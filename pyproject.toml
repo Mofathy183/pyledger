@@ -1,0 +1,7 @@
+[project]
+name = "pyledger"
+version = "0.1.0"
+description = "A simple command-line bookkeeping system built in Python that simulates how a real accounting system works."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
