@@ -10,3 +10,19 @@ dependencies = [
     "rich>=15.0.0",
     "typer>=0.25.1",
 ]
+
+[project.scripts]
+pyledger = "pyledger.main:app"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = ["ruff>=0.15.12"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
