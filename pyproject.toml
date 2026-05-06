@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pyledger = "pyledger.main:app"
+pyledger = "pyledger.main:main"
 
 [tool.uv]
 package = true
