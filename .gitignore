@@ -66,6 +66,7 @@ venv/
 ENV/
 
 # IDEs and editors
+.idea/
 .vscode/
 tempCodeRunnerFile.py
 
