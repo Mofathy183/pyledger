@@ -57,3 +57,12 @@ formatting, console, constants
 - Follow clean architecture principles.
 - Keep CLI code thin.
 - Write tests for business rules.
+
+## Documentation Standards
+
+- Use Google-style docstrings.
+- Document business rules and accounting concepts.
+- Avoid documenting obvious implementation details.
+- Prefer documenting why rather than what.
+- Public domain models, services, and repositories should have docstrings.
+- Private helpers should only be documented when their intent is non-obvious.

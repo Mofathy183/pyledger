@@ -358,6 +358,40 @@ src/pyledger/reports/
 - Reporting should not mutate persisted records.
 - Reporting should not embed CLI-only formatting concerns.
 
+## Current Folder Structure
+
+```text
+pyledger/
+│
+├── AGENTS.md
+├── README.md
+├── pyproject.toml
+├── ruff.toml
+├── uv.lock
+│
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── PROJECT_CONTEXT.md
+│   └── ROADMAP.md
+│
+└── src/
+    └── pyledger/
+        ├── main.py
+        ├── cli/
+        │   ├── __init__.py
+        │   └── app.py
+        │
+        ├── core/
+        │   ├── __init__.py
+        │   └── models.py
+        │
+        └── utils/
+            ├── common.py
+            ├── console.py
+            ├── constants.py
+            └── formatter.py
+```
+
 ## Target Folder Structure
 
 The long-term repository layout should preserve the current separation of concerns while adding explicit layers for
