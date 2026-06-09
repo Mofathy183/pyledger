@@ -171,18 +171,6 @@ That distinction is fundamental to correct posting, account summaries, and trial
 The current domain model also leaves room for additional classifications as the project evolves, but the five account
 types above are the accounting foundation.
 
-## Current Implementation Snapshot
-
-The repository currently includes:
-
-- a validated `JournalEntry` domain model,
-- a Typer CLI application,
-- Rich-based terminal formatting for journal-entry previews and validation errors,
-- shared helpers for default posting dates and journal-number generation.
-
-This means PyLedger is already enforcing part of the accounting rule set, but ledger posting and trial balance
-generation are still part of the intended product direction rather than finished accounting workflows.
-
 ## Long-Term Project Vision
 
 The long-term vision for PyLedger is to become a compact but complete bookkeeping tool that remains easy to reason about

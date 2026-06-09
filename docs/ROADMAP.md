@@ -16,6 +16,56 @@ The project should not move to storage or APIs before the accounting core is dep
 - Prefer small, testable increments over broad rewrites.
 - Treat balancing rules and account behavior as non-negotiable.
 
+## Phase 0: Project Bootstrap
+
+### Goal
+
+Establish the project foundation, development tooling, and repository structure required to implement and validate the
+accounting domain safely and consistently.
+
+### Features
+
+* Python project initialization with UV.
+* Source-layout package structure.
+* Ruff configuration for linting and formatting.
+* pytest configuration and testing conventions.
+* Typer application bootstrap.
+* Rich console integration.
+* Initial project documentation.
+* Development workflow and repository standards.
+
+### Deliverables
+
+* Configured `pyproject.toml`.
+* Working `src/` package structure.
+* CLI entrypoint and application bootstrap.
+* Ruff and development tooling configuration.
+* Initial documentation set:
+
+    * `AGENTS.md`
+    * `PROJECT_CONTEXT.md`
+    * `ARCHITECTURE.md`
+    * `ROADMAP.md`
+* Reproducible local development environment.
+
+### Dependencies
+
+None.
+
+### Definition of Done
+
+* The project installs successfully through UV.
+* The CLI application can be executed from the command line.
+* Linting and formatting tools are configured.
+* The repository structure follows the documented architecture.
+* Documentation exists for project context, architecture, and roadmap.
+* The project is ready for implementation of the accounting domain.
+
+### Notes
+
+Phase 0 focuses exclusively on project setup and development infrastructure. No accounting workflows, posting logic,
+ledger behavior, or reporting features are required at this stage.
+
 ## Phase 1: Harden the Core Journal Model
 
 ### Goal

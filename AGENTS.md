@@ -49,6 +49,21 @@ Typer commands only
 utils/
 formatting, console, constants
 
+## Planned Domain Evolution
+
+Current:
+
+JournalEntry
+├── debit_account
+├── credit_account
+├── debit_balance
+└── credit_balance
+
+Target:
+
+JournalEntry
+└── JournalLine[]
+
 ## Development Guidelines
 
 - Use Pydantic for validation.

@@ -358,6 +358,25 @@ src/pyledger/reports/
 - Reporting should not mutate persisted records.
 - Reporting should not embed CLI-only formatting concerns.
 
+## Current Project Status
+
+Phase: Phase 1
+
+Implemented:
+
+- Typer CLI
+- Rich formatting
+- Pydantic models
+- JournalEntry validation
+
+Not Yet Implemented:
+
+- JournalLine
+- Ledger posting
+- Trial Balance
+- Persistence layer
+- Repository layer
+
 ## Current Folder Structure
 
 ```text
