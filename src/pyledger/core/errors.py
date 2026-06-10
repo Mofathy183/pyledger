@@ -10,8 +10,9 @@ commands, domain models, and future application interfaces.
 """
 
 from dataclasses import dataclass
-from datetime import date
 from enum import StrEnum
+
+from pydantic_core import PydanticCustomError
 
 
 class ErrorCode(StrEnum):
@@ -27,138 +28,166 @@ class ErrorCode(StrEnum):
     - Logging and diagnostics
     - Localization of user-facing messages
 
-    The human-readable message and hint associated with an error may
-    change over time, but the error code should remain stable.
+    The human-readable message associated with an error may change
+    over time, but the error code should remain stable.
     """
 
-    # Journal number
-    INVALID_NUMBER = "invalid_number"
+    #
+    # Generic validation
+    #
+    UNKNOWN_ERROR = "unknown_error"
+    REQUIRED_FIELD = "missing"
+    INVALID_NUMBER = "int_parsing"
+    INVALID_DECIMAL = "decimal_parsing"
+    STRING_TOO_SHORT = "string_too_short"
+    STRING_TOO_LONG = "string_too_long"
+    GREATER_THAN = "greater_than"
+    LESS_THAN_EQUAL = "less_than_equal"
 
-    # Posting date
+    #
+    # Domain errors — posting date
+    #
     FUTURE_DATE = "future_date"
     PAST_DATE = "past_date"
 
-    # Account names
+    #
+    # Domain errors — account names
+    #
     INVALID_ACCOUNT_NAME = "invalid_account_name"
-    TOO_SHORT_DEBIT_ACCOUNT = "too_short_debit_account"
-    TOO_SHORT_CREDIT_ACCOUNT = "too_short_credit_account"
 
-    # Balances
+    #
+    # Domain errors — journal lines
+    #
+    INVALID_LINE_AMOUNTS = "invalid_line_amounts"
+
+    #
+    # Domain errors — journal entry
+    #
     UNBALANCED_ENTRY = "unbalanced_entry"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ErrorDetail:
-    """Represents a user-facing validation error.
+    """Represents a user-facing validation error message.
 
     Attributes:
         code: Stable machine-readable error identifier.
         message: Human-readable explanation of the validation failure.
-        hint: Guidance that helps the user resolve the issue.
     """
 
     code: ErrorCode
     message: str
+
+
+@dataclass(frozen=True, slots=True)
+class Error:
+    detail: ErrorDetail
     hint: str
 
 
-type ErrorMap = dict[str, dict[str, ErrorDetail]]
+type ErrorMap = dict[str, ErrorDetail]
 """
-Maps validation errors to user-facing metadata.
+Maps a validation error type to its user-facing metadata.
 
-Structure:
+The key is the Pydantic error type string or custom domain error
+identifier raised by the validator. The value is the ErrorDetail
+describing the failure.
 
-    {
-        field_name: {
-            validation_error_type: ErrorDetail
-        }
-    }
-
-The outer key typically corresponds to a domain model field, while
-the inner key corresponds to a Pydantic validation error type or
-custom application error identifier.
+Keying by error type rather than field name means this map remains
+valid as the domain model evolves. Dynamic field paths such as
+``lines.0.account`` or ``lines.3.credit_amount`` resolve to the same
+error type regardless of their position, so no updates to this map
+are required when the model structure changes.
 """
 
 
-JOURNAL_ENTRY_ERRORS: ErrorMap = {
-    "journal_number": {
-        "int_parsing": ErrorDetail(
-            message="The posting number must be a number",
-            code=ErrorCode.INVALID_NUMBER,
-            hint=(
-                "you must add a number for the journal entry, "
-                "[underline]or skip and we'll add it 😁, 👍 .[/]"
-            ),
-        )
-    },
-    "posting_date": {
-        "less_than_equal": ErrorDetail(
-            message=(
-                "the date must not in the Future, "
-                f"you can't post a journal in the 2050 and we in {date.today().year}"
-            ),
-            code=ErrorCode.FUTURE_DATE,
-            hint=(
-                "Try to add a date in the current year, not in the future, "
-                "[underline]or skip it and we'll add it 😁, 👍 .[/]"
-            ),
+ERRORS: ErrorMap = {
+    #
+    # Generic validation
+    #
+    ErrorCode.UNKNOWN_ERROR: ErrorDetail(
+        code=ErrorCode.UNKNOWN_ERROR,
+        message="An unexpected validation error occurred.",
+    ),
+    ErrorCode.REQUIRED_FIELD: ErrorDetail(
+        code=ErrorCode.REQUIRED_FIELD,
+        message="This field is required.",
+    ),
+    ErrorCode.INVALID_NUMBER: ErrorDetail(
+        code=ErrorCode.INVALID_NUMBER,
+        message="The journal number must be a valid number.",
+    ),
+    ErrorCode.INVALID_DECIMAL: ErrorDetail(
+        code=ErrorCode.INVALID_DECIMAL,
+        message="A valid decimal amount is required.",
+    ),
+    ErrorCode.STRING_TOO_SHORT: ErrorDetail(
+        code=ErrorCode.STRING_TOO_SHORT,
+        message="The value is too short.",
+    ),
+    ErrorCode.STRING_TOO_LONG: ErrorDetail(
+        code=ErrorCode.STRING_TOO_LONG,
+        message="The value exceeds the allowed length.",
+    ),
+    ErrorCode.GREATER_THAN: ErrorDetail(
+        code=ErrorCode.GREATER_THAN,
+        message="The value is below the minimum allowed value.",
+    ),
+    ErrorCode.LESS_THAN_EQUAL: ErrorDetail(
+        code=ErrorCode.LESS_THAN_EQUAL,
+        message="The value exceeds the allowed limit.",
+    ),
+    #
+    # Posting date
+    #
+    ErrorCode.FUTURE_DATE: ErrorDetail(
+        code=ErrorCode.FUTURE_DATE,
+        message="The posting date cannot be in the future.",
+    ),
+    ErrorCode.PAST_DATE: ErrorDetail(
+        code=ErrorCode.PAST_DATE,
+        message="The posting date is outside the supported accounting period.",
+    ),
+    #
+    # Account names
+    #
+    ErrorCode.INVALID_ACCOUNT_NAME: ErrorDetail(
+        code=ErrorCode.INVALID_ACCOUNT_NAME,
+        message="Account names can only contain letters, spaces, commas, and '/'.",
+    ),
+    #
+    # Journal lines
+    #
+    ErrorCode.INVALID_LINE_AMOUNTS: ErrorDetail(
+        code=ErrorCode.INVALID_LINE_AMOUNTS,
+        message=(
+            "A journal line must contain either a debit amount or a credit amount, "
+            "not both and not neither."
         ),
-        "greater_than": ErrorDetail(
-            message=(
-                "the date must not in the Past, "
-                f"you can't post a journal in the 2020 and we in {date.today().year}"
-            ),
-            code=ErrorCode.PAST_DATE,
-            hint=(
-                "Try to add a date in the current year, not in the Past, "
-                "[underline]or skip it and we'll add it 😁, 👍 .[/]"
-            ),
-        ),
-    },
-    "debit_account": {
-        "string_too_short": ErrorDetail(
-            message=(
-                "There is no debit account with one letter, "
-                "so pleases try to add the account name or its abbreviations at least."
-            ),
-            code=ErrorCode.TOO_SHORT_DEBIT_ACCOUNT,
-            hint=(
-                "Try to add the full name of the account or abbreviations of it 😌, 😐, "
-                "Like Account Receivable or its abbreviations A/R."
-            ),
-        ),
-    },
-    "credit_account": {
-        "string_too_short": ErrorDetail(
-            message=(
-                "There is no credit account with one letter, "
-                "so pleases try to add the account name or its abbreviations at least."
-            ),
-            code=ErrorCode.TOO_SHORT_CREDIT_ACCOUNT,
-            hint=(
-                "Try to add the full name of the account or abbreviations of it 😌, 😐, "
-                "Like Account Payable or its abbreviations A/P."
-            ),
-        ),
-    },
-    "account_name": {
-        "invalid_account_name": ErrorDetail(
-            message="Account names can only contain letters, spaces, / and commas.",
-            code=ErrorCode.INVALID_ACCOUNT_NAME,
-            hint=(
-                "Try using normal account names like Cash or abbreviations "
-                "like A/R 😌, not symbols or random characters."
-            ),
-        ),
-    },
-    "balances": {
-        "balances_not_equal": ErrorDetail(
-            message="Debit balance must equal credit balance.",
-            code=ErrorCode.UNBALANCED_ENTRY,
-            hint=(
-                "Every journal entry must stay balanced "
-                "according to the double-entry accounting system."
-            ),
-        ),
-    },
+    ),
+    #
+    # Journal entry
+    #
+    ErrorCode.UNBALANCED_ENTRY: ErrorDetail(
+        code=ErrorCode.UNBALANCED_ENTRY,
+        message="The journal entry is not balanced. Total debits must equal total credits.",
+    ),
 }
+
+
+def validation_error(code: ErrorCode) -> PydanticCustomError:
+    """Construct a Pydantic-compatible domain validation error.
+
+    Wraps a domain error code in a PydanticCustomError so validators
+    can raise it directly. The error message is intentionally empty
+    because user-facing messages are resolved from ERRORS at the
+    presentation layer rather than embedded in the exception.
+
+    Args:
+        code: The domain error code identifying the validation failure.
+
+    Returns:
+        A PydanticCustomError carrying the error code as its type.
+    """
+    # noinspection PyTypeChecker
+    return PydanticCustomError(code, "")
