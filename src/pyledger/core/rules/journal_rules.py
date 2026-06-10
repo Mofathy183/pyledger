@@ -8,6 +8,7 @@ workflows and validation layers.
 """
 
 import re
+from decimal import Decimal
 
 
 def clean_account_name(value: str) -> str | None:
@@ -41,18 +42,34 @@ def clean_account_name(value: str) -> str | None:
     return cleaned
 
 
-def debits_equal_credits(debit: int, credit: int) -> bool:
-    """Determine whether a journal entry is balanced.
+def is_valid_line_amounts(debit: Decimal, credit: Decimal) -> bool:
+    """Validate the posting amounts for a journal line.
 
-    Double-entry accounting requires that total debits equal total
-    credits for every journal entry. This invariant must hold before
-    a transaction can be accepted into the accounting system.
+    A journal line must represent exactly one side of a double-entry
+    accounting transaction. A line may contain either a debit amount or
+    a credit amount, but not both.
+
+    Valid examples:
+
+    - Debit = 100, Credit = 0
+    - Debit = 0, Credit = 100
+
+    Invalid examples:
+
+    - Debit = 100, Credit = 100
+    - Debit = 0, Credit = 0
 
     Args:
-        debit: Total debit amount.
-        credit: Total credit amount.
+        debit: Debit amount recorded on the journal line.
+        credit: Credit amount recorded on the journal line.
 
     Returns:
-        ``True`` if debits equal credits, otherwise ``False``.
+        ``True`` if the journal line represents a valid posting,
+        otherwise ``False``.
     """
-    return debit == credit
+    if debit > 0 and credit > 0:
+        return False
+    if debit == 0 and credit == 0:
+        return False
+
+    return True
