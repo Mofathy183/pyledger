@@ -6,21 +6,15 @@ into Rich-rendered terminal output. Formatting concerns are kept here
 and away from the domain layer.
 """
 
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
-from rich import box
-from rich.console import Group
-from rich.panel import Panel
-from rich.rule import Rule
-from rich.table import Table
-from rich.text import Text
 
-from pyledger.core.errors import ERRORS, Error, ErrorCode
+from pyledger.core.errors import ERRORS, Error, ErrorCode, ErrorDetail
 from pyledger.core.models.journal import JournalEntry
 
-from .console import console
-from .constants import HINTS
+from .constants import FIELD_LABELS, HINTS
 
 
 def get_error_detail(error: dict[str, Any]) -> Error:
@@ -41,102 +35,132 @@ def get_error_detail(error: dict[str, Any]) -> Error:
     return Error(detail=detail, hint=hint)
 
 
-def error_formatter(errors: ValidationError) -> None:
-    """Render Pydantic validation errors as Rich panels in the terminal.
+def _resolve_field(error: dict[str, Any]) -> str:
+    """Resolve the display field associated with a validation error.
 
-    Each error in the ValidationError is rendered as a separate panel
-    showing the field location, error message, error code, and a hint
-    to help the user resolve the issue.
+    Pydantic field-level validation errors include a location path that
+    identifies the affected field. Model-level validation errors do not
+    provide a location, so a synthetic field label is derived from the
+    error type to produce more useful CLI output.
 
     Args:
-        errors: The ValidationError raised by a Pydantic model.
+        error: A single error dict from ``ValidationError.errors()``.
+
+    Returns:
+        A user-facing field name suitable for validation reporting.
     """
+    loc = ".".join(map(str, error.get("loc", [])))
+    if loc:
+        return loc
+    # Model-level validators produce an empty loc — fall back to a
+    # human-readable label derived from the error type.
+    return FIELD_LABELS.get(error["type"], "unknown")
+
+
+@dataclass(frozen=True)
+class FormattedError:
+    """User-facing validation error prepared for terminal rendering.
+
+    Stores the display field, resolved error metadata, and corrective
+    hint required by the CLI presentation layer.
+    """
+
+    field: str
+    detail: ErrorDetail
+    hint: str
+
+
+def format_validation_errors(errors: ValidationError) -> list[FormattedError]:
+    """Convert Pydantic validation failures into display-ready errors.
+
+    Resolves domain error metadata and user guidance for each validation
+    failure so the CLI layer can render consistent error messages without
+    depending on Pydantic's internal error structure.
+
+    Args:
+        errors: Validation error raised during model validation.
+
+    Returns:
+        A list of formatted validation errors ready for presentation.
+    """
+    formatted_errors = []
     for error in errors.errors():
-        field = ".".join(map(str, error.get("loc", []))) or "unknown"
+        field = _resolve_field(error)
 
         error_config = get_error_detail(error)
 
-        error_format = (
-            "Validation Error\n\n"
-            f"Field: {field}\n"
-            f"Message: {error_config.detail.message}\n"
-            f"Code: [warning]{error_config.detail.code}[/]\n"
-            f"Hint:\n"
-            f"  [info]{error_config.hint}[/]"
+        formatted_errors.append(
+            FormattedError(
+                field=field, detail=error_config.detail, hint=error_config.hint
+            )
         )
 
-        console.print(
-            Panel(error_format, title="Error", style="error", border_style="error")
-        )
+    return formatted_errors
 
 
-def journal_entry_formatter(entry: JournalEntry) -> None:
-    """Render a journal entry as a Rich panel in the terminal.
+@dataclass(frozen=True)
+class FormattedJournalLine:
+    """Display-ready representation of a journal entry line.
 
-    Displays the entry header, posting date, description, a table of
-    journal lines with debit and credit amounts, and a totals summary.
-    The totals row highlights whether the entry is balanced.
+    Stores account and posting amounts as formatted strings suitable
+    for terminal rendering.
+    """
+
+    account: str
+    debit: str
+    credit: str
+    is_debit: bool
+
+
+@dataclass(frozen=True)
+class FormattedJournalEntry:
+    """Display-ready representation of a journal entry.
+
+    Contains journal metadata, formatted posting lines, and summary
+    totals required for rendering an accounting transaction in the CLI.
+    Balance status is included to allow visual indication of whether
+    total debits equal total credits.
+    """
+
+    journal_number: int
+    posting_date: str
+    description: str
+    lines: list[FormattedJournalLine]
+    total_debits: str
+    total_credits: str
+    is_balanced: bool
+
+
+def format_journal_entry(entry: JournalEntry) -> FormattedJournalEntry:
+    """Convert a journal entry into a CLI-friendly representation.
+
+    Transforms domain values into formatted strings and presentation
+    models suitable for terminal rendering. Accounting calculations
+    and balance validation are assumed to have already been performed
+    by the domain layer.
 
     Args:
-        entry: A validated JournalEntry to display.
+        entry: Journal entry to prepare for display.
+
+    Returns:
+        A formatted journal entry ready for terminal presentation.
     """
-    table = Table(
-        box=box.SIMPLE,
-        border_style="journal_entries",
-        header_style="journal_entries",
-        expand=True,
-    )
-    table.add_column("Account", style="assets")
-    table.add_column("Debit", justify="right", style="debit")
-    table.add_column("Credit", justify="right", style="credit")
-
-    for line in entry.lines:
-        debit = f"{line.debit_amount:.2f}" if line.debit_amount else ""
-        credit = f"{line.credit_amount:.2f}" if line.credit_amount else ""
-        row_style = "debit" if line.debit_amount else "credit"
-        table.add_row(line.account, debit, credit, style=row_style)
-
-    header = Text(
-        f"Journal Entry #{entry.journal_number}\n",
-        style="info",
-    )
-
-    posting_date = Text(
-        f"Posting Date: {entry.posting_date:%Y-%m-%d}",
-        style="info",
-    )
-
-    description = Text(
-        entry.description or "No description provided.",
-        style="warning",
-    )
-
-    totals_style = "success" if entry.is_balanced else "error"
-    totals = Text(
-        (
-            f"Total Debit:  {entry.total_debits:.2f}\n"
-            f"Total Credit: {entry.total_credits:.2f}"
-        ),
-        style=totals_style,
-    )
-
-    content = Group(
-        header,
-        posting_date,
-        Rule(style="success"),
-        table,
-        Rule(style="success"),
-        description,
-        Rule(style="success"),
-        totals,
-    )
-
-    console.print(
-        Panel(
-            content,
-            title="Journal Entry",
-            style="success",
-            border_style="success",
-            padding=(1, 2),
+    lines = [
+        FormattedJournalLine(
+            account=line.account,
+            debit=f"{line.debit_amount:.2f}" if line.debit_amount else "",
+            credit=f"{line.credit_amount:.2f}" if line.credit_amount else "",
+            is_debit=bool(line.debit_amount),
         )
+        for line in entry.lines
+    ]
+
+    return FormattedJournalEntry(
+        journal_number=entry.journal_number,
+        posting_date=f"{entry.posting_date:%Y-%m-%d}",
+        description=entry.description or "No description provided.",
+        lines=lines,
+        total_debits=f"{entry.total_debits:.2f}",
+        total_credits=f"{entry.total_credits:.2f}",
+        is_balanced=entry.is_balanced,
     )

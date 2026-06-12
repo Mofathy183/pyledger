@@ -38,7 +38,11 @@ HINTS: HintMap = {
     ErrorCode.INVALID_DECIMAL: "Enter a monetary amount such as 100 or 100.50.",
     ErrorCode.STRING_TOO_SHORT: "Provide a longer value.",
     ErrorCode.STRING_TOO_LONG: "Shorten the value and try again.",
+    ErrorCode.TOO_SHORT: "Provide at least the minimum number of items required.",
     ErrorCode.GREATER_THAN: "Provide a value that is above the minimum allowed.",
+    ErrorCode.GREATER_THAN_EQUAL: (
+        "Provide a value that meets or exceeds the minimum allowed."
+    ),
     ErrorCode.LESS_THAN_EQUAL: (
         "Provide a value that does not exceed the allowed limit."
     ),
@@ -76,4 +80,10 @@ HINTS: HintMap = {
         "Check that the total of all debit amounts equals the total of "
         "all credit amounts across every line in the entry."
     ),
+}
+
+FIELD_LABELS: dict[str, str] = {
+    ErrorCode.UNBALANCED_ENTRY: "lines (balance)",
+    ErrorCode.INVALID_LINE_AMOUNTS: "lines (amounts)",
+    ErrorCode.FUTURE_DATE: "posting_date",
 }
