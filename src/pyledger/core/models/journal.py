@@ -31,7 +31,7 @@ class JournalLine(BaseModel):
         str,
         Field(
             description="The Account name, or its Abbreviations",
-            max_length=150,
+            max_length=100,
             min_length=2,
         ),
     ]

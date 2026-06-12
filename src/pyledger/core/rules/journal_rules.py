@@ -34,7 +34,11 @@ def clean_account_name(value: str) -> str | None:
         within the current accounting model.
     """
     cleaned = value.strip()
-    pattern = r"^[A-Za-z /,]+$"
+
+    # Must start with a letter
+    # Letters, digits, spaces are unrestricted
+    # Special chars (&, -, ', ., /) must appear alone — not consecutive
+    pattern = r"^[A-Za-z][A-Za-z0-9 ]*(?:[&\-'./][A-Za-z0-9 ]+)*$"
 
     if not re.fullmatch(pattern, cleaned):
         return None

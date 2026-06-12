@@ -41,7 +41,9 @@ class ErrorCode(StrEnum):
     INVALID_DECIMAL = "decimal_parsing"
     STRING_TOO_SHORT = "string_too_short"
     STRING_TOO_LONG = "string_too_long"
+    TOO_SHORT = "too_short"
     GREATER_THAN = "greater_than"
+    GREATER_THAN_EQUAL = "greater_than_equal"
     LESS_THAN_EQUAL = "less_than_equal"
 
     #
@@ -99,8 +101,6 @@ valid as the domain model evolves. Dynamic field paths such as
 error type regardless of their position, so no updates to this map
 are required when the model structure changes.
 """
-
-
 ERRORS: ErrorMap = {
     #
     # Generic validation
@@ -129,9 +129,17 @@ ERRORS: ErrorMap = {
         code=ErrorCode.STRING_TOO_LONG,
         message="The value exceeds the allowed length.",
     ),
+    ErrorCode.TOO_SHORT: ErrorDetail(
+        code=ErrorCode.TOO_SHORT,
+        message="The list does not meet the minimum required length.",
+    ),
     ErrorCode.GREATER_THAN: ErrorDetail(
         code=ErrorCode.GREATER_THAN,
         message="The value is below the minimum allowed value.",
+    ),
+    ErrorCode.GREATER_THAN_EQUAL: ErrorDetail(
+        code=ErrorCode.GREATER_THAN_EQUAL,
+        message="The value must be at or above the minimum allowed value.",
     ),
     ErrorCode.LESS_THAN_EQUAL: ErrorDetail(
         code=ErrorCode.LESS_THAN_EQUAL,
