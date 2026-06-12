@@ -16,12 +16,22 @@ The project should not move to storage or APIs before the accounting core is dep
 - Prefer small, testable increments over broad rewrites.
 - Treat balancing rules and account behavior as non-negotiable.
 
+## Current Status
+
+- Completed: Phase 0 and Phase 1.
+- Partially Completed: Phase 2, including the compound journal-entry refactor.
+- Not Started: Phase 3 through Phase 8.
+
 ## Phase 0: Project Bootstrap
 
 ### Goal
 
 Establish the project foundation, development tooling, and repository structure required to implement and validate the
 accounting domain safely and consistently.
+
+### Status
+
+Completed.
 
 ### Features
 
@@ -72,6 +82,10 @@ ledger behavior, or reporting features are required at this stage.
 
 Make the journal-entry domain reliable, explicit, and fully covered by business-rule tests.
 
+### Status
+
+Completed.
+
 ### Features
 
 - Balanced journal-entry validation.
@@ -108,6 +122,10 @@ Make the journal-entry domain reliable, explicit, and fully covered by business-
 Introduce explicit account behavior so PyLedger can reason about debit-normal and credit-normal accounts beyond a single
 journal entry.
 
+### Status
+
+Partially Completed.
+
 ### Features
 
 - Account catalog model.
@@ -115,26 +133,6 @@ journal entry.
 - Posting logic that maps journal entries to account movements.
 - Balance accumulation per account.
 - Validation that posting preserves accounting integrity.
-
-## Phase 2 – Compound Journal Entries
-
-Goal:
-
-Replace the current two-account journal model with a multi-line journal system.
-
-Tasks:
-
-- Create JournalLine model.
-- Refactor JournalEntry to contain a collection of JournalLines.
-- Implement debit/credit aggregation validation.
-- Update CLI commands to support line-based entry creation.
-- Add tests for compound transactions.
-
-Definition of Done:
-
-- JournalEntry supports any number of lines.
-- Validation ensures total debits equal total credits.
-- Existing functionality continues to work.
 
 ### Deliverables
 
@@ -156,11 +154,39 @@ Definition of Done:
 - Posting logic is tested independently of the CLI.
 - No CLI or storage code is required to validate posting behavior.
 
+## Phase 2: Compound Journal Entries
+
+### Goal
+
+Replace the current two-account journal model with a multi-line journal system.
+
+### Status
+
+Partially Completed.
+
+### Tasks
+
+- Completed: Create `JournalLine` model.
+- Completed: Refactor `JournalEntry` to contain a collection of `JournalLine` records.
+- Completed: Implement debit and credit aggregation validation.
+- Not Started: Update CLI commands to support line-based entry creation.
+- Completed: Add tests for compound transactions.
+
+### Definition of Done
+
+- `JournalEntry` supports any number of lines.
+- Validation ensures total debits equal total credits.
+- Existing functionality continues to work.
+
 ## Phase 3: Build Trial Balance Reporting
 
 ### Goal
 
 Add the first complete accounting report so the application can verify that posted ledger activity still balances.
+
+### Status
+
+Not Started.
 
 ### Features
 
@@ -193,6 +219,10 @@ Add the first complete accounting report so the application can verify that post
 ### Goal
 
 Turn the CLI into a practical bookkeeping interface for creating, reviewing, and checking accounting data.
+
+### Status
+
+Not Started.
 
 ### Features
 
@@ -228,6 +258,10 @@ Turn the CLI into a practical bookkeeping interface for creating, reviewing, and
 Define stable data-access contracts so the application can persist bookkeeping data without binding the domain to a
 storage technology.
 
+### Status
+
+Not Started.
+
 ### Features
 
 - Repository interfaces for journal entries, accounts, and ledger records.
@@ -257,6 +291,10 @@ storage technology.
 ### Goal
 
 Persist accounting data reliably so PyLedger can survive beyond in-memory or single-session usage.
+
+### Status
+
+Not Started.
 
 ### Features
 
@@ -290,6 +328,10 @@ Persist accounting data reliably so PyLedger can survive beyond in-memory or sin
 
 Expand PyLedger from a verification tool into a useful bookkeeping system with readable historical reports.
 
+### Status
+
+Not Started.
+
 ### Features
 
 - Ledger reports by account.
@@ -321,6 +363,10 @@ Expand PyLedger from a verification tool into a useful bookkeeping system with r
 ### Goal
 
 Make PyLedger interoperable with external workflows once the accounting core is stable.
+
+### Status
+
+Not Started.
 
 ### Features
 

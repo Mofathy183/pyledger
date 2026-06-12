@@ -2,9 +2,9 @@
 
 ## Overview
 
-PyLedger is a Python command-line bookkeeping application built around double-entry accounting. Its purpose is to model
-the core bookkeeping workflow in a small, strict, and well-validated domain: users describe journal entries, the system
-enforces accounting rules, and the resulting records can be carried forward into ledger and trial balance views.
+PyLedger is a Python command-line bookkeeping application built around double-entry accounting. The current codebase is a
+small, strict domain prototype: users describe journal entries, the system validates accounting rules, and the terminal
+layer formats the results for display.
 
 The project is designed as a clean-architecture style codebase:
 
@@ -12,9 +12,8 @@ The project is designed as a clean-architecture style codebase:
 - `cli/` contains Typer commands only.
 - `utils/` contains formatting, console, and shared presentation helpers.
 
-The current implementation focuses on journal-entry validation and terminal presentation. The broader project direction
-is to grow from validated journal entries into a complete bookkeeping workflow with ledger posting and trial balance
-generation.
+The current implementation focuses on journal-entry validation and terminal presentation. Ledger posting and trial
+balance generation remain planned work.
 
 ## Accounting Model
 
@@ -32,49 +31,39 @@ This flow is intentional:
 
 `Journal Entry -> Ledger Posting -> Trial Balance`
 
-Each stage transforms the same underlying transaction data into progressively more structured accounting output.
+In the current codebase, only the journal-entry stage is implemented. Ledger posting and trial balance reporting are
+still roadmap items.
 
 ## Journal Entries
 
-A journal entry is the atomic bookkeeping record in PyLedger. It identifies:
+A journal entry is the atomic bookkeeping record in PyLedger. The current implementation models it with:
 
 - a unique journal number,
 - a posting date,
-- a debit account,
-- a credit account,
-- a debit amount,
-- a credit amount,
-- an optional description.
+- an optional description,
+- a list of `JournalLine` objects.
 
 Journal entries are the first line of defense for accounting correctness. They must be internally consistent before they
 can move into any ledger or reporting process.
 
-In the current codebase, journal entries are represented with Pydantic models and validated before display. This keeps
-validation close to the domain model and independent of CLI concerns.
+The current codebase uses Pydantic models for validation and computed properties for totals. A journal entry exposes:
+
+- `total_debits`
+- `total_credits`
+- `is_balanced`
+
+These values are derived from the journal lines and are not stored separately.
 
 ## Journal Entry Design
 
-PyLedger should support compound journal entries rather than limiting transactions to a single debit account and a
-single credit account.
+PyLedger uses a compound journal-entry model based on `JournalLine` records.
 
-The current implementation uses:
-
-- debit_account
-- credit_account
-- debit_balance
-- credit_balance
-
-This design is suitable for simple transactions but does not accurately model real-world accounting systems.
-
-The target design is:
+The current implementation stores:
 
 JournalEntry
-├── JournalLine
-├── JournalLine
-├── JournalLine
-└── ...
+└── JournalLine[]
 
-Each JournalLine represents the effect of a transaction on a single account.
+Each `JournalLine` represents the effect of a transaction on a single account.
 
 Example:
 
@@ -97,7 +86,7 @@ Validation Rule:
 
 The sum of all debit amounts must equal the sum of all credit amounts.
 
-A JournalEntry is considered valid only when:
+A `JournalEntry` is considered valid only when:
 
 Total Debits == Total Credits
 
@@ -113,8 +102,8 @@ Conceptually, ledger posting does the following:
 - accumulates running balances per account,
 - preserves a trace back to the original journal entry.
 
-The ledger is the bridge between transaction capture and reporting. It is the place where journal entries become durable
-account histories.
+The ledger is the bridge between transaction capture and reporting. It is the place where journal entries become
+durable account histories.
 
 ## Trial Balance
 
@@ -137,6 +126,7 @@ PyLedger enforces a small set of non-negotiable accounting rules:
 
 - Every journal entry must balance.
 - Total debits must equal total credits.
+- Journal lines must contain either a debit amount or a credit amount, not both and not neither.
 - Negative amounts are invalid.
 - Empty account names are invalid.
 - Business logic must remain independent of Typer and Rich.
@@ -148,7 +138,7 @@ Additional domain constraints already visible in the current implementation incl
 
 - posting dates must be valid and bounded,
 - account names must use permitted characters,
-- journal numbers should be unique and sequential in normal usage,
+- journal numbers must be positive integers,
 - descriptive text is optional but constrained.
 
 ## Account Types and Normal Balances
@@ -161,6 +151,11 @@ PyLedger uses the standard five core account categories:
 - Revenue: normal credit
 - Expense: normal debit
 
+The current `AccountCategory` enum also includes:
+
+- Dividend
+- Drawing
+
 These normal balances matter because they define what a "positive" balance means for each account type.
 
 - Debit-normal accounts increase with debits and decrease with credits.
@@ -168,13 +163,10 @@ These normal balances matter because they define what a "positive" balance means
 
 That distinction is fundamental to correct posting, account summaries, and trial balance logic.
 
-The current domain model also leaves room for additional classifications as the project evolves, but the five account
-types above are the accounting foundation.
-
 ## Long-Term Project Vision
 
-The long-term vision for PyLedger is to become a compact but complete bookkeeping tool that remains easy to reason about
-and safe to extend.
+The long-term vision for PyLedger is to become a compact but complete bookkeeping tool that remains easy to reason
+about and safe to extend.
 
 That means:
 
@@ -185,5 +177,5 @@ That means:
 - trial balance reporting as a system integrity check,
 - room for future reporting features such as summaries, exports, and financial statements.
 
-The project should continue to optimize for correctness first. Features are valuable only if they preserve the
-accounting model and keep the codebase maintainable under clean-architecture principles.
+The project should continue to optimize for correctness first. At present, the codebase is still focused on validated
+journal entries, Rich formatting, and a thin Typer shell around that domain.
