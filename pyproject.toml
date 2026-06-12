@@ -24,6 +24,7 @@ build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
+    "build>=1.5.0",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.16",
