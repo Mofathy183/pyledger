@@ -39,6 +39,7 @@ HINTS: HintMap = {
     ErrorCode.STRING_TOO_SHORT: "Provide a longer value.",
     ErrorCode.STRING_TOO_LONG: "Shorten the value and try again.",
     ErrorCode.TOO_SHORT: "Provide at least the minimum number of items required.",
+    ErrorCode.TOO_LONG: "Remove items until the list meets the maximum allowed length.",
     ErrorCode.GREATER_THAN: "Provide a value that is above the minimum allowed.",
     ErrorCode.GREATER_THAN_EQUAL: (
         "Provide a value that meets or exceeds the minimum allowed."
@@ -64,6 +65,11 @@ HINTS: HintMap = {
         "Use the full account name or a recognised abbreviation, "
         "such as Cash, Accounts Receivable, or A/R. "
         "Numbers and special characters are not allowed."
+    ),
+    ErrorCode.UNKNOWN_ACCOUNT: (
+        "This account does not exist in the chart of accounts. "
+        "Use an existing account name or alias, or add the account "
+        "to the chart of accounts before posting."
     ),
     #
     # Journal lines

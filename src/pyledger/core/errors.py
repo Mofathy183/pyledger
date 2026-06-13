@@ -42,6 +42,7 @@ class ErrorCode(StrEnum):
     STRING_TOO_SHORT = "string_too_short"
     STRING_TOO_LONG = "string_too_long"
     TOO_SHORT = "too_short"
+    TOO_LONG = "too_long"
     GREATER_THAN = "greater_than"
     GREATER_THAN_EQUAL = "greater_than_equal"
     LESS_THAN_EQUAL = "less_than_equal"
@@ -56,7 +57,7 @@ class ErrorCode(StrEnum):
     # Domain errors — account names
     #
     INVALID_ACCOUNT_NAME = "invalid_account_name"
-
+    UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
     #
     # Domain errors — journal lines
     #
@@ -133,6 +134,10 @@ ERRORS: ErrorMap = {
         code=ErrorCode.TOO_SHORT,
         message="The list does not meet the minimum required length.",
     ),
+    ErrorCode.TOO_LONG: ErrorDetail(
+        code=ErrorCode.TOO_LONG,
+        message="The list exceeds the maximum allowed length.",
+    ),
     ErrorCode.GREATER_THAN: ErrorDetail(
         code=ErrorCode.GREATER_THAN,
         message="The value is below the minimum allowed value.",
@@ -162,6 +167,10 @@ ERRORS: ErrorMap = {
     ErrorCode.INVALID_ACCOUNT_NAME: ErrorDetail(
         code=ErrorCode.INVALID_ACCOUNT_NAME,
         message="Account names can only contain letters, spaces, commas, and '/'.",
+    ),
+    ErrorCode.UNKNOWN_ACCOUNT: ErrorDetail(
+        code=ErrorCode.UNKNOWN_ACCOUNT,
+        message="The referenced account does not exist in the chart of accounts.",
     ),
     #
     # Journal lines
