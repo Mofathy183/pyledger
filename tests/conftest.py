@@ -3,12 +3,19 @@ from decimal import Decimal
 
 import pytest
 
+from pyledger.core.models.account import Account
 from pyledger.core.models.journal import JournalEntry, JournalLine
 from tests.helpers import (
+    make_account,
     make_credit_line,
     make_debit_line,
     make_journal_entry,
 )
+
+
+@pytest.fixture
+def account() -> Account:
+    return make_account()
 
 
 @pytest.fixture

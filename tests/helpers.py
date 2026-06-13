@@ -1,7 +1,22 @@
 from datetime import datetime
 from decimal import Decimal
 
+from pyledger.core.models.account import Account, AccountCategory
 from pyledger.core.models.journal import JournalEntry, JournalLine
+
+
+def make_account(
+    code: int = 1001,
+    name: str = "Cash",
+    category: AccountCategory = AccountCategory.ASSET,
+    aliases: list[str] | None = None,
+) -> Account:
+    return Account(
+        code=code,
+        name=name,
+        category=category,
+        aliases=aliases or [],
+    )
 
 
 def make_debit_line(
