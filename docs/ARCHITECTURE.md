@@ -2,23 +2,18 @@
 
 ## Purpose
 
-This document describes the current architecture of PyLedger and the direction of the codebase as it grows into a
-fuller bookkeeping system. It separates what exists today from the layers that are planned next so the repository
-remains easy to evolve without mixing business logic, I/O, and reporting concerns.
+This document describes the current structure of PyLedger as it exists in the repository today. The codebase is
+feature-oriented and is organized around account, journal, and posting modules, with separate CLI and shared support
+packages.
 
-PyLedger follows a clean-architecture style approach:
+The architectural goals are:
 
-- domain logic stays in `core/`,
-- CLI concerns stay in `cli/`,
-- shared formatting and presentation helpers stay in `utils/`,
-- persistence and reporting are expected to live in separate layers as the project expands.
+- keep accounting rules inside the feature modules,
+- keep CLI code thin and presentation-only,
+- keep reusable validation and error handling in `shared/`,
+- keep persistence and reporting outside the domain models until they are implemented.
 
-## Current Architecture
-
-The current repository is intentionally small. It contains a small set of domain models, one Typer application, and a
-set of utility modules that support validation output and terminal formatting.
-
-### Current Folder Structure
+## Actual Folder Structure
 
 ```text
 src/pyledger/
@@ -27,527 +22,514 @@ src/pyledger/
 ├── cli/
 │   ├── __init__.py
 │   ├── app.py
-│   └── commands/
-│       ├── __init__.py
-│       └── journal_command.py
-├── core/
-│   ├── __init__.py
-│   ├── errors.py
-│   ├── helpers.py
-│   ├── models/
+│   ├── console.py
+│   ├── commands/
 │   │   ├── __init__.py
-│   │   ├── account.py
-│   │   └── journal.py
-│   └── rules/
+│   │   └── journal_cmd.py
+│   ├── constants/
+│   │   ├── __init__.py
+│   │   └── errors.py
+│   ├── formatters/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── error_fmt.py
+│   │   └── journal_fmt.py
+│   ├── theme/
+│   │   ├── __init__.py
+│   │   ├── detection.py
+│   │   └── styles.py
+│   └── tests/
+│       └── test_formatter.py
+├── modules/
+│   ├── account/
+│   │   ├── __init__.py
+│   │   ├── dtos.py
+│   │   ├── repo.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── account.py
+│   │   │   └── chart.py
+│   │   ├── service.py
+│   │   └── tests/
+│   ├── journal/
+│   │   ├── __init__.py
+│   │   ├── dtos.py
+│   │   ├── repo.py
+│   │   ├── rule.py
+│   │   ├── schemas/
+│   │   │   ├── journal.py
+│   │   │   └── line.py
+│   │   ├── service.py
+│   │   └── tests/
+│   └── posting/
 │       ├── __init__.py
-│       └── journal_rules.py
-└── utils/
+│       ├── dtos.py
+│       ├── repo.py
+│       ├── rule.py
+│       ├── schemas/
+│       │   └── ledger_posting.py
+│       ├── service.py
+│       └── tests/
+└── shared/
     ├── __init__.py
-    ├── console.py
-    ├── constants.py
-    └── formatter.py
+    ├── rule.py
+    ├── util.py
+    └── errors/
+        ├── __init__.py
+        ├── codes.py
+        ├── errors.py
+        ├── translators.py
+        └── tests/
 ```
-
-### Current Test Structure
 
 ```text
 tests/
-├── __init__.py
 ├── conftest.py
-├── helpers.py
-├── core/
-│   ├── models/
-│   │   ├── test_account_model.py
-│   │   └── test_journal_model.py
-│   └── rules/
-│       └── test_journal_rules.py
-└── utils/
-    └── test_formatter.py
+├── fixtures/
+├── factories/
+└── fakes/
 ```
 
-Notes:
+There is no `src/pyledger/conftest.py` and there is no `tests/helpers.py`.
 
-- `test_journal_model.py` covers `JournalLine` and `JournalEntry`.
-- `test_journal_rules.py` covers account-name normalization and line-amount validation.
-- `test_formatter.py` covers validation formatting and journal-entry rendering.
-- `test_account_model.py` exists as a placeholder and does not yet contain assertions.
-- There are no CLI tests yet.
+## Dependency Direction
 
-### Current Responsibility Map
-
-- `src/pyledger/main.py`
-  - Application entry point.
-  - Boots the Typer app and exposes the console command used by the installed script.
-
-- `src/pyledger/cli/app.py`
-  - Creates the Typer application instance.
-  - Owns CLI configuration such as help text and command suggestion settings.
-  - Should remain free of accounting rules.
-
-- `src/pyledger/cli/commands/journal_command.py`
-  - Defines the `journal` command namespace.
-  - Currently acts as a scaffold only; there are no user-facing subcommands yet.
-
-- `src/pyledger/core/errors.py`
-  - Defines domain error codes, error messages, and validation helpers.
-  - Keeps Pydantic-compatible custom errors centralized.
-
-- `src/pyledger/core/helpers.py`
-  - Provides small domain helpers such as default posting dates and journal number generation.
-  - Keeps convenience logic near the accounting domain rather than in the CLI.
-
-- `src/pyledger/core/models/account.py`
-  - Defines the account category enum and the `Account` model.
-  - Captures account metadata without mixing in CLI or formatting concerns.
-
-- `src/pyledger/core/models/journal.py`
-  - Defines `JournalLine` and `JournalEntry`.
-  - Enforces journal-line validation, balanced entries, and computed totals.
-
-- `src/pyledger/core/rules/journal_rules.py`
-  - Provides reusable validation helpers for account names and journal-line amounts.
-  - Keeps small rules independent of the Pydantic model classes that use them.
-
-- `src/pyledger/utils/formatter.py`
-  - Renders validation errors and journal-entry output for the terminal.
-  - Keeps presentation formatting separate from core accounting rules.
-
-- `src/pyledger/utils/console.py`
-  - Configures Rich console behavior, theme selection, and traceback styling.
-  - Centralizes terminal presentation concerns.
-
-- `src/pyledger/utils/constants.py`
-  - Stores message templates, field labels, hints, and presentation constants.
-  - Supports consistent terminal output without embedding formatting data in business logic.
-
-- `src/pyledger/__init__.py`
-  - Marks the package and keeps the public import surface minimal.
-
-- `src/pyledger/cli/__init__.py`
-  - Package marker for CLI-related code.
-
-- `src/pyledger/core/__init__.py`
-  - Package marker for domain logic.
-
-- `src/pyledger/utils/__init__.py`
-  - Package marker for shared utilities.
-
-## Layer Responsibilities
-
-### Domain Layer
-
-The domain layer is the center of the architecture. It should contain the accounting model, invariants, and business
-rules that must remain true regardless of interface or storage mechanism.
-
-#### Current location
+The live dependency direction is:
 
 ```text
-src/pyledger/core/
+main.py -> cli.app -> cli.commands -> cli.formatters -> modules.*.dtos/schemas/services -> shared.*
+modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors
+modules.*.schemas -> shared.rule + shared.errors
+shared.* -> stdlib + pydantic
+tests -> public modules + tests/fixtures + tests/factories + tests/fakes
 ```
 
-#### Current responsibilities
+Important boundary rules:
 
-- Represent accounts, journal lines, and journal entries.
-- Validate accounting constraints.
-- Preserve double-entry rules.
-- Keep business logic independent of CLI and formatting code.
+- CLI code should not make accounting decisions.
+- Feature modules should not import Rich or Typer.
+- Shared validation helpers should not depend on CLI presentation code.
+- Repositories must remain behind interfaces.
 
-#### Current module focus
-
-- `errors.py`
-  - Centralized validation error codes, details, and construction helpers.
-
-- `helpers.py`
-  - Date and journal-number helpers used by the accounting workflow.
-
-- `models/account.py`
-  - `AccountCategory`: account classification enum.
-  - `Account`: domain model for account metadata.
-
-- `models/journal.py`
-  - `JournalLine`: a single posting line within a journal entry.
-  - `JournalEntry`: a balanced journal record with computed debit and credit totals.
-
-- `rules/journal_rules.py`
-  - Account-name normalization.
-  - Journal-line amount validation.
-
-#### Architectural boundaries
-
-- No Typer imports.
-- No Rich imports.
-- No file system access.
-- No direct database or repository access.
-
-The domain layer should be reusable from tests, CLI commands, future APIs, and future storage adapters.
+## Layer Boundaries
 
 ### CLI Layer
 
-The CLI layer is the user interface boundary. It should translate command-line input into domain objects, call the
-appropriate application behavior, and render output to the terminal.
+Location:
 
-#### Current location
+- `src/pyledger/main.py`
+- `src/pyledger/cli/`
 
-```text
-src/pyledger/cli/
-src/pyledger/main.py
-```
+Responsibilities:
 
-#### Current responsibilities
+- define the Typer application,
+- register command groups,
+- render accounting output,
+- render validation errors,
+- keep user interaction separate from accounting rules.
 
-- Configure the Typer application.
-- Register command groups.
-- Keep user interaction separate from accounting rules.
-- Render validation and status output through presentation helpers.
+Current state:
 
-#### Current module focus
+- `main.py` boots the Typer app.
+- `cli/app.py` creates the root app and registers the `journal` sub-app.
+- `cli/commands/journal_cmd.py` defines a command namespace but no operational subcommands.
+- `cli/formatters/journal_fmt.py` renders journal entries and journal lists.
+- `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist but are not wired into a live command path.
+- `cli/console.py` configures the Rich console.
 
-- `app.py`
-  - Defines the Typer application instance.
-  - Keeps command registration separate from the main entry point.
+### Feature Modules
 
-- `commands/journal_command.py`
-  - Defines the `journal` command group.
-  - Does not yet expose operational journal commands.
+Location:
 
-- `main.py`
-  - Wires the Typer app into executable form.
-  - Serves as the `pyledger` console script target.
+- `src/pyledger/modules/`
 
-#### Architectural boundaries
+Responsibilities:
 
-- The CLI should not contain accounting rules.
-- The CLI should not own storage logic.
-- The CLI should not calculate ledger or trial balance behavior directly.
-- The CLI should remain thin and delegate work to the core and future application layers.
+- hold the accounting models,
+- hold feature-specific validation rules,
+- define service orchestration,
+- define repository contracts,
+- provide DTOs for service boundaries.
 
-### Utility Layer
+This is where the current accounting domain lives.
 
-The utility layer contains shared helpers that support presentation and convenience behaviors. These modules are not the
-place for business rules, but they are appropriate for formatting, terminal setup, and generic helper functions used
-across the user-facing application.
+### Shared Support
 
-#### Current location
+Location:
 
-```text
-src/pyledger/utils/
-```
+- `src/pyledger/shared/`
 
-#### Current responsibilities
+Responsibilities:
 
-- Configure Rich console behavior.
-- Standardize formatting and error display.
-- Hold shared constants used by user-facing output.
+- provide reusable validation helpers,
+- provide account lookup normalization,
+- define the shared error model,
+- translate Pydantic errors into domain errors.
 
-#### Current module focus
+`shared/util.py` currently contains `default_posting_date()`, but it is not used by the active workflow.
 
-- `console.py`
-  - Sets up the global Rich console and theme map.
-  - Installs traceback formatting for terminal debugging.
+## Responsibility Map
 
-- `constants.py`
-  - Stores validation message metadata and reason text.
-  - Keeps display copy centralized.
+### `src/pyledger/main.py`
 
-- `formatter.py`
-  - Formats validation errors into Rich panels.
-  - Formats journal-entry data into Rich tables and summary panels.
+- Console-script entry point.
+- Imports and invokes the Typer app.
+- Does not contain accounting logic.
 
-#### Architectural boundaries
+### `src/pyledger/cli/app.py`
 
-- Utilities should not own domain invariants.
-- Utilities should not become a hidden service layer.
-- Utilities may support presentation and lightweight shared behavior only.
+- Constructs the root Typer application.
+- Owns CLI-level configuration.
+- Registers the journal command namespace.
 
-## Domain Model
+### `src/pyledger/cli/commands/journal_cmd.py`
+
+- Defines the `journal` command group.
+- Currently a scaffold with no subcommands.
+
+### `src/pyledger/cli/console.py`
+
+- Creates the shared Rich console instance.
+- Installs traceback styling.
+
+### `src/pyledger/cli/theme/*`
+
+- Defines terminal theme detection and style names.
+- Keeps style selection separate from rendering code.
+
+### `src/pyledger/cli/formatters/base.py`
+
+- Builds reusable Rich panels, rules, and tables.
+- Keeps layout choices out of the feature formatters.
+
+### `src/pyledger/cli/formatters/journal_fmt.py`
+
+- Renders journal entries and journal lists.
+- Consumes `JournalViewModel` and `JournalLineViewModel`.
+
+### `src/pyledger/cli/formatters/error_fmt.py`
+
+- Formats validation and application errors for terminal output.
+- Uses CLI-owned message and hint catalogs.
+- Is currently unused by any operational command.
+
+### `src/pyledger/cli/constants/errors.py`
+
+- Defines CLI-facing error messages, hints, and field labels.
+- Is currently only consumed by `cli/formatters/error_fmt.py`.
+
+### `src/pyledger/modules/account/schemas/account.py`
+
+- Defines `AccountCategory`.
+- Defines `Account`.
+- Derives `normal_balance` from category.
+- Normalizes account names.
+
+### `src/pyledger/modules/account/schemas/chart.py`
+
+- Defines `ChartOfAccounts`.
+- Builds code and name indexes.
+- Resolves canonical names case-insensitively.
+- Resolves account codes directly.
+
+### `src/pyledger/modules/account/dtos.py`
+
+- Defines create, update, and view DTOs for account workflows.
+
+### `src/pyledger/modules/account/repo.py`
+
+- Defines the async account repository contract.
+- No concrete implementation exists in the repository.
+
+### `src/pyledger/modules/account/service.py`
+
+- Orchestrates account creation, update, lookup, listing, resolution, and deletion.
+- Converts validated accounts into view models.
+- Rebuilds the chart of accounts when a full snapshot is needed.
+
+### `src/pyledger/modules/journal/schemas/line.py`
+
+- Defines `JournalLine`.
+- Enforces debit/credit exclusivity.
+- Normalizes account references.
+
+### `src/pyledger/modules/journal/schemas/journal.py`
+
+- Defines `JournalEntry`.
+- Enforces balanced entries and a minimum line count.
+- Computes totals and balance state.
+
+### `src/pyledger/modules/journal/dtos.py`
+
+- Defines journal input and view DTOs.
+
+### `src/pyledger/modules/journal/service.py`
+
+- Contains mapping helpers between journal schemas and journal view models.
+- Does not expose a public workflow API yet.
+
+### `src/pyledger/modules/journal/repo.py`
+
+- Present as an empty scaffold.
+- No repository interface is defined yet.
+
+### `src/pyledger/modules/posting/schemas/ledger_posting.py`
+
+- Defines `LedgerPosting`.
+- Makes postings immutable.
+- Validates account names, amounts, and posting dates.
+
+### `src/pyledger/modules/posting/service.py`
+
+- Present as commented scaffold code.
+- References a stale API and is not executable.
+
+### `src/pyledger/modules/posting/repo.py`
+
+- Defines the async posting repository contract.
+- No concrete implementation exists in the repository.
+
+## Domain Model Structure
 
 ### Account
 
-Represents a ledger account.
+The account model is responsible for:
 
-Attributes:
+- validating the account code,
+- validating and normalizing the name,
+- deriving normal balance from category.
 
-- code
-- name
-- category
-- normal_balance
-- aliases
+The current model does not include aliases.
+
+### ChartOfAccounts
+
+The chart aggregate is responsible for:
+
+- uniqueness of account codes,
+- uniqueness of account names,
+- case-insensitive account lookup by canonical name,
+- direct account lookup by code,
+- efficient lookup caching via private indexes.
 
 ### JournalLine
 
-Represents a single posting line within a journal entry.
+The line model is responsible for:
 
-Attributes:
-
-- account
-- debit_amount
-- credit_amount
-
-Rules:
-
-- A line cannot contain both a debit and credit amount.
-- At least one amount must be greater than zero.
-- Account names are normalized before the model is accepted.
+- account normalization,
+- side exclusivity,
+- rejecting negative amounts.
 
 ### JournalEntry
 
-Represents a complete accounting transaction.
+The entry model is responsible for:
 
-Attributes:
+- minimum line count,
+- journal number validation,
+- posting date validation,
+- aggregate debit and credit totals,
+- balance enforcement.
 
-- journal_number
-- posting_date
-- description
-- lines
+### LedgerPosting
 
-Computed properties:
+The posting model is responsible for:
 
-- total_debits
-- total_credits
-- is_balanced
+- freezing derived posting data,
+- carrying the source journal number and date,
+- validating the account reference,
+- validating single-side posting amounts.
 
-Rules:
+## Repository Architecture
 
-- Must contain at least two `JournalLine` records.
-- Total debits must equal total credits.
-- The entry is valid only when `is_balanced` is true.
+Repository abstractions currently exist only as contracts.
 
-## Planned Architecture
+Implemented contracts:
 
-PyLedger is expected to grow beyond the current prototype. The next layers should separate persistence, repositories,
-and reporting from the core domain and CLI.
+- `AccountRepo`
+- `PostingRepo`
 
-### Future Repository Layer
+Not yet defined:
 
-The repository layer will define abstract access patterns for persisted data. It should act as the boundary between
-business logic and storage implementation.
+- a journal repository contract
 
-#### Proposed location
+Not yet implemented:
 
-```text
-src/pyledger/repositories/
-```
+- any storage-backed repository adapter
 
-#### Planned responsibilities
+Architectural intent:
 
-- Define repository interfaces for journal entries, accounts, and ledger records.
-- Expose persistence operations without binding the domain to a specific database or file format.
-- Keep data access rules testable and swappable.
+- repositories should remain async,
+- repositories should not contain business rules,
+- repositories should not know about Rich or Typer,
+- repositories should be swappable for future storage adapters.
 
-#### Typical responsibilities by module
+## Service Architecture
 
-- `journal_entry_repository.py`
-  - Save and load journal entries.
-  - Query entries by date, account, or journal number.
+The service layer exists inside each feature package rather than in a separate top-level application package.
 
-- `account_repository.py`
-  - Store account metadata and account classifications.
-  - Support account lookup and account catalog maintenance.
+Current services:
 
-- `ledger_repository.py`
-  - Persist posted ledger records or posting snapshots.
-  - Support retrieval of account-level histories.
+- `AccountService`
+- `JournalService`
+- `PostingService`
 
-#### Boundary rules
+Service responsibilities:
 
-- Repository interfaces should not format terminal output.
-- Repository interfaces should not contain CLI parsing.
-- Repository interfaces should avoid hard-coding storage technology.
+- orchestrate domain model construction,
+- call repository abstractions,
+- translate validation failures into application errors,
+- return DTOs or derived models to callers.
 
-### Future Storage Layer
+Service boundaries:
 
-The storage layer will provide concrete implementations of repository interfaces. This is where JSON files, SQLite, or
-another durable store can be introduced without affecting domain rules.
+- services are the correct place for cross-aggregate orchestration,
+- services should not render output,
+- services should not own persistence details,
+- services should keep the CLI thin.
 
-#### Proposed location
+Current shape:
 
-```text
-src/pyledger/storage/
-```
+- `AccountService` is complete end to end.
+- `JournalService` is only a mapping helper today.
+- `PostingService` is commented scaffold code and should not be treated as implemented behavior.
 
-#### Planned responsibilities
+## Error Architecture
 
-- Implement repository contracts.
-- Serialize and deserialize domain data.
-- Handle file, database, or other persistence mechanics.
-- Keep storage-specific concerns isolated from the core accounting model.
+The error system is split between shared domain errors and CLI presentation.
 
-#### Typical responsibilities by module
+### Shared Error Model
 
-- `json_storage.py`
-  - Read and write simple persisted data files.
-  - Suitable for early local-first usage or export/import workflows.
+`src/pyledger/shared/errors/` defines:
 
-- `sqlite_storage.py`
-  - Provide structured persistence for journal entries, ledger postings, and report-ready data.
-  - Support indexing and query-heavy workflows as the app matures.
+- `ErrorCode`
+- `AppError`
+- `ValidationAppError`
+- `FieldViolation`
+- Pydantic translation helpers
 
-- `mappers.py`
-  - Convert between domain models and storage records.
-  - Keep serialization rules in one place.
+This layer provides stable error identity and structured context.
 
-#### Boundary rules
+### CLI Error Rendering
 
-- Storage code should not decide accounting rules.
-- Storage code should not know about terminal formatting.
-- Storage code should implement persistence, not policy.
+`src/pyledger/cli/constants/errors.py` defines:
 
-### Future Reporting Layer
+- user-facing error messages,
+- user-facing hints,
+- field labels for presentation.
 
-The reporting layer will transform domain and ledger data into user-facing accounting reports. It should consume
-validated data and produce structured summaries that are separate from entry capture and persistence.
+`src/pyledger/cli/formatters/error_fmt.py` turns validation and application errors into terminal output.
 
-#### Proposed location
+### Boundary Rule
 
-```text
-src/pyledger/reports/
-```
+The shared error layer should not contain presentation text. The CLI layer owns the wording that users see.
 
-#### Planned responsibilities
+## Validation Architecture
 
-- Build trial balances from ledger postings.
-- Produce summaries and grouped account views.
-- Support future financial statements and exports.
-- Provide a stable reporting surface for the CLI or future integrations.
+Validation is implemented in three layers:
 
-#### Typical responsibilities by module
+1. Shared reusable rules in `shared/rule.py`.
+2. Pydantic field and model validators inside the feature schemas.
+3. Service-level validation and existence checks where cross-record rules are required.
 
-- `trial_balance.py`
-  - Aggregate account balances.
-  - Verify that total debits and total credits match.
+Current examples:
 
-- `ledger_report.py`
-  - Present account activity and posting detail.
-  - Summarize transactions by account.
+- `clean_account_name()` normalizes account references.
+- `is_valid_line_amounts()` enforces one-sided journal lines.
+- `Account.validate_name()` enforces account naming rules.
+- `ChartOfAccounts` enforces name and code uniqueness.
+- `JournalEntry` enforces date, line-count, and balance rules.
+- `LedgerPosting` enforces frozen single-side postings.
 
-- `financial_statements.py`
-  - Prepare higher-level outputs such as income statements or balance sheets when the domain supports them.
+## Test Architecture
 
-#### Boundary rules
+Testing currently focuses on domain behavior, shared error translation, and account service workflows.
 
-- Reporting should depend on validated domain or ledger data.
-- Reporting should not mutate persisted records.
-- Reporting should not embed CLI-only formatting concerns.
+Current coverage:
 
-## Current Project Status
+- account model rules,
+- chart-of-accounts uniqueness and lookup,
+- account lookup key normalization,
+- journal line validation,
+- journal entry validation,
+- ledger posting validation,
+- shared error translation,
+- account service workflows.
 
-Phase: Phase 2
+Current test organization:
 
-Completed:
+- `src/pyledger/modules/account/tests/`
+- `src/pyledger/modules/journal/tests/`
+- `src/pyledger/modules/posting/tests/`
+- `src/pyledger/shared/errors/tests/`
+- `src/pyledger/cli/tests/`
+- root `tests/fixtures/`
+- root `tests/factories/`
+- root `tests/fakes/`
 
-- Typer CLI scaffold.
-- Rich formatting.
-- Pydantic models.
-- `JournalLine` and line-based `JournalEntry` validation.
-- Computed debit and credit totals.
-- Balance checks for journal entries.
-- Validation tests for the journal model and journal rules.
+The root `tests/` package provides shared fixtures and helpers rather than test cases. `src/pyledger/cli/tests/test_formatter.py`
+is currently empty.
 
-Partially Completed:
+There are no tests for concrete storage, reporting, or end-user CLI commands yet.
 
-- CLI command structure. The `journal` group exists, but there are no operational subcommands yet.
-- Account model test coverage. The model exists, but the test file is still a placeholder.
+## Application Flow
 
-Not Yet Implemented:
+The current executable flow is:
 
-- Ledger posting.
-- Trial Balance.
-- Persistence layer.
-- Repository layer.
-- Reporting layer.
+1. The `pyledger` console script imports `pyledger.main:main`.
+2. `main.py` invokes the Typer application.
+3. Typer dispatches into the registered command groups.
+4. Command handlers would construct DTOs and call feature services.
+5. Feature services build or validate domain models.
+6. Shared error translation converts validation failures into structured errors.
+7. CLI formatters render view models or error objects with Rich.
 
-## Target Folder Structure
+The CLI currently stops at the scaffold stage for operational commands, so the flow is mostly structural rather than
+user-facing.
 
-The long-term repository layout should preserve the current separation of concerns while adding explicit layers for
-repositories, storage, and reports.
+## Implementation Status
 
-```text
-src/pyledger/
-├── __init__.py
-├── main.py
-│
-├── cli/
-│   ├── __init__.py
-│   ├── app.py
-│   └── commands/
-│       ├── __init__.py
-│       └── journal_command.py
-│
-├── core/
-│   ├── __init__.py
-│   ├── errors.py          <- domain error codes and messages
-│   ├── helpers.py         <- posting dates and journal numbering
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── account.py     <- Account, AccountCategory
-│   │   └── journal.py     <- JournalEntry, JournalLine
-│   ├── rules/
-│   │   ├── __init__.py
-│   │   └── journal_rules.py  <- balance invariants, amount/name validators
-│   └── services/
-│       └── __init__.py    <- placeholder for posting logic
-│
-├── repositories/
-│   └── __init__.py        <- placeholder
-│
-├── storage/
-│   └── __init__.py        <- placeholder
-│
-├── reports/
-│   └── __init__.py        <- placeholder
-│
-└── utils/
-    ├── __init__.py
-    ├── console.py          <- Rich console and theme setup
-    ├── constants.py        <- display-only formatting strings
-    └── formatter.py        <- Rich tables, panels, validation rendering
+### Implemented
 
-tests/
-├── __init__.py
-├── conftest.py
-├── helpers.py
-├── core/
-│   ├── __init__.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── test_account_model.py
-│   │   └── test_journal_model.py
-│   ├── rules/
-│   │   ├── __init__.py
-│   │   └── test_journal_rules.py
-├── cli/
-│   └── __init__.py
-├── reports/
-│   └── __init__.py
-└── utils/
-    ├── __init__.py
-    └── test_formatter.py
-```
+- Typer application bootstrap.
+- Rich console and theme scaffolding.
+- Shared validation rules.
+- Shared error model and Pydantic translation helpers.
+- Account domain model and chart-of-accounts model.
+- Journal line and journal entry models.
+- Ledger posting model.
+- Account service.
+- Journal entry formatter.
 
-This structure keeps the accounting rules at the center and lets the application evolve in controlled layers:
+### Partial
 
-- `core/` answers what the business rules are.
-- `repositories/` defines how the application asks for data.
-- `storage/` defines where the data actually lives.
-- `reports/` defines how validated accounting data is summarized.
-- `cli/` defines how users interact with the system.
-- `utils/` supports the user interface and shared helpers.
+- Journal service mapping helpers.
+- Posting service scaffold.
+- CLI error formatting.
+- CLI error presentation constants.
+- CLI command wiring beyond the journal group scaffold.
 
-## Design Principles
+### Scaffold Only
 
-PyLedger architecture should continue to follow these rules:
+- `modules/journal/repo.py`
+- `modules/journal/rule.py`
+- `modules/posting/dtos.py`
+- `modules/posting/rule.py`
+- `modules/posting/service.py`
 
-- Keep business logic independent of Typer and Rich.
-- Keep the CLI thin.
-- Keep storage behind interfaces.
-- Keep reporting separate from persistence.
-- Prefer explicit data flow over hidden state.
-- Validate accounting rules as early as possible.
-- Preserve double-entry integrity at every boundary.
+### Planned
 
-## Summary
+- Concrete repository implementations.
+- Storage adapters.
+- Trial balance reporting.
+- Account, journal, and posting CLI workflows.
+- Higher-level reports and historical views.
+- Import/export and integration surfaces.
 
-The current codebase is a compact CLI bookkeeping prototype with a line-based journal model, validation helpers, and
-well-defined presentation helpers. The next major architectural steps are to introduce repository abstractions, add
-real storage implementations, and build reporting modules that can generate ledger and trial balance outputs from
-validated accounting data.
+## Known Gaps
+
+- Alias support is not implemented.
+- `JournalService._to_entry_view()` is currently misdeclared and should not be treated as usable code.
+- The CLI invalid-account-name copy still mentions commas, which does not match the active validator.
+- There is no journal repository contract.
+- There are no concrete repository implementations.
+- There is no trial balance or reporting pipeline.
+- There are no operational CLI commands yet.

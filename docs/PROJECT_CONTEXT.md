@@ -2,180 +2,151 @@
 
 ## Overview
 
-PyLedger is a Python command-line bookkeeping application built around double-entry accounting. The current codebase is a
-small, strict domain prototype: users describe journal entries, the system validates accounting rules, and the terminal
-layer formats the results for display.
+PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository is a
+feature-oriented domain prototype with a working account service, validated journal and posting models, shared error
+translation, and Rich-based journal rendering. Storage-backed workflows, reporting, and operational CLI commands are
+not implemented yet.
 
-The project is designed as a clean-architecture style codebase:
+## Repository Shape
 
-- `core/` holds the accounting domain models and business rules.
-- `cli/` contains Typer commands only.
-- `utils/` contains formatting, console, and shared presentation helpers.
+- `src/pyledger/main.py` boots the Typer application.
+- `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and a journal
+  command scaffold.
+- `src/pyledger/modules/account/` contains the active account domain, DTOs, async repository contract, service layer,
+  and tests.
+- `src/pyledger/modules/journal/` contains journal schemas, DTOs, a partial mapping service, an empty repository
+  scaffold, an empty rule scaffold, and tests.
+- `src/pyledger/modules/posting/` contains the immutable posting schema, an async repository contract, an empty DTO
+  scaffold, an empty rule scaffold, a commented service scaffold, and tests.
+- `src/pyledger/shared/` contains reusable validation helpers, utility code, and the shared error model.
+- `tests/` contains shared fixtures, factories, and fakes, not application test cases.
+- Module-local tests live under `src/pyledger/modules/**/tests/`.
+- Shared error tests live under `src/pyledger/shared/errors/tests/`.
 
-The current implementation focuses on journal-entry validation and terminal presentation. Ledger posting and trial
-balance generation remain planned work.
+## Current State
+
+- `Account` enforces code, name, and category validation and derives `normal_balance` from category.
+- `ChartOfAccounts` enforces unique codes and unique canonical names, and resolves accounts with `get_by_code()` and
+  `get_by_name()`.
+- `JournalLine` enforces account normalization and debit/credit exclusivity.
+- `JournalEntry` enforces minimum line count, positive journal number, supported posting dates, and balanced totals.
+- `LedgerPosting` is an immutable derived record with the same single-side amount rule.
+- `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
+- `JournalService` only maps journal schemas to view models.
+- `PostingService` is not executable code; it remains a commented scaffold.
+- `cli/formatters/journal_fmt.py` renders journal view models.
+- `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
+- There is no persistent storage layer, trial balance, or reporting pipeline.
 
 ## Accounting Model
 
-PyLedger follows the standard double-entry accounting model. Every financial event is represented as a balanced journal
-entry with matching debits and credits. This keeps the accounting equation intact and makes downstream reporting
-reliable.
+PyLedger follows standard double-entry accounting.
 
-The core concepts are:
+```text
+Journal Entry -> Ledger Posting
+```
 
-- `Journal Entry`: the source record that captures a business transaction.
-- `Ledger Posting`: the process of distributing journal-entry amounts into individual account records.
-- `Trial Balance`: the summary check that verifies total debits equal total credits across the ledger.
+Only the first two stages exist in code today. There is no trial balance pipeline or downstream reporting layer.
 
-This flow is intentional:
+## Domain Models
 
-`Journal Entry -> Ledger Posting -> Trial Balance`
+### Account
 
-In the current codebase, only the journal-entry stage is implemented. Ledger posting and trial balance reporting are
-still roadmap items.
+- Fields: `code`, `name`, `category`, and computed `normal_balance`.
+- `code` is limited to 1 to 20 characters and must match the account code pattern.
+- `name` is normalized by `clean_account_name()` and must be 2 to 150 characters long.
+- `category` is one of `ASSET`, `LIABILITY`, `EQUITY`, `REVENUE`, `EXPENSE`, `DIVIDEND`, or `DRAWING`.
+- `normal_balance` is derived from the category and is not stored independently.
+- Account aliases are not implemented.
 
-## Journal Entries
+### ChartOfAccounts
 
-A journal entry is the atomic bookkeeping record in PyLedger. The current implementation models it with:
+- Enforces unique account codes.
+- Enforces unique canonical names case-insensitively.
+- Resolves by code with `get_by_code()`.
+- Resolves by canonical name with `get_by_name()`.
+- Does not expose a `resolve()` method.
+- Does not implement aliases.
 
-- a unique journal number,
-- a posting date,
-- an optional description,
-- a list of `JournalLine` objects.
+### JournalLine
 
-Journal entries are the first line of defense for accounting correctness. They must be internally consistent before they
-can move into any ledger or reporting process.
+- Fields: `account`, `debit_amount`, and `credit_amount`.
+- `account` is normalized with `clean_account_name()`.
+- A line must carry either a debit amount or a credit amount, not both and not neither.
+- Negative amounts are rejected by the schema.
 
-The current codebase uses Pydantic models for validation and computed properties for totals. A journal entry exposes:
+### JournalEntry
 
-- `total_debits`
-- `total_credits`
-- `is_balanced`
+- Fields: `journal_number`, `posting_date`, `lines`, and optional `description`.
+- `journal_number` must be positive.
+- `posting_date` must be later than `2020-01-01` and must not be in the future.
+- `lines` must contain at least two `JournalLine` records.
+- `total_debits`, `total_credits`, and `is_balanced` are computed fields.
+- Unbalanced entries are rejected.
 
-These values are derived from the journal lines and are not stored separately.
+### LedgerPosting
 
-## Journal Entry Design
+- Fields: `account`, `debit_amount`, `credit_amount`, `journal_number`, and `posting_date`.
+- `LedgerPosting` is frozen after creation.
+- `account` is normalized with `clean_account_name()`.
+- `journal_number` must be positive.
+- `posting_date` must be later than `2020-01-01` and must not be in the future.
+- `is_debit` is a derived boolean helper.
 
-PyLedger uses a compound journal-entry model based on `JournalLine` records.
+## DTOs
 
-The current implementation stores:
+- `modules/account/dtos.py` defines `CreateAccountInput`, `UpdateAccountInput`, `AccountViewModel`, and
+  `ChartOfAccountsViewModel`.
+- `modules/journal/dtos.py` defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and
+  `JournalViewModel`.
+- `modules/posting/dtos.py` is currently empty.
 
-JournalEntry
-└── JournalLine[]
+## Service Layer And CLI
 
-Each `JournalLine` represents the effect of a transaction on a single account.
+- `AccountService` exposes `create_account()`, `update_account()`, `get_account()`, `get_chart()`,
+  `resolve_account()`, `list_accounts()`, and `delete_account()`.
+- `AccountService` raises `AppError` for business conflicts and `ValidationAppError` for domain validation failures.
+- `AccountService.delete_account()` currently checks existence only; posting-history safeguards are not implemented.
+- `JournalService` only contains `_to_line_view()` and `_to_entry_view()` mapping helpers.
+- `PostingService` is commented out and references stale API concepts, so it should be treated as a scaffold only.
+- The CLI currently registers the root app and a `journal` command group, but there are no operational subcommands.
+- The journal formatter can render `JournalViewModel` instances, but no command currently feeds it data.
+- The error formatter and CLI error catalog are present, but no live command path uses them yet.
 
-Example:
+## Error System
 
-Journal Entry: Sale Transaction
+- `src/pyledger/shared/errors/` defines `ErrorCode`, `AppError`, `ValidationAppError`, `FieldViolation`, and the
+  Pydantic translation helpers.
+- `pydantic_error()` is used by schema validators to raise domain error codes through Pydantic.
+- `get_field_violations()` converts Pydantic validation output into stable `FieldViolation` records.
+- The CLI owns the user-facing message catalog in `cli/constants/errors.py` and the render path in
+  `cli/formatters/error_fmt.py`.
+- The CLI error copy for invalid account names is currently stale; it still mentions commas even though the validator
+  does not allow them.
 
-- Cash ................ Debit 100
-- Sales Revenue ....... Credit 100
+## Testing
 
-More complex transactions may contain three or more lines.
+- Pytest is configured to collect tests from `tests/` and `src/pyledger/`.
+- Root-level `tests/` contains `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
+- `tests/conftest.py` registers the fixture modules as pytest plugins.
+- Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
+- Shared error tests live under `src/pyledger/shared/errors/tests/`.
+- `src/pyledger/cli/tests/test_formatter.py` is an empty placeholder file.
+- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, and
+  `AccountService`.
 
-Example:
+## Known Issues
 
-Journal Entry: Equipment Purchase
+- Alias support is not implemented anywhere in the active code path.
+- `JournalService._to_entry_view()` is currently declared as a staticmethod but still takes a `self` parameter.
+- `PostingService` is commented out and should not be treated as executable workflow code.
+- The CLI invalid-account-name message is out of sync with the actual account-name validator.
+- There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
 
-- Equipment ........... Debit 1,000
-- VAT Recoverable ..... Debit 150
-- Cash ................ Credit 1,150
+## Long-Term Direction
 
-Validation Rule:
-
-The sum of all debit amounts must equal the sum of all credit amounts.
-
-A `JournalEntry` is considered valid only when:
-
-Total Debits == Total Credits
-
-## Ledger
-
-The ledger is the account-level view of accounting activity. While a journal entry records a transaction once, the
-ledger organizes that same transaction by account so that each account can be inspected over time.
-
-Conceptually, ledger posting does the following:
-
-- takes each balanced journal entry,
-- posts the debit and credit sides into the relevant accounts,
-- accumulates running balances per account,
-- preserves a trace back to the original journal entry.
-
-The ledger is the bridge between transaction capture and reporting. It is the place where journal entries become
-durable account histories.
-
-## Trial Balance
-
-The trial balance is a control report used to verify that the ledger remains mathematically correct. It groups balances
-by account and compares the total debits and total credits.
-
-The trial balance exists to answer one question:
-
-- Does the accounting system still balance?
-
-If the ledger was posted correctly and every journal entry was balanced, the trial balance should also balance. A
-mismatch indicates an error in entry capture, posting, or account classification.
-
-In a mature PyLedger workflow, the trial balance becomes a central checkpoint before financial statements or other
-summaries are produced.
-
-## Core Business Rules
-
-PyLedger enforces a small set of non-negotiable accounting rules:
-
-- Every journal entry must balance.
-- Total debits must equal total credits.
-- Journal lines must contain either a debit amount or a credit amount, not both and not neither.
-- Negative amounts are invalid.
-- Empty account names are invalid.
-- Business logic must remain independent of Typer and Rich.
-
-These rules are not presentation details. They define the integrity of the accounting domain and should remain inside
-the core business layer.
-
-Additional domain constraints already visible in the current implementation include:
-
-- posting dates must be valid and bounded,
-- account names must use permitted characters,
-- journal numbers must be positive integers,
-- descriptive text is optional but constrained.
-
-## Account Types and Normal Balances
-
-PyLedger uses the standard five core account categories:
-
-- Asset: normal debit
-- Liability: normal credit
-- Equity: normal credit
-- Revenue: normal credit
-- Expense: normal debit
-
-The current `AccountCategory` enum also includes:
-
-- Dividend
-- Drawing
-
-These normal balances matter because they define what a "positive" balance means for each account type.
-
-- Debit-normal accounts increase with debits and decrease with credits.
-- Credit-normal accounts increase with credits and decrease with debits.
-
-That distinction is fundamental to correct posting, account summaries, and trial balance logic.
-
-## Long-Term Project Vision
-
-The long-term vision for PyLedger is to become a compact but complete bookkeeping tool that remains easy to reason
-about and safe to extend.
-
-That means:
-
-- a strong domain layer that keeps accounting rules explicit,
-- a CLI that stays thin and delegates to core business logic,
-- reliable validation for all money-moving operations,
-- account-level ledger views derived from validated journal entries,
-- trial balance reporting as a system integrity check,
-- room for future reporting features such as summaries, exports, and financial statements.
-
-The project should continue to optimize for correctness first. At present, the codebase is still focused on validated
-journal entries, Rich formatting, and a thin Typer shell around that domain.
+- Add concrete repository implementations behind the existing async contracts.
+- Add storage adapters and persistence tests.
+- Wire operational account, journal, and posting commands into the CLI.
+- Build trial balance and reporting support from validated data.
+- Add import/export and integration surfaces once the core bookkeeping workflow is stable.
