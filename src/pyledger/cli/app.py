@@ -12,7 +12,7 @@ domain and service layers.
 
 import typer
 
-from .commands.journal_command import journal_app
+from .commands.journal_cmd import journal_app
 
 app = typer.Typer(
     name="PyLedger",
