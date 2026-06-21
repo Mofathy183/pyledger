@@ -23,7 +23,7 @@ jobs:
           - "3.14"
 
     steps:
-      - name: Checkout Repository
+      - name: Check Out Repository
         uses: actions/checkout@v4
 
       - name: Install UV
@@ -39,13 +39,16 @@ jobs:
       - name: Install Dependencies
         run: uv sync --dev
 
-      - name: Run Ruff Format Check
+      - name: Run Type Checks
+        run: uv run ty check
+
+      - name: Check Formatting
         run: uv run ruff format --check
 
-      - name: Run Ruff Lint
+      - name: Run Linting
         run: uv run ruff check
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: uv run pytest
 
       - name: Build Package
