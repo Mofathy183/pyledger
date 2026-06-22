@@ -10,20 +10,28 @@ from .line import JournalLine
 
 
 class JournalEntry(BaseModel):
-    """Represents a single double-entry accounting transaction.
+    """A complete double-entry accounting transaction.
 
     A journal entry records the financial impact of a business event
-    before it is posted to the ledger. Every journal entry must contain
-    at least one debit and one credit side of equal value.
+    before it is posted to the ledger. Each entry must contain at least
+    two journal lines and remain balanced, meaning the total value
+    recorded as debits equals the total value recorded as credits.
 
-    Important invariants:
+    Posting dates are restricted to supported accounting periods and may
+    not be future-dated. Journal numbers provide a positive transaction
+    identifier within the bookkeeping workflow.
 
-    - Journal numbers identify individual transactions.
-    - Posting dates must fall within the supported accounting period.
-    - Debit and credit account names must be valid.
-    - Debit and credit amounts must be positive values.
-    - Total debits must equal total credits before the entry can be
-      accepted into the accounting workflow.
+    Attributes:
+        journal_number: Positive identifier assigned to the transaction.
+        posting_date: Effective accounting date of the transaction.
+        lines: Debit and credit lines that make up the transaction.
+        description: Optional explanation of the business event.
+
+    Invariants:
+        - Journal numbers must be positive.
+        - Posting dates must be later than 2020-01-01 and not in the future.
+        - Entries must contain at least two journal lines.
+        - Total debits must equal total credits.
     """
 
     journal_number: Annotated[
@@ -63,52 +71,56 @@ class JournalEntry(BaseModel):
     @computed_field()
     @property
     def total_debits(self) -> Decimal:
-        """Return the total debit value of the journal entry.
+        """Total debit value recorded by the journal entry.
 
-        The total debits represent the aggregate value recorded on the
-        debit side of the transaction and are used to verify that the
-        entry satisfies double-entry accounting requirements.
+        Computed from the current journal lines rather than stored
+        independently. Storing the value separately could allow the total
+        to drift from the underlying transaction lines and produce an
+        incorrect balance calculation.
         """
         return sum((line.debit_amount for line in self.lines), Decimal("0"))
 
     @computed_field()
     @property
     def total_credits(self) -> Decimal:
-        """Return the total credit value of the journal entry.
+        """Total credit value recorded by the journal entry.
 
-        The total credits represent the aggregate value recorded on the
-        credit side of the transaction and are used to verify that the
-        entry satisfies double-entry accounting requirements.
+        Computed from the current journal lines rather than stored
+        independently. Storing the value separately could allow the total
+        to diverge from the transaction lines and misrepresent the entry's
+        accounting impact.
         """
         return sum((line.credit_amount for line in self.lines), Decimal("0"))
 
     @computed_field()
     @property
     def is_balanced(self) -> bool:
-        """Determine whether the journal entry is balanced.
+        """Whether the journal entry satisfies double-entry accounting.
 
-        A balanced journal entry satisfies the fundamental double-entry
-        accounting rule that total debits must equal total credits.
+        Computed from the current debit and credit totals rather than stored
+        independently. A stored balance flag could become inconsistent with
+        the underlying transaction lines if either side were modified.
         """
         return self.total_debits == self.total_credits
 
     @field_validator("posting_date")
     @classmethod
     def validate_posting_date(cls, value: datetime) -> datetime:
-        """Prevent future-dated accounting transactions.
+        """Ensure transactions are not recorded in the future.
 
         Journal entries represent business events that have already
-        occurred. Rejecting future posting dates helps preserve the
-        integrity and chronological accuracy of accounting records.
+        occurred. Allowing future-dated transactions would weaken the
+        chronological integrity of the accounting record.
 
         Args:
-            value: The proposed posting date.
+            value: Proposed posting date.
 
         Returns:
             The validated posting date.
 
         Raises:
-            PydanticCustomError: If the posting date is in the future.
+            PydanticCustomError: With code ``ErrorCode.FUTURE_DATE`` when the
+                posting date is later than the current date.
         """
         if value > datetime.now():
             raise pydantic_error(
@@ -118,17 +130,19 @@ class JournalEntry(BaseModel):
 
     @model_validator(mode="after")
     def validate_balances(self) -> Self:
-        """Enforce the double-entry accounting balance rule.
+        """Enforce the fundamental balance requirement of double-entry accounting.
 
-        Every journal entry must remain balanced. The total value
-        recorded on the debit side must equal the total value recorded
-        on the credit side.
+        Every transaction must affect accounts equally on both sides of the
+        books. An entry whose debit total differs from its credit total
+        would leave the accounting records internally inconsistent and
+        therefore cannot be accepted.
 
         Returns:
-            The validated journal entry instance.
+            The validated journal entry.
 
         Raises:
-            PydanticCustomError: If debit and credit totals are not equal.
+            PydanticCustomError: With code ``ErrorCode.UNBALANCED_ENTRY`` when
+                total debits and total credits differ.
         """
         if not self.is_balanced:
             raise pydantic_error(
