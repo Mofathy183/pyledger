@@ -17,11 +17,12 @@ before adding storage, reporting, or integration layers.
 ## Current Status
 
 - Completed: project bootstrap, shared validation rules, shared error model, account model basics, chart-of-accounts
-  basics, journal line validation, journal entry validation, derived posting model, Typer/Rich scaffolding, journal
-  rendering, and the account service.
+  basics, journal line validation, journal entry validation, journal DTOs, derived posting model, posting repository
+  contract, Typer/Rich scaffolding, journal rendering, account service, and journal/posting domain schema tests.
 - Partial: service/repository alignment, CLI error formatting, journal service mapping helpers, posting service
-  scaffold, and CLI command wiring.
-- Not started: concrete storage, trial balance reporting, historical reports, and import/export surfaces.
+  scaffold, journal repository contract, posting DTOs, and CLI command wiring.
+- Not started: concrete storage, journal and posting service workflows, trial balance reporting, historical reports,
+  and import/export surfaces.
 - Removed: alias support is not a tracked roadmap item in the current codebase.
 
 ## Phase 0: Project Bootstrap
@@ -94,25 +95,27 @@ Completed.
 - Balance enforcement.
 - Future-date rejection.
 - Minimum line-count validation.
-- Journal domain tests.
+- Journal domain schema tests.
 
 ## Phase 4: Posting Domain Model
 
 ### Status
 
-Completed for the posting model, partial for the posting service scaffold.
+Completed for the posting model and repository contract; partial for the posting service scaffold.
 
 ### Completed Work
 
 - `LedgerPosting`.
 - Frozen posting records.
 - Single-side posting validation.
-- Posting-domain tests.
+- `PostingRepo` contract.
+- Posting-domain schema tests.
 
 ### Partial Work
 
 - Posting service orchestration.
 - Posting service tests.
+- Posting DTOs.
 
 ## Phase 5: Service Layer Completion
 
@@ -131,8 +134,10 @@ Partial.
 
 - `JournalService` mapping helpers only.
 - `PostingService` scaffold only.
-- Decide whether a journal repository contract is required.
-- Add service-level tests for the active workflows.
+- Journal repository contract (`modules/journal/repo.py` is still empty).
+- Journal number assignment workflow (`CreateJournalInput` omits `journal_number`).
+- Posting DTOs (`modules/posting/dtos.py` is empty).
+- Service-level tests for journal and posting workflows.
 
 ## Phase 6: CLI Presentation Layer
 
@@ -151,6 +156,7 @@ Partial.
 
 ### Partial Work
 
+- Reconcile CLI error copy with the shared error model and active validators.
 - Account commands.
 - Journal entry commands.
 - Posting inspection commands.
@@ -200,6 +206,8 @@ Not started.
 - The CLI account-name error copy is still ahead of the validator wording and should be reconciled.
 - `JournalService._to_entry_view()` should not be treated as production-ready until its signature is fixed.
 - `PostingService` remains a commented scaffold and should not be treated as a real workflow layer.
+- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.
+- `CreateJournalInput` omits `journal_number`; no service workflow assigns journal numbers yet.
 
 ## Success Criteria
 

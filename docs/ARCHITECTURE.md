@@ -34,12 +34,10 @@ src/pyledger/
 │   │   ├── base.py
 │   │   ├── error_fmt.py
 │   │   └── journal_fmt.py
-│   ├── theme/
-│   │   ├── __init__.py
-│   │   ├── detection.py
-│   │   └── styles.py
-│   └── tests/
-│       └── test_formatter.py
+│   └── theme/
+│       ├── __init__.py
+│       ├── detection.py
+│       └── styles.py
 ├── modules/
 │   ├── account/
 │   │   ├── __init__.py
@@ -74,6 +72,7 @@ src/pyledger/
     ├── __init__.py
     ├── rule.py
     ├── util.py
+    ├── tests/
     └── errors/
         ├── __init__.py
         ├── codes.py
@@ -90,7 +89,7 @@ tests/
 └── fakes/
 ```
 
-There is no `src/pyledger/conftest.py` and there is no `tests/helpers.py`.
+There is no `src/pyledger/conftest.py`, no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
 
 ## Dependency Direction
 
@@ -130,10 +129,11 @@ Responsibilities:
 
 Current state:
 
-- `main.py` boots the Typer app.
+- `main.py` boots the Typer app. Commented legacy command code remains in the file but references removed
+  `pyledger.core` modules and is not active.
 - `cli/app.py` creates the root app and registers the `journal` sub-app.
 - `cli/commands/journal_cmd.py` defines a command namespace but no operational subcommands.
-- `cli/formatters/journal_fmt.py` renders journal entries and journal lists.
+- `cli/formatters/journal_fmt.py` renders journal entries and journal lists from view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist but are not wired into a live command path.
 - `cli/console.py` configures the Rich console.
 
@@ -174,7 +174,8 @@ Responsibilities:
 
 - Console-script entry point.
 - Imports and invokes the Typer app.
-- Does not contain accounting logic.
+- Contains commented legacy scaffold code that is not executed.
+- Does not contain active accounting logic.
 
 ### `src/pyledger/cli/app.py`
 
@@ -217,6 +218,7 @@ Responsibilities:
 
 - Defines CLI-facing error messages, hints, and field labels.
 - Is currently only consumed by `cli/formatters/error_fmt.py`.
+- Still mentions abbreviations and aliases in several messages even though alias support is not implemented.
 
 ### `src/pyledger/modules/account/schemas/account.py`
 
@@ -229,8 +231,9 @@ Responsibilities:
 
 - Defines `ChartOfAccounts`.
 - Builds code and name indexes.
-- Resolves canonical names case-insensitively.
-- Resolves account codes directly.
+- Resolves canonical names case-insensitively with `get_by_name()`.
+- Resolves account codes directly with `get_by_code()`.
+- Does not expose a `resolve()` method.
 
 ### `src/pyledger/modules/account/dtos.py`
 
@@ -261,17 +264,27 @@ Responsibilities:
 
 ### `src/pyledger/modules/journal/dtos.py`
 
-- Defines journal input and view DTOs.
+- Defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and `JournalViewModel`.
+- Input DTOs perform structural validation only; accounting rules are enforced when the service constructs domain
+  models.
+- `CreateJournalInput` does not carry `journal_number`; no service workflow assigns journal numbers yet.
+- Field descriptions mention aliases, but alias resolution is not implemented.
 
 ### `src/pyledger/modules/journal/service.py`
 
 - Contains mapping helpers between journal schemas and journal view models.
 - Does not expose a public workflow API yet.
+- `_to_entry_view()` is misdeclared as a staticmethod with a `self` parameter and should not be treated as usable.
 
 ### `src/pyledger/modules/journal/repo.py`
 
 - Present as an empty scaffold.
 - No repository interface is defined yet.
+
+### `src/pyledger/modules/journal/rule.py`
+
+- Present as an empty scaffold.
+- No journal-specific rule helpers are defined yet.
 
 ### `src/pyledger/modules/posting/schemas/ledger_posting.py`
 
@@ -279,15 +292,25 @@ Responsibilities:
 - Makes postings immutable.
 - Validates account names, amounts, and posting dates.
 
+### `src/pyledger/modules/posting/dtos.py`
+
+- Present as an empty scaffold.
+- No posting input or view DTOs are defined yet.
+
 ### `src/pyledger/modules/posting/service.py`
 
 - Present as commented scaffold code.
-- References a stale API and is not executable.
+- References a stale `chart.resolve()` API and is not executable.
 
 ### `src/pyledger/modules/posting/repo.py`
 
-- Defines the async posting repository contract.
+- Defines the async posting repository contract with `save_many()`, `get_by_account()`, and `get_by_journal_number()`.
 - No concrete implementation exists in the repository.
+
+### `src/pyledger/modules/posting/rule.py`
+
+- Present as an empty scaffold.
+- No posting-specific rule helpers are defined yet.
 
 ## Domain Model Structure
 
@@ -349,7 +372,7 @@ Implemented contracts:
 
 Not yet defined:
 
-- a journal repository contract
+- a journal repository contract (`modules/journal/repo.py` is empty)
 
 Not yet implemented:
 
@@ -391,6 +414,43 @@ Current shape:
 - `AccountService` is complete end to end.
 - `JournalService` is only a mapping helper today.
 - `PostingService` is commented scaffold code and should not be treated as implemented behavior.
+
+## DTO Architecture
+
+DTOs separate caller input and output contracts from domain schemas.
+
+Current DTO coverage:
+
+- Account: `CreateAccountInput`, `UpdateAccountInput`, `AccountViewModel`, `ChartOfAccountsViewModel`.
+- Journal: `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, `JournalViewModel`.
+- Posting: none defined yet (`modules/posting/dtos.py` is empty).
+
+View models are what CLI formatters consume. Input DTOs are what future commands and API routes would pass into
+services.
+
+## Journal Architecture
+
+Current journal support is split across four layers:
+
+1. Domain schemas (`JournalLine`, `JournalEntry`) enforce accounting rules at construction time.
+2. Input and view DTOs define the service boundary shape.
+3. `JournalService` maps validated domain objects to view models only; it does not create, persist, or list entries.
+4. `journal_fmt.py` renders view models for terminal output.
+
+There is no journal repository contract, no journal persistence workflow, and no CLI command that creates or lists
+journal entries.
+
+## Posting Architecture
+
+Current posting support is limited to the domain model and a repository contract:
+
+1. `LedgerPosting` validates immutable single-side posting records.
+2. `PostingRepo` defines async persistence and lookup methods.
+3. The commented `PostingService` sketch describes intended posting derivation from journal entries, but it is not
+   executable and references APIs that no longer exist.
+
+There is no posting DTO layer, no active posting service, and no workflow that converts journal entries into ledger
+postings.
 
 ## Error Architecture
 
@@ -441,7 +501,7 @@ Current examples:
 
 ## Test Architecture
 
-Testing currently focuses on domain behavior, shared error translation, and account service workflows.
+Testing currently focuses on domain behavior, shared error translation, shared rules, and account service workflows.
 
 Current coverage:
 
@@ -452,6 +512,7 @@ Current coverage:
 - journal entry validation,
 - ledger posting validation,
 - shared error translation,
+- shared rule helpers,
 - account service workflows.
 
 Current test organization:
@@ -460,15 +521,15 @@ Current test organization:
 - `src/pyledger/modules/journal/tests/`
 - `src/pyledger/modules/posting/tests/`
 - `src/pyledger/shared/errors/tests/`
-- `src/pyledger/cli/tests/`
+- `src/pyledger/shared/tests/`
 - root `tests/fixtures/`
 - root `tests/factories/`
 - root `tests/fakes/`
 
-The root `tests/` package provides shared fixtures and helpers rather than test cases. `src/pyledger/cli/tests/test_formatter.py`
-is currently empty.
+The root `tests/` package provides shared fixtures and helpers rather than test cases.
 
-There are no tests for concrete storage, reporting, or end-user CLI commands yet.
+There are no tests for concrete storage, reporting, journal service workflows, posting service workflows, or end-user
+CLI commands yet.
 
 ## Application Flow
 
@@ -495,9 +556,12 @@ user-facing.
 - Shared error model and Pydantic translation helpers.
 - Account domain model and chart-of-accounts model.
 - Journal line and journal entry models.
+- Journal input and view DTOs.
 - Ledger posting model.
 - Account service.
 - Journal entry formatter.
+- Journal and posting domain schema tests.
+- `PostingRepo` contract.
 
 ### Partial
 
@@ -519,6 +583,8 @@ user-facing.
 
 - Concrete repository implementations.
 - Storage adapters.
+- Journal repository contract and journal service workflows.
+- Posting service workflows and posting DTOs.
 - Trial balance reporting.
 - Account, journal, and posting CLI workflows.
 - Higher-level reports and historical views.
@@ -528,8 +594,11 @@ user-facing.
 
 - Alias support is not implemented.
 - `JournalService._to_entry_view()` is currently misdeclared and should not be treated as usable code.
-- The CLI invalid-account-name copy still mentions commas, which does not match the active validator.
+- The CLI invalid-account-name and unknown-account copy still mentions abbreviations and aliases, which does not match
+  the active validator or chart lookup behavior.
+- `CreateJournalInput` omits `journal_number`; no service assigns journal numbers yet.
 - There is no journal repository contract.
 - There are no concrete repository implementations.
 - There is no trial balance or reporting pipeline.
 - There are no operational CLI commands yet.
+- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.

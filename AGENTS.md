@@ -22,7 +22,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `tests/` contains shared test infrastructure only: `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
-- `src/pyledger/cli/tests/test_formatter.py` exists but is currently empty.
+- There is no `src/pyledger/cli/tests/` directory today.
 
 ## Current Domain Rules
 
@@ -43,12 +43,18 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 ## Current Implementation Notes
 
 - `AccountService` is the only feature service that is currently coherent end to end.
-- `JournalService` currently exposes only private mapping helpers and no public workflow methods.
+- `JournalService` exposes only private mapping helpers (`_to_line_view()`, `_to_entry_view()`) and no public workflow methods.
 - `PostingService` is a commented scaffold and is not a usable workflow service.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
-- `modules/journal/repo.py`, `modules/journal/rule.py`, `modules/posting/dtos.py`, and `modules/posting/rule.py` are empty scaffolds.
-- `cli/constants/errors.py` still has wording drift for invalid account names; its copy mentions commas even though `clean_account_name()` does not allow them.
+- `modules/journal/repo.py` and `modules/journal/rule.py` are empty scaffolds.
+- `modules/posting/dtos.py` and `modules/posting/rule.py` are empty scaffolds.
+- `modules/journal/__init__.py` and `modules/posting/__init__.py` are empty.
+- `main.py` contains commented legacy command code that references removed `pyledger.core` paths; the active entry point only invokes `app()`.
+- `cli/constants/errors.py` still has wording drift for invalid account names and unknown accounts; its copy mentions abbreviations and aliases even though alias support is not implemented and `clean_account_name()` does not allow commas.
+- `modules/journal/dtos.py` field descriptions mention aliases, but alias resolution is not implemented.
+- `CreateJournalInput` omits `journal_number`; no service workflow assigns journal numbers yet.
 - `JournalService._to_entry_view()` is currently misdeclared as a staticmethod with a `self` parameter, so it should be treated as broken until fixed.
+- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist; the chart exposes `get_by_name()` and `get_by_code()` only.
 
 ## Development Rules
 
@@ -72,9 +78,12 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 - Domain tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
+- Shared rule tests live under `src/pyledger/shared/tests/`.
 - Shared fixtures, factories, and fakes live under `tests/`.
-- Current automated coverage is concentrated on domain models, shared validation helpers, and `AccountService`.
-- There are no concrete storage, reporting, or user-facing CLI workflow tests yet.
+- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, and `AccountService`.
+- Journal schema tests cover `JournalLine` and `JournalEntry` validation.
+- Posting schema tests cover `LedgerPosting` validation.
+- There are no `JournalService`, `PostingService`, concrete storage, reporting, or user-facing CLI workflow tests yet.
 
 ## Error Handling
 
@@ -89,7 +98,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 - `AccountRepo` and `PostingRepo` are abstract contracts only.
 - There is no concrete repository implementation in the repository today.
-- `JournalRepo` is not defined yet.
+- `JournalRepo` is not defined yet; `modules/journal/repo.py` is an empty file.
 - Service methods that talk to repos remain async.
 - Services should orchestrate domain objects and repositories, not render terminal output.
 - CLI code should consume DTOs or view models, not repository implementations or domain internals.
