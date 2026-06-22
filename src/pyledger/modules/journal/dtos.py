@@ -1,12 +1,13 @@
 """
-Data transfer objects for the journal feature.
+Service-boundary DTOs for the journal feature.
 
-Input DTOs carry raw user or API input into the service layer without
-enforcing accounting rules. ViewModels carry service results back to
-the CLI or API without exposing domain internals.
+Input DTOs carry caller-supplied data into journal workflows.
+View models carry service results back to presentation layers such
+as the CLI.
 
-The formatter depends only on the ViewModels defined here, never on
-JournalEntry or JournalLine directly.
+This module separates external contracts from the journal domain
+schemas. Callers depend on these DTOs rather than the internal
+structure of JournalLine or JournalEntry.
 """
 
 from datetime import datetime
@@ -14,71 +15,74 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-# ---------------------------------------------------------------------------
 # Input DTOs — data coming IN to the service
-# ---------------------------------------------------------------------------
 
 
 class JournalLineInput(BaseModel):
-    """Input shape for a single journal line.
+    """Input DTO for a journal-entry line.
 
-    Carries raw user-supplied values. No accounting validation is
-    applied here — the service constructs a JournalLine domain object
-    from this input, and the domain enforces the rules at that point.
+    Carries caller-supplied values for a single line of a journal
+    entry. Accounting rules are enforced by the JournalLine domain
+    model constructed by the service.
     """
 
     account: str = Field(
-        description="Account name or recognised alias.",
-        min_length=1,
+        min_length=2,
         max_length=100,
+        description="The account name for this journal line.",
     )
+
     debit_amount: Decimal = Field(
         default=Decimal("0"),
         ge=0,
-        description="Debit amount for this line. Zero means no debit posting.",
+        description="Debit amount recorded on this journal line.",
     )
+
     credit_amount: Decimal = Field(
         default=Decimal("0"),
         ge=0,
-        description="Credit amount for this line. Zero means no credit posting.",
+        description="Credit amount recorded on this journal line.",
     )
 
 
 class CreateJournalInput(BaseModel):
-    """Input DTO for journal entry creation.
+    """Input DTO for journal-entry creation.
 
-    The posting_date is optional — the service defaults to today when
-    not supplied. The description is always optional. Lines must contain
-    at least two entries, but balance enforcement happens in the domain,
-    not here.
+    Carries the data required to create a new journal entry.
+
+    The journal number is intentionally omitted from this contract.
+    Current roadmap documents confirm that journal-number assignment
+    belongs to the service workflow and has not yet been implemented.
+
+    Accounting validation is performed when the service constructs
+    the JournalEntry domain model.
     """
 
-    posting_date: datetime | None = Field(
-        default=None,
-        description="Posting date. Defaults to today if not provided.",
+    posting_date: datetime = Field(description="Journal-entry posting date.")
+
+    lines: list[JournalLineInput] = Field(
+        min_length=2,
+        description="The lines of the journal entry.",
     )
+
     description: str | None = Field(
         default=None,
         max_length=255,
-        description="Optional short description of the transaction.",
-    )
-    lines: list[JournalLineInput] = Field(
-        min_length=2,
-        description="Journal lines. Must balance when passed to the domain.",
+        description="An optional short description for the journal entry.",
     )
 
 
-# ---------------------------------------------------------------------------
 # ViewModels — data coming OUT of the service
-# ---------------------------------------------------------------------------
 
 
 class JournalLineViewModel(BaseModel):
-    """Read-only view of a single journal line.
+    """Read-only representation of a journal entry.
 
-    Amounts are always present as Decimal. Zero means no posting on
-    that side. The formatter uses _is_debit_line() to determine which
-    side is active rather than checking for None.
+    Returned by the service layer and consumed by presentation code.
+
+    Derived totals and balance status are included explicitly so
+    callers do not need to recompute accounting values from the
+    underlying journal lines.
     """
 
     account: str
@@ -87,20 +91,18 @@ class JournalLineViewModel(BaseModel):
 
 
 class JournalViewModel(BaseModel):
-    """Read-only view of a complete journal entry.
+    """Read-only view of a single journal entry.
 
-    This is the stable output contract between the service layer and
-    all callers — CLI formatters, future API routes, tests. It does not
-    expose JournalEntry internals and can be changed independently of
-    the domain model.
-
-    posting_date is carried as datetime to match the domain model.
-    Formatters extract the date portion for display using fstr time.
+    Provides the service layer's public representation of a journal
+    entry. Callers consume this model instead of JournalEntry internals.
+    Computed totals and balance state are included so formatters and
+    consumers never need to re-derive them.
     """
 
     journal_number: int
     posting_date: datetime
     description: str | None
+    lines: list[JournalLineViewModel]
     total_debits: Decimal
     total_credits: Decimal
-    lines: list[JournalLineViewModel]
+    is_balanced: bool
