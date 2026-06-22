@@ -1,5 +1,5 @@
 from pyledger.modules.journal.repo import JournalRepo
-from pyledger.modules.journal.schemas.journal import JournalEntry
+from pyledger.modules.journal.schemas import JournalEntry
 
 
 class FakeJournalRepo(JournalRepo):

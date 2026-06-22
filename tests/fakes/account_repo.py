@@ -1,6 +1,5 @@
-from pyledger.modules.account.repo import AccountRepo
-from pyledger.modules.account.schemas.account import Account
-from pyledger.modules.account.schemas.chart import ChartOfAccounts
+from pyledger.modules.account import AccountRepo
+from pyledger.modules.account.schemas import Account, ChartOfAccounts
 from pyledger.shared.errors import AppError, ErrorCode
 from pyledger.shared.rule import account_lookup_key
 
