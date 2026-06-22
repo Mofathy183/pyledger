@@ -54,6 +54,7 @@ class ErrorCode(StrEnum):
     # ── Journal domain ─────────────────────────────────────────────────────
     INVALID_LINE_AMOUNTS = "journal.invalid_line_amounts"
     UNBALANCED_ENTRY = "journal.unbalanced"
+    UNKNOWN_JOURNAL_ENTRY = "journal.unknown_entry"
 
     # ── Storage (ready for MongoDB) ────────────────────────────────────────
     STORAGE_UNAVAILABLE = "storage.unavailable"
