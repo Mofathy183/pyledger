@@ -17,12 +17,13 @@ before adding storage, reporting, or integration layers.
 ## Current Status
 
 - Completed: project bootstrap, shared validation rules, shared error model, account model basics, chart-of-accounts
-  basics, journal line validation, journal entry validation, journal DTOs, derived posting model, posting repository
-  contract, Typer/Rich scaffolding, journal rendering, account service, and journal/posting domain schema tests.
-- Partial: service/repository alignment, CLI error formatting, journal service mapping helpers, posting service
-  scaffold, journal repository contract, posting DTOs, and CLI command wiring.
-- Not started: concrete storage, journal and posting service workflows, trial balance reporting, historical reports,
-  and import/export surfaces.
+  basics, journal line validation, journal entry validation, journal DTOs, journal repository contract, journal
+  service workflows, derived posting model, posting repository contract, Typer/Rich scaffolding, journal rendering,
+  account service, and journal/posting domain schema tests.
+- Partial: CLI error formatting, CLI error presentation constants, posting DTOs, posting service scaffold, and CLI
+  command wiring.
+- Not started: concrete storage, posting service workflows, trial balance reporting, historical reports, and
+  import/export surfaces.
 - Removed: alias support is not a tracked roadmap item in the current codebase.
 
 ## Phase 0: Project Bootstrap
@@ -127,17 +128,16 @@ Partial.
 
 - `AccountService`.
 - `AccountRepo`.
+- `JournalRepo`.
 - `PostingRepo`.
 - DTOs for account and journal workflows.
+- Journal service create, get, and list workflows.
 
 ### Partial Work
 
-- `JournalService` mapping helpers only.
 - `PostingService` scaffold only.
-- Journal repository contract (`modules/journal/repo.py` is still empty).
-- Journal number assignment workflow (`CreateJournalInput` omits `journal_number`).
 - Posting DTOs (`modules/posting/dtos.py` is empty).
-- Service-level tests for journal and posting workflows.
+- Service-level tests for posting workflows.
 
 ## Phase 6: CLI Presentation Layer
 
@@ -204,16 +204,17 @@ Not started.
 ## Known Issues
 
 - The CLI account-name error copy is still ahead of the validator wording and should be reconciled.
-- `JournalService._to_entry_view()` should not be treated as production-ready until its signature is fixed.
 - `PostingService` remains a commented scaffold and should not be treated as a real workflow layer.
 - The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.
-- `CreateJournalInput` omits `journal_number`; no service workflow assigns journal numbers yet.
+- `modules/posting/dtos.py` is still empty.
+- There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
 
 ## Success Criteria
 
 PyLedger should be considered on track when:
 
 - journal entries are always validated before acceptance,
+- journal numbering remains deterministic,
 - posting derivation remains deterministic,
 - repository contracts are stable,
 - storage is isolated behind interfaces,

@@ -55,6 +55,7 @@ src/pyledger/
 │   │   ├── repo.py
 │   │   ├── rule.py
 │   │   ├── schemas/
+│   │   │   ├── __init__.py
 │   │   │   ├── journal.py
 │   │   │   └── line.py
 │   │   ├── service.py
@@ -91,13 +92,23 @@ tests/
 
 There is no `src/pyledger/conftest.py`, no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
 
+## Public Exports
+
+- `src/pyledger/modules/account/__init__.py` re-exports `AccountRepo`, `AccountService`, `CreateAccountInput`,
+  `UpdateAccountInput`, `AccountViewModel`, and `ChartOfAccountsViewModel`.
+- `src/pyledger/modules/journal/__init__.py` re-exports `JournalRepo`, `JournalService`, `CreateJournalInput`,
+  `JournalLineInput`, `JournalLineViewModel`, and `JournalViewModel`.
+- `src/pyledger/cli/constants/__init__.py` re-exports `ERRORS`, `HINTS`, and `FIELD_LABELS`.
+- `src/pyledger/modules/posting/__init__.py`, `src/pyledger/cli/formatters/__init__.py`, `src/pyledger/shared/__init__.py`,
+  and `src/pyledger/__init__.py` are empty today.
+
 ## Dependency Direction
 
 The live dependency direction is:
 
 ```text
 main.py -> cli.app -> cli.commands -> cli.formatters -> modules.*.dtos/schemas/services -> shared.*
-modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors
+modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors + peer services when needed
 modules.*.schemas -> shared.rule + shared.errors
 shared.* -> stdlib + pydantic
 tests -> public modules + tests/fixtures + tests/factories + tests/fakes
@@ -267,19 +278,21 @@ Responsibilities:
 - Defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and `JournalViewModel`.
 - Input DTOs perform structural validation only; accounting rules are enforced when the service constructs domain
   models.
-- `CreateJournalInput` does not carry `journal_number`; no service workflow assigns journal numbers yet.
-- Field descriptions mention aliases, but alias resolution is not implemented.
+- `CreateJournalInput` does not carry `journal_number`; `JournalService` assigns it via the repository.
 
 ### `src/pyledger/modules/journal/service.py`
 
-- Contains mapping helpers between journal schemas and journal view models.
-- Does not expose a public workflow API yet.
-- `_to_entry_view()` is misdeclared as a staticmethod with a `self` parameter and should not be treated as usable.
+- Validates account references against a chart snapshot from `AccountService`.
+- Requests journal numbers from `JournalRepo`.
+- Builds `JournalEntry` and returns `JournalViewModel`.
+- Exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`.
+- Includes private mapping helpers `_to_line_view()` and `_to_entry_view()`.
 
 ### `src/pyledger/modules/journal/repo.py`
 
-- Present as an empty scaffold.
-- No repository interface is defined yet.
+- Defines the async journal repository contract.
+- Requires `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
+- No concrete implementation exists in the repository.
 
 ### `src/pyledger/modules/journal/rule.py`
 
@@ -368,11 +381,8 @@ Repository abstractions currently exist only as contracts.
 Implemented contracts:
 
 - `AccountRepo`
+- `JournalRepo`
 - `PostingRepo`
-
-Not yet defined:
-
-- a journal repository contract (`modules/journal/repo.py` is empty)
 
 Not yet implemented:
 
@@ -412,7 +422,7 @@ Service boundaries:
 Current shape:
 
 - `AccountService` is complete end to end.
-- `JournalService` is only a mapping helper today.
+- `JournalService` is complete end to end for create, get, and list workflows.
 - `PostingService` is commented scaffold code and should not be treated as implemented behavior.
 
 ## DTO Architecture
@@ -430,15 +440,16 @@ services.
 
 ## Journal Architecture
 
-Current journal support is split across four layers:
+Current journal support is split across five layers:
 
 1. Domain schemas (`JournalLine`, `JournalEntry`) enforce accounting rules at construction time.
 2. Input and view DTOs define the service boundary shape.
-3. `JournalService` maps validated domain objects to view models only; it does not create, persist, or list entries.
-4. `journal_fmt.py` renders view models for terminal output.
+3. `JournalService` validates account references, allocates journal numbers, creates `JournalEntry`, persists it,
+   fetches entries, and returns view models.
+4. `JournalRepo` is the async persistence boundary used by the service.
+5. `journal_fmt.py` renders view models for terminal output.
 
-There is no journal repository contract, no journal persistence workflow, and no CLI command that creates or lists
-journal entries.
+There is no journal storage adapter and no CLI command that creates or lists journal entries yet.
 
 ## Posting Architecture
 
@@ -497,11 +508,13 @@ Current examples:
 - `Account.validate_name()` enforces account naming rules.
 - `ChartOfAccounts` enforces name and code uniqueness.
 - `JournalEntry` enforces date, line-count, and balance rules.
+- `JournalService` validates account references before entry construction.
 - `LedgerPosting` enforces frozen single-side postings.
 
 ## Test Architecture
 
-Testing currently focuses on domain behavior, shared error translation, shared rules, and account service workflows.
+Testing currently focuses on domain behavior, shared error translation, shared rules, and account/journal service
+workflows.
 
 Current coverage:
 
@@ -510,6 +523,8 @@ Current coverage:
 - account lookup key normalization,
 - journal line validation,
 - journal entry validation,
+- journal DTO validation,
+- journal service create/get/list workflows,
 - ledger posting validation,
 - shared error translation,
 - shared rule helpers,
@@ -526,10 +541,13 @@ Current test organization:
 - root `tests/factories/`
 - root `tests/fakes/`
 
-The root `tests/` package provides shared fixtures and helpers rather than test cases.
+The root `tests/` package provides shared fixtures, factories, and fake repository implementations rather than test
+cases.
 
-There are no tests for concrete storage, reporting, journal service workflows, posting service workflows, or end-user
-CLI commands yet.
+`tests/fakes/journal_repo.py` provides an in-memory `JournalRepo` that issues journal numbers sequentially for service
+tests.
+
+There are no tests for concrete storage, reporting, posting service workflows, or end-user CLI commands yet.
 
 ## Application Flow
 
@@ -539,7 +557,7 @@ The current executable flow is:
 2. `main.py` invokes the Typer application.
 3. Typer dispatches into the registered command groups.
 4. Command handlers would construct DTOs and call feature services.
-5. Feature services build or validate domain models.
+5. `AccountService` and `JournalService` build or validate domain models and coordinate repository access.
 6. Shared error translation converts validation failures into structured errors.
 7. CLI formatters render view models or error objects with Rich.
 
@@ -557,23 +575,25 @@ user-facing.
 - Account domain model and chart-of-accounts model.
 - Journal line and journal entry models.
 - Journal input and view DTOs.
+- Journal repository contract.
+- Journal service workflows.
 - Ledger posting model.
 - Account service.
 - Journal entry formatter.
 - Journal and posting domain schema tests.
-- `PostingRepo` contract.
+- Journal DTO tests.
+- Journal service tests.
+- `AccountRepo`, `JournalRepo`, and `PostingRepo` contracts.
 
 ### Partial
 
-- Journal service mapping helpers.
-- Posting service scaffold.
 - CLI error formatting.
 - CLI error presentation constants.
 - CLI command wiring beyond the journal group scaffold.
+- Posting service scaffold.
 
 ### Scaffold Only
 
-- `modules/journal/repo.py`
 - `modules/journal/rule.py`
 - `modules/posting/dtos.py`
 - `modules/posting/rule.py`
@@ -583,7 +603,6 @@ user-facing.
 
 - Concrete repository implementations.
 - Storage adapters.
-- Journal repository contract and journal service workflows.
 - Posting service workflows and posting DTOs.
 - Trial balance reporting.
 - Account, journal, and posting CLI workflows.
@@ -593,12 +612,10 @@ user-facing.
 ## Known Gaps
 
 - Alias support is not implemented.
-- `JournalService._to_entry_view()` is currently misdeclared and should not be treated as usable code.
 - The CLI invalid-account-name and unknown-account copy still mentions abbreviations and aliases, which does not match
   the active validator or chart lookup behavior.
-- `CreateJournalInput` omits `journal_number`; no service assigns journal numbers yet.
-- There is no journal repository contract.
-- There are no concrete repository implementations.
+- There is no concrete storage implementation.
+- There is no journal or posting storage adapter.
 - There is no trial balance or reporting pipeline.
 - There are no operational CLI commands yet.
 - The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.

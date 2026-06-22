@@ -3,9 +3,9 @@
 ## Overview
 
 PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository is a
-feature-oriented domain prototype with a working account service, validated journal and posting models, journal input
-and view DTOs, shared error translation, and Rich-based journal rendering. Storage-backed workflows, reporting, and
-operational CLI commands are not implemented yet.
+feature-oriented domain prototype with a working account service, a working journal service, validated journal and
+posting models, journal input and view DTOs, a journal repository contract, shared error translation, and Rich-based
+journal rendering. Storage-backed workflows, reporting, and operational CLI commands are not implemented yet.
 
 ## Repository Shape
 
@@ -15,8 +15,8 @@ operational CLI commands are not implemented yet.
   command scaffold.
 - `src/pyledger/modules/account/` contains the active account domain, DTOs, async repository contract, service layer,
   and tests.
-- `src/pyledger/modules/journal/` contains journal schemas, DTOs, a partial mapping service, empty repository and
-  rule scaffolds, and schema tests.
+- `src/pyledger/modules/journal/` contains journal schemas, DTOs, the async repository contract, a workflow service,
+  and schema/service tests.
 - `src/pyledger/modules/posting/` contains the immutable posting schema, an async repository contract, empty DTO and
   rule scaffolds, a commented service scaffold, and schema tests.
 - `src/pyledger/shared/` contains reusable validation helpers, utility code, and the shared error model.
@@ -32,12 +32,12 @@ operational CLI commands are not implemented yet.
   `get_by_name()`.
 - `JournalLine` enforces account normalization and debit/credit exclusivity.
 - `JournalEntry` enforces minimum line count, positive journal number, supported posting dates, and balanced totals.
+- `JournalRepo` defines async save, lookup, list, and journal-number allocation methods.
+- `JournalService` validates account references, allocates journal numbers, persists entries, and returns view models.
 - `LedgerPosting` is an immutable derived record with the same single-side amount rule.
-- Journal DTOs define input and view shapes, but no service workflow consumes `CreateJournalInput` yet.
 - `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
-- `JournalService` only maps journal schemas to view models through private helpers.
-- `PostingService` is not executable code; it remains a commented scaffold.
 - `PostingRepo` defines async persistence and lookup methods, but no concrete implementation exists.
+- `PostingService` is not executable code; it remains a commented scaffold.
 - `cli/formatters/journal_fmt.py` renders journal view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
 - There is no persistent storage layer, trial balance, or reporting pipeline.
@@ -50,8 +50,8 @@ PyLedger follows standard double-entry accounting.
 Journal Entry -> Ledger Posting
 ```
 
-Only the first two stages exist in code today. There is no trial balance pipeline or downstream reporting layer, and
-no workflow converts journal entries into ledger postings yet.
+Only the first stage is currently implemented as a live workflow. There is no trial balance pipeline or downstream
+reporting layer, and no workflow converts journal entries into ledger postings yet.
 
 ## Domain Models
 
@@ -104,8 +104,7 @@ no workflow converts journal entries into ledger postings yet.
   `ChartOfAccountsViewModel`.
 - `modules/journal/dtos.py` defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and
   `JournalViewModel`.
-- `CreateJournalInput` does not include `journal_number`; no service workflow assigns journal numbers yet.
-- `JournalLineInput` field descriptions mention aliases, but alias resolution is not implemented.
+- `CreateJournalInput` does not include `journal_number`; `JournalService` assigns it through the repository.
 - `modules/posting/dtos.py` is currently empty.
 
 ## Service Layer And CLI
@@ -114,11 +113,11 @@ no workflow converts journal entries into ledger postings yet.
   `resolve_account()`, `list_accounts()`, and `delete_account()`.
 - `AccountService` raises `AppError` for business conflicts and `ValidationAppError` for domain validation failures.
 - `AccountService.delete_account()` currently checks existence only; posting-history safeguards are not implemented.
-- `JournalService` only contains `_to_line_view()` and `_to_entry_view()` mapping helpers.
-- `JournalService._to_entry_view()` is misdeclared as a staticmethod with a `self` parameter and should not be treated
-  as production-ready.
-- `PostingService` is commented out and references stale API concepts such as `chart.resolve()`, so it should be treated
-  as a scaffold only.
+- `JournalService` exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`.
+- `JournalService` validates account references through `AccountService`, allocates journal numbers via `JournalRepo`,
+  constructs `JournalEntry`, and persists or returns view models.
+- `PostingService` is commented out and references stale API concepts such as `chart.resolve()`, so it should be
+  treated as a scaffold only.
 - The CLI currently registers the root app and a `journal` command group, but there are no operational subcommands.
 - The journal formatter can render `JournalViewModel` instances, but no command currently feeds it data.
 - The error formatter and CLI error catalog are present, but no live command path uses them yet.
@@ -139,30 +138,33 @@ no workflow converts journal entries into ledger postings yet.
 - Pytest is configured to collect tests from `tests/` and `src/pyledger/`.
 - Root-level `tests/` contains `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
 - `tests/conftest.py` registers the fixture modules as pytest plugins.
+- `tests/fakes/account_repo.py` and `tests/fakes/journal_repo.py` provide in-memory repository fakes for service tests.
+- The journal fake issues journal numbers sequentially and stores entries in memory.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
-- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, and
-  `AccountService`.
+- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation,
+  `AccountService`, and `JournalService`.
 - Journal schema tests cover `JournalLine` and `JournalEntry`.
+- Journal DTO tests cover `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and `JournalViewModel`.
+- Journal service tests cover create, get, list, account validation, domain validation, and journal-number allocation.
 - Posting schema tests cover `LedgerPosting`.
-- There are no `JournalService`, `PostingService`, storage, reporting, or CLI workflow tests yet.
+- There are no `PostingService`, storage, reporting, or CLI workflow tests yet.
 
 ## Known Issues
 
 - Alias support is not implemented anywhere in the active code path.
-- `JournalService._to_entry_view()` is currently declared as a staticmethod but still takes a `self` parameter.
-- `PostingService` is commented out and should not be treated as executable workflow code.
 - The CLI invalid-account-name and unknown-account messages are out of sync with the actual account-name validator and
   chart lookup behavior.
-- `CreateJournalInput` omits `journal_number`; no service assigns journal numbers yet.
-- There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
+- `PostingService` is commented out and should not be treated as executable workflow code.
+- There are no storage-backed repositories or concrete adapters yet.
+- There are no operational CLI commands yet.
+- There is no reporting pipeline yet.
 
 ## Long-Term Direction
 
 - Add concrete repository implementations behind the existing async contracts.
 - Add storage adapters and persistence tests.
-- Define a journal repository contract and complete journal service workflows.
 - Complete posting service workflows and posting DTOs.
 - Wire operational account, journal, and posting commands into the CLI.
 - Build trial balance and reporting support from validated data.
