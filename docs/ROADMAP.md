@@ -18,12 +18,11 @@ before adding storage, reporting, or integration layers.
 
 - Completed: project bootstrap, shared validation rules, shared error model, account model basics, chart-of-accounts
   basics, journal line validation, journal entry validation, journal DTOs, journal repository contract, journal
-  service workflows, derived posting model, posting repository contract, Typer/Rich scaffolding, journal rendering,
-  account service, and journal/posting domain schema tests.
-- Partial: CLI error formatting, CLI error presentation constants, posting DTOs, posting service scaffold, and CLI
-  command wiring.
-- Not started: concrete storage, posting service workflows, trial balance reporting, historical reports, and
-  import/export surfaces.
+  service workflows, derived posting model, posting DTOs, posting repository contract, posting service workflows,
+  posting service tests, Typer/Rich scaffolding, journal rendering, account service, and journal/posting domain schema
+  tests.
+- Partial: CLI error formatting, CLI error presentation constants, and CLI command wiring.
+- Not started: concrete storage, trial balance reporting, historical reports, and import/export surfaces.
 - Removed: alias support is not a tracked roadmap item in the current codebase.
 
 ## Phase 0: Project Bootstrap
@@ -102,27 +101,23 @@ Completed.
 
 ### Status
 
-Completed for the posting model and repository contract; partial for the posting service scaffold.
+Completed.
 
 ### Completed Work
 
 - `LedgerPosting`.
 - Frozen posting records.
 - Single-side posting validation.
+- `PostingViewModel`.
 - `PostingRepo` contract.
 - Posting-domain schema tests.
-
-### Partial Work
-
-- Posting service orchestration.
-- Posting service tests.
-- Posting DTOs.
+- Posting DTO tests.
 
 ## Phase 5: Service Layer Completion
 
 ### Status
 
-Partial.
+Completed.
 
 ### Completed Work
 
@@ -130,14 +125,10 @@ Partial.
 - `AccountRepo`.
 - `JournalRepo`.
 - `PostingRepo`.
-- DTOs for account and journal workflows.
+- DTOs for account, journal, and posting workflows.
 - Journal service create, get, and list workflows.
-
-### Partial Work
-
-- `PostingService` scaffold only.
-- Posting DTOs (`modules/posting/dtos.py` is empty).
-- Service-level tests for posting workflows.
+- `PostingService` journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
+- Journal and posting service tests.
 
 ## Phase 6: CLI Presentation Layer
 
@@ -204,9 +195,8 @@ Not started.
 ## Known Issues
 
 - The CLI account-name error copy is still ahead of the validator wording and should be reconciled.
-- `PostingService` remains a commented scaffold and should not be treated as a real workflow layer.
-- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.
-- `modules/posting/dtos.py` is still empty.
+- `PostingService` is implemented, but it is not yet wired into the CLI.
+- `modules/posting/rule.py` is still an empty scaffold.
 - There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
 
 ## Success Criteria

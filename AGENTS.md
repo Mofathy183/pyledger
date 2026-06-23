@@ -17,7 +17,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 - `src/pyledger/main.py` is the console entry point.
 - `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and the journal command scaffold.
-- `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account and journal have implemented service layers; posting remains a scaffold.
+- `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account, journal, and posting each have implemented service layers.
 - `src/pyledger/shared/` contains reusable validation helpers, utility functions, and the shared error model.
 - `tests/` contains shared test infrastructure only: `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
@@ -42,21 +42,21 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 ## Current Implementation Notes
 
-- `AccountService` and `JournalService` are the implemented feature services.
+- `AccountService`, `JournalService`, and `PostingService` are the implemented feature services.
 - `JournalService` exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`, plus private mapping helpers.
 - `JournalService._to_entry_view()` is a normal instance method, not a broken staticmethod.
 - `JournalRepo` defines `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
-- `PostingService` is a commented scaffold and is not a usable workflow service.
+- `PostingService` derives ledger postings from journal entries. It exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`. It prevents duplicate posting by journal number.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
 - `modules/journal/repo.py` is an implemented async repository contract.
 - `modules/journal/rule.py` remains an empty scaffold.
-- `modules/posting/dtos.py` and `modules/posting/rule.py` are empty scaffolds.
+- `modules/posting/dtos.py` defines `PostingViewModel`, and `modules/posting/rule.py` remains an empty scaffold.
 - `modules/journal/__init__.py` re-exports the journal repo, service, and DTOs.
-- `modules/posting/__init__.py` is empty.
-- `main.py` contains commented legacy command code that references removed `pyledger.core` paths; the active entry point only invokes `app()`.
+- `modules/posting/__init__.py` re-exports the posting repo, service, and DTOs.
+- `main.py` is a thin console entry point that only invokes `app()`.
 - `cli/constants/errors.py` still has wording drift for invalid account names and unknown accounts; its copy mentions abbreviations and aliases even though alias support is not implemented and `clean_account_name()` does not allow commas.
 - `CreateJournalInput` omits `journal_number`; `JournalService` assigns it via `JournalRepo.next_journal_number()`.
-- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist; the chart exposes `get_by_name()` and `get_by_code()` only.
+- `PostingService` is implemented and available for journal-to-posting workflows, though it is not yet wired into the CLI.
 
 ## Development Rules
 
@@ -81,13 +81,15 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Domain tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
-- Shared fixtures, factories, and fakes live under `tests/`.
-- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, `AccountService`, and `JournalService`.
+- Shared fixtures, factories, and fakes live under `tests/`. `tests/factories/posting.py` and `tests/fakes/posting_repo.py` support posting service tests.
+- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, `AccountService`, `JournalService`, and `PostingService`.
 - Journal schema tests cover `JournalLine` and `JournalEntry` validation.
 - Journal DTO tests cover the journal input and view models.
 - Journal service tests cover create, get, list, account validation, domain validation, and journal-number allocation workflows.
 - Posting schema tests cover `LedgerPosting` validation.
-- There are no `PostingService`, concrete storage, reporting, or user-facing CLI workflow tests yet.
+- Posting DTO tests cover `PostingViewModel`.
+- Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
+- There are no concrete storage, reporting, or user-facing CLI workflow tests yet.
 
 ## Error Handling
 
