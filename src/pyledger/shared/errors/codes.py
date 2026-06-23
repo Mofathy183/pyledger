@@ -56,6 +56,9 @@ class ErrorCode(StrEnum):
     UNBALANCED_ENTRY = "journal.unbalanced"
     UNKNOWN_JOURNAL_ENTRY = "journal.unknown_entry"
 
+    # ── Posting domain ─────────────────────────────────────────────────────
+    JOURNAL_ALREADY_POSTED = "posting.already_posted"
+
     # ── Storage (ready for MongoDB) ────────────────────────────────────────
     STORAGE_UNAVAILABLE = "storage.unavailable"
     STORAGE_TIMEOUT = "storage.timeout"

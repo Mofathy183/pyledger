@@ -13,7 +13,12 @@ from .journal import (
     make_journal_entry,
     make_journal_service,
 )
-from .posting import make_credit_posting, make_debit_posting
+from .posting import (
+    make_credit_posting,
+    make_debit_posting,
+    make_fake_posting_repo,
+    make_posting_service,
+)
 
 __all__ = [
     "make_credit_posting",
@@ -29,4 +34,6 @@ __all__ = [
     "make_fake_journal_repo",
     "make_journal_service",
     "make_create_journal_input",
+    "make_fake_posting_repo",
+    "make_posting_service",
 ]
