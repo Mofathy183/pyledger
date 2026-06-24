@@ -183,6 +183,19 @@ ruff format
 ty check
 ```
 
+## Environment Configuration
+
+Copy the example environment files and customize them as needed:
+
+```bash
+cp .env.example .env
+cp .env.test.example .env.test
+```
+
+- `.env` contains settings for local development.
+- `.env.test` contains settings used by the test suite.
+- The test database should be separate from the development database to avoid accidental data loss.
+
 ## Current Project Status
 
 ### Implemented

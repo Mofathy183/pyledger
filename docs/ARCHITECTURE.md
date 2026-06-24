@@ -99,8 +99,8 @@ There is no `src/pyledger/conftest.py`, no `tests/helpers.py`, and no `src/pyled
 - `src/pyledger/modules/journal/__init__.py` re-exports `JournalRepo`, `JournalService`, `CreateJournalInput`,
   `JournalLineInput`, `JournalLineViewModel`, and `JournalViewModel`.
 - `src/pyledger/cli/constants/__init__.py` re-exports `ERRORS`, `HINTS`, and `FIELD_LABELS`.
-- `src/pyledger/modules/posting/__init__.py`, `src/pyledger/cli/formatters/__init__.py`, `src/pyledger/shared/__init__.py`,
-  and `src/pyledger/__init__.py` are empty today.
+- `src/pyledger/modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
+- `src/pyledger/cli/formatters/__init__.py`, `src/pyledger/shared/__init__.py`, and `src/pyledger/__init__.py` are empty today.
 
 ## Dependency Direction
 
@@ -140,8 +140,7 @@ Responsibilities:
 
 Current state:
 
-- `main.py` boots the Typer app. Commented legacy command code remains in the file but references removed
-  `pyledger.core` modules and is not active.
+- `main.py` boots the Typer app. The file contains only the active entry point and invokes `app()`.
 - `cli/app.py` creates the root app and registers the `journal` sub-app.
 - `cli/commands/journal_cmd.py` defines a command namespace but no operational subcommands.
 - `cli/formatters/journal_fmt.py` renders journal entries and journal lists from view models.
@@ -185,7 +184,6 @@ Responsibilities:
 
 - Console-script entry point.
 - Imports and invokes the Typer app.
-- Contains commented legacy scaffold code that is not executed.
 - Does not contain active accounting logic.
 
 ### `src/pyledger/cli/app.py`
@@ -307,13 +305,16 @@ Responsibilities:
 
 ### `src/pyledger/modules/posting/dtos.py`
 
-- Present as an empty scaffold.
-- No posting input or view DTOs are defined yet.
+- Defines `PostingViewModel`, the read-only output DTO for posting workflows.
+- No posting input DTO exists because postings are derived from validated journal entries.
 
 ### `src/pyledger/modules/posting/service.py`
 
-- Present as commented scaffold code.
-- References a stale `chart.resolve()` API and is not executable.
+- Retrieves journal entries via `JournalService`.
+- Prevents duplicate posting by checking `get_by_journal_number()`.
+- Derives one `LedgerPosting` per journal line, persists the batch, and returns `PostingViewModel` instances.
+- Exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
+- Is not yet wired into the CLI.
 
 ### `src/pyledger/modules/posting/repo.py`
 
@@ -423,7 +424,7 @@ Current shape:
 
 - `AccountService` is complete end to end.
 - `JournalService` is complete end to end for create, get, and list workflows.
-- `PostingService` is commented scaffold code and should not be treated as implemented behavior.
+- `PostingService` is implemented end to end for journal-to-posting derivation, duplicate-posting prevention, and retrieval by account or journal number.
 
 ## DTO Architecture
 
@@ -433,7 +434,7 @@ Current DTO coverage:
 
 - Account: `CreateAccountInput`, `UpdateAccountInput`, `AccountViewModel`, `ChartOfAccountsViewModel`.
 - Journal: `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, `JournalViewModel`.
-- Posting: none defined yet (`modules/posting/dtos.py` is empty).
+- Posting: `PostingViewModel` only. Posting inputs are not modeled because postings are derived from validated journal entries.
 
 View models are what CLI formatters consume. Input DTOs are what future commands and API routes would pass into
 services.
@@ -453,15 +454,19 @@ There is no journal storage adapter and no CLI command that creates or lists jou
 
 ## Posting Architecture
 
-Current posting support is limited to the domain model and a repository contract:
+Current posting support includes a live service layer, not just a schema and repository contract:
 
 1. `LedgerPosting` validates immutable single-side posting records.
-2. `PostingRepo` defines async persistence and lookup methods.
-3. The commented `PostingService` sketch describes intended posting derivation from journal entries, but it is not
-   executable and references APIs that no longer exist.
+2. `PostingViewModel` is the read-only output DTO for posting workflows.
+3. `PostingRepo` defines async persistence and lookup methods.
+4. `PostingService` retrieves a journal entry from `JournalService`, prevents duplicate posting by checking
+   `get_by_journal_number()`, derives one `LedgerPosting` per journal line, saves the batch, and returns
+   `PostingViewModel` instances.
+5. `tests/factories/posting.py` and `tests/fakes/posting_repo.py` provide the service factory and in-memory fake used
+   by posting tests.
 
-There is no posting DTO layer, no active posting service, and no workflow that converts journal entries into ledger
-postings.
+`modules/posting/rule.py` remains an empty scaffold. There is still no posting input DTO, and the CLI does not yet
+expose posting commands.
 
 ## Error Architecture
 
@@ -513,8 +518,8 @@ Current examples:
 
 ## Test Architecture
 
-Testing currently focuses on domain behavior, shared error translation, shared rules, and account/journal service
-workflows.
+Testing currently focuses on domain behavior, shared error translation, shared rules, and account/journal/posting
+service workflows.
 
 Current coverage:
 
@@ -526,6 +531,8 @@ Current coverage:
 - journal DTO validation,
 - journal service create/get/list workflows,
 - ledger posting validation,
+- posting DTO validation,
+- posting service journal-to-posting workflows,
 - shared error translation,
 - shared rule helpers,
 - account service workflows.
@@ -546,8 +553,10 @@ cases.
 
 `tests/fakes/journal_repo.py` provides an in-memory `JournalRepo` that issues journal numbers sequentially for service
 tests.
+`tests/fakes/posting_repo.py` provides an in-memory `PostingRepo` for posting-service tests.
+`tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 
-There are no tests for concrete storage, reporting, posting service workflows, or end-user CLI commands yet.
+There are no tests for concrete storage, reporting, or end-user CLI commands yet.
 
 ## Application Flow
 
@@ -557,12 +566,12 @@ The current executable flow is:
 2. `main.py` invokes the Typer application.
 3. Typer dispatches into the registered command groups.
 4. Command handlers would construct DTOs and call feature services.
-5. `AccountService` and `JournalService` build or validate domain models and coordinate repository access.
+5. `AccountService`, `JournalService`, and `PostingService` build or validate domain models and coordinate repository access.
 6. Shared error translation converts validation failures into structured errors.
 7. CLI formatters render view models or error objects with Rich.
 
 The CLI currently stops at the scaffold stage for operational commands, so the flow is mostly structural rather than
-user-facing.
+user-facing. Posting workflows exist in the service layer, but they are not yet wired into commands.
 
 ## Implementation Status
 
@@ -575,14 +584,19 @@ user-facing.
 - Account domain model and chart-of-accounts model.
 - Journal line and journal entry models.
 - Journal input and view DTOs.
+- Posting view DTO.
 - Journal repository contract.
+- Posting repository contract.
 - Journal service workflows.
+- Posting service workflows.
 - Ledger posting model.
 - Account service.
 - Journal entry formatter.
 - Journal and posting domain schema tests.
 - Journal DTO tests.
+- Posting DTO tests.
 - Journal service tests.
+- Posting service tests.
 - `AccountRepo`, `JournalRepo`, and `PostingRepo` contracts.
 
 ### Partial
@@ -590,20 +604,16 @@ user-facing.
 - CLI error formatting.
 - CLI error presentation constants.
 - CLI command wiring beyond the journal group scaffold.
-- Posting service scaffold.
 
 ### Scaffold Only
 
 - `modules/journal/rule.py`
-- `modules/posting/dtos.py`
 - `modules/posting/rule.py`
-- `modules/posting/service.py`
 
 ### Planned
 
 - Concrete repository implementations.
 - Storage adapters.
-- Posting service workflows and posting DTOs.
 - Trial balance reporting.
 - Account, journal, and posting CLI workflows.
 - Higher-level reports and historical views.
@@ -617,5 +627,6 @@ user-facing.
 - There is no concrete storage implementation.
 - There is no journal or posting storage adapter.
 - There is no trial balance or reporting pipeline.
+- `PostingService` is implemented, but it is not yet wired into the CLI.
+- `modules/posting/rule.py` is still an empty scaffold.
 - There are no operational CLI commands yet.
-- The commented `PostingService` scaffold references `chart.resolve()`, which does not exist.
