@@ -127,8 +127,12 @@ Completed.
 - `PostingRepo`.
 - DTOs for account, journal, and posting workflows.
 - Journal service create, get, and list workflows.
-- `PostingService` journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
 - Journal and posting service tests.
+- `PostingService` with `post_journal_entry()`, `get_postings_by_account()`, `get_postings_by_journal_number()`
+- `PostingViewModel` DTO
+- `PostingRepo` contract
+- `FakePostingRepo` in-memory fake
+- Service-level tests for posting workflows
 
 ## Phase 6: CLI Presentation Layer
 
@@ -158,14 +162,24 @@ Partial.
 
 ### Status
 
-Not started.
+Partial.
 
-### Expected Scope
+### Completed Work
 
-- Repository implementations.
-- Serialization and deserialization.
-- Safe loading and saving of accounts, journal entries, and postings.
-- Storage-specific tests.
+- MongoDB connection bootstrap (`connect()`, `disconnect()`, `MongoConnection`).
+- Typed configuration layer (`Settings`, `TestSettings`, `MongoSettings`, `get_settings()`).
+- Environment-separated configuration (production `PYLEDGER_` prefix, test `PYLEDGER_TEST_` prefix).
+- MongoDB connection lifecycle tests.
+- Settings tests with LRU cache isolation.
+- `infrastructure/mongo/documents/` and `infrastructure/mongo/repositories/` reserved as empty packages.
+
+### Remaining Work
+
+- Concrete repository implementations for `AccountRepo`, `JournalRepo`, and `PostingRepo`.
+- MongoDB ODM document models.
+- Serialization and deserialization for domain models.
+- Storage-level uniqueness enforcement.
+- Integration tests for concrete repository adapters.
 
 ## Phase 8: Trial Balance and Reporting
 
@@ -195,9 +209,8 @@ Not started.
 ## Known Issues
 
 - The CLI account-name error copy is still ahead of the validator wording and should be reconciled.
-- `PostingService` is implemented, but it is not yet wired into the CLI.
-- `modules/posting/rule.py` is still an empty scaffold.
 - There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
+- No concrete storage-backed repository adapters exist yet.
 
 ## Success Criteria
 

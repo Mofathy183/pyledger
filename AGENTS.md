@@ -9,6 +9,8 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Typer
 - Rich
 - Pydantic v2
+- Pydantic Settings
+- PyMongo (async)
 - Pytest
 - Ruff
 - Ty
@@ -19,6 +21,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and the journal command scaffold.
 - `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account, journal, and posting each have implemented service layers.
 - `src/pyledger/shared/` contains reusable validation helpers, utility functions, and the shared error model.
+
 - `tests/` contains shared test infrastructure only: `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
@@ -46,13 +49,13 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `JournalService` exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`, plus private mapping helpers.
 - `JournalService._to_entry_view()` is a normal instance method, not a broken staticmethod.
 - `JournalRepo` defines `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
-- `PostingService` derives ledger postings from journal entries. It exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`. It prevents duplicate posting by journal number.
+- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
 - `modules/journal/repo.py` is an implemented async repository contract.
 - `modules/journal/rule.py` remains an empty scaffold.
-- `modules/posting/dtos.py` defines `PostingViewModel`, and `modules/posting/rule.py` remains an empty scaffold.
+- `modules/posting/dtos.py` defines `PostingViewModel`. `modules/posting/rule.py` remains an empty scaffold.
 - `modules/journal/__init__.py` re-exports the journal repo, service, and DTOs.
-- `modules/posting/__init__.py` re-exports the posting repo, service, and DTOs.
+- `modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
 - `main.py` is a thin console entry point that only invokes `app()`.
 - `cli/constants/errors.py` still has wording drift for invalid account names and unknown accounts; its copy mentions abbreviations and aliases even though alias support is not implemented and `clean_account_name()` does not allow commas.
 - `CreateJournalInput` omits `journal_number`; `JournalService` assigns it via `JournalRepo.next_journal_number()`.
@@ -76,6 +79,16 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Use `pytest` for tests.
 - The pytest configuration enables coverage by default. If Windows file locking interferes with local runs, `pytest -o addopts=""` is the quickest way to inspect the raw test results.
 
+## Configuration and Infrastructure
+
+- `pyledger.config` exposes `Settings`, `TestSettings`, `MongoSettings`, and `get_settings()`.
+- Settings load from environment variables under the `PYLEDGER_` prefix and an optional `.env` file.
+- `TestSettings` uses the `PYLEDGER_TEST_` prefix and `.env.test` to keep test configuration isolated from production.
+- `get_settings()` is cached with `lru_cache`; tests must call `get_settings.cache_clear()` before and after mutating the environment.
+- `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and the `MongoConnection` dataclass for MongoDB lifecycle management.
+- No concrete repository implementations exist yet; `connect()` and `disconnect()` are the only infrastructure entry points.
+- Do not couple domain models, services, or CLI code to `MongoSettings`, `AsyncMongoClient`, or any infrastructure type.
+
 ## Testing Guidance
 
 - Domain tests live beside the feature code under `src/pyledger/modules/**/tests/`.
@@ -90,6 +103,11 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Posting DTO tests cover `PostingViewModel`.
 - Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
 - There are no concrete storage, reporting, or user-facing CLI workflow tests yet.
+- Settings tests live under `src/pyledger/config/tests/`.
+- MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
+- `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture backed by `TestSettings`.
+- `tests/fixtures/mongo.py` provides `mongo_connection` (session-scoped) and `clean_db` fixtures for future integration tests.
+- `tests/conftest.py` registers all fixture modules and provides an `isolate_settings_cache` autouse fixture that clears `get_settings.cache_clear()` before and after every test.
 
 ## Error Handling
 

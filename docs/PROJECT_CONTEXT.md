@@ -37,11 +37,13 @@ implemented yet.
 - `LedgerPosting` is an immutable derived record with the same single-side amount rule.
 - `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
 - `PostingRepo` defines async persistence and lookup methods, but no concrete implementation exists.
-- `PostingService` is implemented and handles journal-to-posting derivation, duplicate-posting prevention, and posting
+- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
   retrieval by account or journal number. It is not yet wired into the CLI.
 - `cli/formatters/journal_fmt.py` renders journal view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
 - There is no persistent storage layer, trial balance, or reporting pipeline.
+- `pyledger.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `PYLEDGER_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `PYLEDGER_TEST_` and `.env.test`.
+- `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle management. No concrete repository implementations exist yet.
 
 ## Accounting Model
 
@@ -106,7 +108,7 @@ balance pipeline or downstream reporting layer.
 - `modules/journal/dtos.py` defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and
   `JournalViewModel`.
 - `CreateJournalInput` does not include `journal_number`; `JournalService` assigns it through the repository.
-- `modules/posting/dtos.py` defines `PostingViewModel`. There is no posting input DTO because postings are derived from
+- `modules/posting/dtos.py` defines `PostingViewModel` with a computed `is_debit field`. There is no posting input DTO because postings are derived from
   validated journal entries.
 
 ## Service Layer And CLI
@@ -118,8 +120,7 @@ balance pipeline or downstream reporting layer.
 - `JournalService` exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`.
 - `JournalService` validates account references through `AccountService`, allocates journal numbers via `JournalRepo`,
   constructs `JournalEntry`, and persists or returns view models.
-- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
-  It derives ledger postings from journal entries and is not yet wired into the CLI.
+- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`. It derives postings from `JournalViewModel` instances returned by `JournalService` and persists them via `PostingRepo`.
 - The CLI currently registers the root app and a `journal` command group, but there are no operational subcommands.
 - The journal formatter can render `JournalViewModel` instances, but no command currently feeds it data.
 - The error formatter and CLI error catalog are present, but no live command path uses them yet.
@@ -156,16 +157,20 @@ balance pipeline or downstream reporting layer.
 - Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval.
 - `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 - There are no storage, reporting, or CLI workflow tests yet.
+- Settings tests live under `src/pyledger/config/tests/`.
+- MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
+- `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture.
+- `tests/fixtures/mongo.py` provides `mongo_connection` and `clean_db` fixtures for future integration tests.
+- `tests/conftest.py` provides an `isolate_settings_cache` autouse fixture that clears the `get_settings` LRU cache before and after every test.
+- Posting service tests cover `post_journal_entry`, `get_postings_by_account`, and `get_postings_by_journal_number` workflows including duplicate-posting detection.
 
 ## Known Issues
 
 - Alias support is not implemented anywhere in the active code path.
 - The CLI invalid-account-name and unknown-account messages are out of sync with the actual account-name validator and
   chart lookup behavior.
-- `PostingService` is implemented, but it is not yet wired into the CLI.
 - There are no storage-backed repositories or concrete adapters yet.
 - There are no operational CLI commands yet.
-- There is no reporting pipeline yet.
 
 ## Long-Term Direction
 

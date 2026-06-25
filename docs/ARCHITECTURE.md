@@ -38,6 +38,20 @@ src/pyledger/
 │       ├── __init__.py
 │       ├── detection.py
 │       └── styles.py
+├── config/
+│   ├── __init__.py
+│   ├── settings.py
+│   └── tests/
+├── infrastructure/
+│   ├── __init__.py
+│   └── mongo/
+│       ├── __init__.py
+│       ├── connection.py
+│       ├── documents/
+│       │   └── __init__.py
+│       ├── repositories/
+│       │   └── __init__.py
+│       └── tests/
 ├── modules/
 │   ├── account/
 │   │   ├── __init__.py
@@ -112,6 +126,8 @@ modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + share
 modules.*.schemas -> shared.rule + shared.errors
 shared.* -> stdlib + pydantic
 tests -> public modules + tests/fixtures + tests/factories + tests/fakes
+config.* -> pydantic-settings + stdlib
+infrastructure.mongo.* -> config.* + pymongo
 ```
 
 Important boundary rules:
@@ -146,6 +162,52 @@ Current state:
 - `cli/formatters/journal_fmt.py` renders journal entries and journal lists from view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist but are not wired into a live command path.
 - `cli/console.py` configures the Rich console.
+
+### Configuration Layer
+
+Location:
+
+- `src/pyledger/config/`
+
+Responsibilities:
+
+- Define typed settings models (`Settings`, `TestSettings`, `MongoSettings`).
+- Load configuration from environment variables and optional dotenv files.
+- Provide a cached `get_settings()` accessor for the rest of the application.
+- Keep test configuration isolated from production configuration.
+
+Current state:
+
+- `Settings` loads from `PYLEDGER_` environment variables and an optional `.env` file.
+- `TestSettings` loads from `PYLEDGER_TEST_` environment variables and an optional `.env.test` file.
+- `MongoSettings` is nested inside both settings models and carries `uri` and `db` fields.
+- `get_settings()` uses `lru_cache`; the cache is cleared in `tests/conftest.py` before and after every test via `isolate_settings_cache`.
+
+### Infrastructure Layer
+
+Location:
+
+- `src/pyledger/infrastructure/`
+- `src/pyledger/infrastructure/mongo/`
+
+Responsibilities:
+
+- Provide MongoDB connection lifecycle management.
+- Supply the `MongoConnection` dataclass for passing connection resources to future repository adapters.
+- Keep database concerns outside domain models, services, and CLI code.
+
+Current state:
+
+- `connect()` creates an `AsyncMongoClient`, verifies connectivity with a ping, and returns a `MongoConnection`.
+- `disconnect()` closes the client held by a `MongoConnection`.
+- `infrastructure/mongo/documents/` and `infrastructure/mongo/repositories/` are empty packages reserved for future ODM documents and concrete repository adapters.
+- No concrete repository implementations exist yet.
+
+Boundary rules:
+
+- Infrastructure code must not import from `cli/` or `modules/`.
+- Domain models must not import from `infrastructure/`.
+- `connect()` and `disconnect()` accept `MongoSettings`; they do not access `get_settings()` directly.
 
 ### Feature Modules
 
@@ -305,16 +367,19 @@ Responsibilities:
 
 ### `src/pyledger/modules/posting/dtos.py`
 
-- Defines `PostingViewModel`, the read-only output DTO for posting workflows.
-- No posting input DTO exists because postings are derived from validated journal entries.
+- Defines `PostingViewModel`.
+- Debit postings carry a non-None `debit_amount` and a None `credit_amount`; credit postings are the reverse.
+- `is_debit` is a `computed_field` derived from `debit_amount` so it cannot diverge from the stored amounts.
+- There is no input DTO; postings are derived internally by `PostingService` from `JournalViewModel` instances.
 
 ### `src/pyledger/modules/posting/service.py`
 
-- Retrieves journal entries via `JournalService`.
-- Prevents duplicate posting by checking `get_by_journal_number()`.
-- Derives one `LedgerPosting` per journal line, persists the batch, and returns `PostingViewModel` instances.
+- Implements `PostingService`.
 - Exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
-- Is not yet wired into the CLI.
+- Derives one `LedgerPosting` per journal line from a `JournalViewModel` returned by `JournalService`.
+- Enforces the one-posting-per-journal-entry invariant by checking `PostingRepo.get_by_journal_number()` before saving.
+- Persists posting batches atomically via `PostingRepo.save_many()`.
+- Returns `PostingViewModel` instances to callers.
 
 ### `src/pyledger/modules/posting/repo.py`
 
@@ -598,6 +663,10 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - Journal service tests.
 - Posting service tests.
 - `AccountRepo`, `JournalRepo`, and `PostingRepo` contracts.
+- Typed configuration layer (`Settings`, `TestSettings`, `MongoSettings`, `get_settings()`)
+- MongoDB connection bootstrap (`connect()`, `disconnect()`, `MongoConnection`)
+- Settings tests
+- MongoDB connection tests
 
 ### Partial
 
