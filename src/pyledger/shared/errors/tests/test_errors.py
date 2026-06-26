@@ -82,6 +82,35 @@ class TestAppError:
         assert error.code == ErrorCode.UNKNOWN_ERROR
         assert error.cause is cause
 
+    def test_storage_unavailable_returns_storage_unavailable_error(self):
+        error = AppError.storage_unavailable()
+
+        assert error.code == ErrorCode.STORAGE_UNAVAILABLE
+        assert error.cause is None
+
+    def test_storage_unavailable_preserves_cause(self):
+        cause = ConnectionError("connection failed")
+
+        error = AppError.storage_unavailable(cause)
+
+        assert error.code == ErrorCode.STORAGE_UNAVAILABLE
+        assert error.cause is cause
+
+    def test_storage_timeout_returns_storage_timeout_error(self):
+        error = AppError.storage_timeout()
+
+        assert error.code == ErrorCode.STORAGE_TIMEOUT
+        assert error.context == {}
+        assert error.cause is None
+
+    def test_storage_timeout_preserves_cause(self):
+        cause = TimeoutError("timed out")
+
+        error = AppError.storage_timeout(cause)
+
+        assert error.code == ErrorCode.STORAGE_TIMEOUT
+        assert error.cause is cause
+
 
 @pytest.mark.unit
 class TestValidationAppError:

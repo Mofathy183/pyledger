@@ -128,6 +128,41 @@ class AppError(Exception):
         """
         return cls(code=ErrorCode.UNKNOWN_ERROR, cause=cause)
 
+    @classmethod
+    def storage_unavailable(cls, cause: BaseException | None = None) -> AppError:
+        """Create a storage-unavailable error.
+
+        Raised when the storage backend cannot be reached due to a
+        connection failure. Callers should treat this as a transient
+        infrastructure failure, not a domain error.
+
+        Args:
+            cause: The underlying connection exception preserved for
+                diagnostics and logging.
+
+        Returns:
+            An AppError with ErrorCode.STORAGE_UNAVAILABLE.
+        """
+        return cls(code=ErrorCode.STORAGE_UNAVAILABLE, cause=cause)
+
+    @classmethod
+    def storage_timeout(cls, cause: BaseException | None = None) -> AppError:
+        """Create a storage-timeout error.
+
+        Raised when the storage backend fails to respond within the
+        configured timeout window. Distinguished from a general
+        connection failure so callers can apply a different retry or
+        alerting strategy.
+
+        Args:
+            cause: The underlying timeout exception preserved for
+                diagnostics and logging.
+
+        Returns:
+            An AppError with ErrorCode.STORAGE_TIMEOUT.
+        """
+        return cls(code=ErrorCode.STORAGE_TIMEOUT, cause=cause)
+
 
 @dataclass(frozen=True)
 class ValidationAppError(AppError):
