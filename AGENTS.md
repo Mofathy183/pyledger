@@ -10,6 +10,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Rich
 - Pydantic v2
 - Pydantic Settings
+- Beanie
 - PyMongo (async)
 - Pytest
 - Ruff
@@ -17,13 +18,17 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 ## Repository Layout
 
+- `src/pyledger/conftest.py` registers the shared pytest fixture plugins.
 - `src/pyledger/main.py` is the console entry point.
 - `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and the journal command scaffold.
+- `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error translation,
+  the MongoDB account document and repository, and MongoDB infrastructure tests.
 - `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account, journal, and posting each have implemented service layers.
 - `src/pyledger/shared/` contains reusable validation helpers, utility functions, and the shared error model.
 
-- `tests/` contains shared test infrastructure only: `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
+- `tests/` contains shared test infrastructure only: `fixtures/`, `factories/`, and `fakes/`.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
+- MongoDB infrastructure tests live under `src/pyledger/infrastructure/mongo/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - There is no `src/pyledger/cli/tests/` directory today.
 
@@ -50,6 +55,9 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `JournalService._to_entry_view()` is a normal instance method, not a broken staticmethod.
 - `JournalRepo` defines `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
 - `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
+- `pyledger.infrastructure.mongo` exposes `MongoConnection`, `connect()`, and `disconnect()`.
+- `pyledger.infrastructure.mongo.shared` exposes `TimestampedDocument`, `MongoExecutor`, and the Mongo error translator.
+- `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
 - `modules/journal/repo.py` is an implemented async repository contract.
 - `modules/journal/rule.py` remains an empty scaffold.
@@ -77,17 +85,21 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Use `ruff format` and `ruff check` for formatting and linting.
 - Use `ty check` for static type checking.
 - Use `pytest` for tests.
-- The pytest configuration enables coverage by default. If Windows file locking interferes with local runs, `pytest -o addopts=""` is the quickest way to inspect the raw test results.
+- The pytest configuration sets `-ra`, strict markers, importlib mode, and session-scoped asyncio loop defaults. Run
+  `pytest -m unit` for the fast suite and `pytest -m integration` for Mongo-backed tests. If Windows file locking
+  interferes with local runs, `pytest -o addopts=""` is the quickest way to inspect the raw test results.
 
 ## Configuration and Infrastructure
 
 - `pyledger.config` exposes `Settings`, `TestSettings`, `MongoSettings`, and `get_settings()`.
 - Settings load from environment variables under the `PYLEDGER_` prefix and an optional `.env` file.
 - `TestSettings` uses the `PYLEDGER_TEST_` prefix and `.env.test` to keep test configuration isolated from production.
+- Nested settings use `PYLEDGER_*__*` environment variables such as `PYLEDGER_TEST_MONGO__URI`.
 - `get_settings()` is cached with `lru_cache`; tests must call `get_settings.cache_clear()` before and after mutating the environment.
 - `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and the `MongoConnection` dataclass for MongoDB lifecycle management.
-- No concrete repository implementations exist yet; `connect()` and `disconnect()` are the only infrastructure entry points.
-- Do not couple domain models, services, or CLI code to `MongoSettings`, `AsyncMongoClient`, or any infrastructure type.
+- `pyledger.infrastructure.mongo.shared` provides `MongoExecutor`, `TimestampedDocument`, and error translation helpers.
+- `pyledger.infrastructure.mongo.account` provides the concrete MongoDB account repository.
+- Do not couple domain models, services, or CLI code to `MongoSettings`, `AsyncMongoClient`, `MongoExecutor`, or any infrastructure type.
 
 ## Testing Guidance
 
@@ -95,33 +107,37 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
 - Shared fixtures, factories, and fakes live under `tests/`. `tests/factories/posting.py` and `tests/fakes/posting_repo.py` support posting service tests.
-- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, `AccountService`, `JournalService`, and `PostingService`.
+- Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, `AccountService`, `JournalService`, `PostingService`, and MongoDB infrastructure behavior.
 - Journal schema tests cover `JournalLine` and `JournalEntry` validation.
 - Journal DTO tests cover the journal input and view models.
 - Journal service tests cover create, get, list, account validation, domain validation, and journal-number allocation workflows.
 - Posting schema tests cover `LedgerPosting` validation.
 - Posting DTO tests cover `PostingViewModel`.
 - Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
-- There are no concrete storage, reporting, or user-facing CLI workflow tests yet.
-- Settings tests live under `src/pyledger/config/tests/`.
 - MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
-- `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture backed by `TestSettings`.
-- `tests/fixtures/mongo.py` provides `mongo_connection` (session-scoped) and `clean_db` fixtures for future integration tests.
-- `tests/conftest.py` registers all fixture modules and provides an `isolate_settings_cache` autouse fixture that clears `get_settings.cache_clear()` before and after every test.
+- MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
+- There are no journal or posting storage adapter tests, reporting tests, or user-facing CLI workflow tests yet.
+- Settings tests live under `src/pyledger/config/tests/`.
+- `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture backed by `TestSettings` and the
+  `isolate_settings_cache` autouse fixture that clears `get_settings.cache_clear()` before and after every test.
+- `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed integration tests.
+- `src/pyledger/conftest.py` registers all fixture modules.
 
 ## Error Handling
 
 - `pyledger.shared.errors` is the shared error boundary.
 - `ErrorCode`, `AppError`, `ValidationAppError`, and `FieldViolation` are the stable public error types.
 - Pydantic validation is translated through `pydantic_error()` and `get_field_violations()`.
+- `AppError.storage_unavailable()` and `AppError.storage_timeout()` are the storage-specific error constructors.
 - CLI wording belongs in the CLI layer, not in shared errors.
 - Keep `AppError` as the only exception type that should cross a service boundary.
 - Reconcile `cli/constants/errors.py` and `cli/formatters/error_fmt.py` with the shared error model before relying on them in new code.
 
 ## Service And Repository Boundaries
 
-- `AccountRepo`, `JournalRepo`, and `PostingRepo` are abstract contracts only.
-- There is no concrete repository implementation in the repository today.
+- `AccountRepo`, `JournalRepo`, and `PostingRepo` are the repository contracts.
+- `MongoAccountRepo` is the concrete MongoDB account repository implementation.
+- There is no concrete journal or posting repository implementation in the repository today.
 - Service methods that talk to repos remain async.
 - Services should orchestrate domain objects and repositories, not render terminal output.
 - CLI code should consume DTOs or view models, not repository implementations or domain internals.

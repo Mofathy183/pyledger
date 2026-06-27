@@ -17,6 +17,7 @@ The architectural goals are:
 
 ```text
 src/pyledger/
+├── conftest.py
 ├── __init__.py
 ├── main.py
 ├── cli/
@@ -46,11 +47,18 @@ src/pyledger/
 │   ├── __init__.py
 │   └── mongo/
 │       ├── __init__.py
+│       ├── account/
+│       │   ├── __init__.py
+│       │   ├── document.py
+│       │   ├── repository.py
+│       │   └── tests/
 │       ├── connection.py
-│       ├── documents/
-│       │   └── __init__.py
-│       ├── repositories/
-│       │   └── __init__.py
+│       ├── error_translation.py
+│       ├── shared/
+│       │   ├── __init__.py
+│       │   ├── document.py
+│       │   ├── repository.py
+│       │   └── tests/
 │       └── tests/
 ├── modules/
 │   ├── account/
@@ -98,13 +106,13 @@ src/pyledger/
 
 ```text
 tests/
-├── conftest.py
 ├── fixtures/
 ├── factories/
 └── fakes/
 ```
 
-There is no `src/pyledger/conftest.py`, no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
+There is a `src/pyledger/conftest.py` that registers the shared fixture plugins. There is no `tests/conftest.py`,
+no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
 
 ## Public Exports
 
@@ -114,6 +122,12 @@ There is no `src/pyledger/conftest.py`, no `tests/helpers.py`, and no `src/pyled
   `JournalLineInput`, `JournalLineViewModel`, and `JournalViewModel`.
 - `src/pyledger/cli/constants/__init__.py` re-exports `ERRORS`, `HINTS`, and `FIELD_LABELS`.
 - `src/pyledger/modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
+- `src/pyledger/config/__init__.py` re-exports `get_settings`, `Settings`, `TestSettings`, and `MongoSettings`.
+- `src/pyledger/infrastructure/mongo/__init__.py` re-exports `MongoConnection`, `connect`, and `disconnect`.
+- `src/pyledger/infrastructure/mongo/account/__init__.py` re-exports `AccountDocument` and `MongoAccountRepo`.
+- `src/pyledger/infrastructure/mongo/shared/__init__.py` re-exports `TimestampedDocument` and `MongoExecutor`.
+- `src/pyledger/shared/errors/__init__.py` re-exports `ErrorCode`, `FieldViolation`, `AppError`,
+  `ValidationAppError`, `pydantic_error`, `PYDANTIC_CODES`, and `get_field_violations`.
 - `src/pyledger/cli/formatters/__init__.py`, `src/pyledger/shared/__init__.py`, and `src/pyledger/__init__.py` are empty today.
 
 ## Dependency Direction
@@ -124,10 +138,11 @@ The live dependency direction is:
 main.py -> cli.app -> cli.commands -> cli.formatters -> modules.*.dtos/schemas/services -> shared.*
 modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors + peer services when needed
 modules.*.schemas -> shared.rule + shared.errors
+src/pyledger/conftest.py -> tests/fixtures/*
 shared.* -> stdlib + pydantic
 tests -> public modules + tests/fixtures + tests/factories + tests/fakes
 config.* -> pydantic-settings + stdlib
-infrastructure.mongo.* -> config.* + pymongo
+infrastructure.mongo.* -> config.* + pymongo + beanie + shared.errors
 ```
 
 Important boundary rules:
@@ -181,7 +196,8 @@ Current state:
 - `Settings` loads from `PYLEDGER_` environment variables and an optional `.env` file.
 - `TestSettings` loads from `PYLEDGER_TEST_` environment variables and an optional `.env.test` file.
 - `MongoSettings` is nested inside both settings models and carries `uri` and `db` fields.
-- `get_settings()` uses `lru_cache`; the cache is cleared in `tests/conftest.py` before and after every test via `isolate_settings_cache`.
+- `get_settings()` uses `lru_cache`; the cache is cleared in `tests/fixtures/settings.py` before and after every
+  test via `isolate_settings_cache`.
 
 ### Infrastructure Layer
 
@@ -200,14 +216,18 @@ Current state:
 
 - `connect()` creates an `AsyncMongoClient`, verifies connectivity with a ping, and returns a `MongoConnection`.
 - `disconnect()` closes the client held by a `MongoConnection`.
-- `infrastructure/mongo/documents/` and `infrastructure/mongo/repositories/` are empty packages reserved for future ODM documents and concrete repository adapters.
-- No concrete repository implementations exist yet.
+- `infrastructure/mongo/shared/` provides `TimestampedDocument`, `MongoExecutor`, and the shared MongoDB error
+  translation helper.
+- `infrastructure/mongo/account/` provides `AccountDocument` and the concrete `MongoAccountRepo` implementation.
+- `infrastructure/mongo/tests/` and `infrastructure/mongo/account/tests/` cover the MongoDB connection helpers and the
+  account repository adapter.
 
 Boundary rules:
 
 - Infrastructure code must not import from `cli/` or `modules/`.
 - Domain models must not import from `infrastructure/`.
 - `connect()` and `disconnect()` accept `MongoSettings`; they do not access `get_settings()` directly.
+- The Mongo infrastructure layer should not couple services to `AsyncMongoClient` or other storage-driver types.
 
 ### Feature Modules
 
@@ -547,6 +567,11 @@ The error system is split between shared domain errors and CLI presentation.
 - `FieldViolation`
 - Pydantic translation helpers
 
+The shared error model also includes storage-specific helpers such as
+`AppError.storage_unavailable()` and `AppError.storage_timeout()` so
+MongoDB connection failures can cross the repository boundary as
+structured application errors.
+
 This layer provides stable error identity and structured context.
 
 ### CLI Error Rendering
@@ -583,8 +608,8 @@ Current examples:
 
 ## Test Architecture
 
-Testing currently focuses on domain behavior, shared error translation, shared rules, and account/journal/posting
-service workflows.
+Testing currently focuses on domain behavior, shared error translation, shared rules, account/journal/posting service
+workflows, and MongoDB infrastructure behavior.
 
 Current coverage:
 
@@ -616,12 +641,16 @@ Current test organization:
 The root `tests/` package provides shared fixtures, factories, and fake repository implementations rather than test
 cases.
 
+`src/pyledger/conftest.py` registers the shared fixture modules.
 `tests/fakes/journal_repo.py` provides an in-memory `JournalRepo` that issues journal numbers sequentially for service
 tests.
 `tests/fakes/posting_repo.py` provides an in-memory `PostingRepo` for posting-service tests.
 `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 
-There are no tests for concrete storage, reporting, or end-user CLI commands yet.
+`src/pyledger/infrastructure/mongo/tests/` and `src/pyledger/infrastructure/mongo/account/tests/` cover the MongoDB
+connection helpers and account repository adapter.
+
+There are no reporting or end-user CLI workflow tests yet.
 
 ## Application Flow
 
@@ -665,8 +694,10 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - `AccountRepo`, `JournalRepo`, and `PostingRepo` contracts.
 - Typed configuration layer (`Settings`, `TestSettings`, `MongoSettings`, `get_settings()`)
 - MongoDB connection bootstrap (`connect()`, `disconnect()`, `MongoConnection`)
+- MongoDB account repository adapter (`AccountDocument`, `MongoAccountRepo`, `MongoExecutor`)
 - Settings tests
 - MongoDB connection tests
+- MongoDB account repository tests
 
 ### Partial
 
@@ -681,8 +712,7 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 
 ### Planned
 
-- Concrete repository implementations.
-- Storage adapters.
+- Journal and posting storage adapters.
 - Trial balance reporting.
 - Account, journal, and posting CLI workflows.
 - Higher-level reports and historical views.

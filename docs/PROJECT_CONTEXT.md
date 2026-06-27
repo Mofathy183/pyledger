@@ -3,10 +3,10 @@
 ## Overview
 
 PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository is a
-feature-oriented domain prototype with a working account service, a working journal service, a working posting service,
-validated journal and posting models, journal and posting DTOs, journal and posting repository contracts, shared error
-translation, and Rich-based journal rendering. Storage-backed workflows, reporting, and operational CLI commands are not
-implemented yet.
+feature-oriented domain prototype with working account, journal, and posting services; validated journal and posting
+models; journal and posting DTOs; journal and posting repository contracts; shared error translation; Rich-based
+journal rendering; and a concrete MongoDB account repository plus its supporting infrastructure. Journal and posting
+storage workflows, reporting, and operational CLI commands are not implemented yet.
 
 ## Repository Shape
 
@@ -19,11 +19,15 @@ implemented yet.
   and schema/service tests.
 - `src/pyledger/modules/posting/` contains the immutable posting schema, the `PostingViewModel` DTO, the async
   repository contract, the implemented posting service, schema/DTO/service tests, and the empty `rule.py` scaffold.
+- `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error-translation
+  utilities, the MongoDB account document and repository, and infrastructure tests.
 - `src/pyledger/shared/` contains reusable validation helpers, utility code, and the shared error model.
+- `src/pyledger/conftest.py` registers the shared pytest fixture plugins.
 - `tests/` contains shared fixtures, factories, and fakes, not application test cases.
 - Module-local tests live under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
+- MongoDB infrastructure tests live under `src/pyledger/infrastructure/mongo/**/tests/`.
 
 ## Current State
 
@@ -36,14 +40,16 @@ implemented yet.
 - `JournalService` validates account references, allocates journal numbers, persists entries, and returns view models.
 - `LedgerPosting` is an immutable derived record with the same single-side amount rule.
 - `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
-- `PostingRepo` defines async persistence and lookup methods, but no concrete implementation exists.
-- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
-  retrieval by account or journal number. It is not yet wired into the CLI.
+- `JournalRepo` and `PostingRepo` define async persistence and lookup methods, but no concrete implementation exists.
+- `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`
+  for journal-to-posting workflows, but it is not yet wired into the CLI.
 - `cli/formatters/journal_fmt.py` renders journal view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
-- There is no persistent storage layer, trial balance, or reporting pipeline.
+- There is no persistent journal or posting storage layer, trial balance, or reporting pipeline.
 - `pyledger.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `PYLEDGER_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `PYLEDGER_TEST_` and `.env.test`.
-- `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle management. No concrete repository implementations exist yet.
+- `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle
+  management. `pyledger.infrastructure.mongo.shared` exposes `MongoExecutor` and `TimestampedDocument`, and
+  `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`.
 
 ## Accounting Model
 
@@ -131,6 +137,8 @@ balance pipeline or downstream reporting layer.
   Pydantic translation helpers.
 - `pydantic_error()` is used by schema validators to raise domain error codes through Pydantic.
 - `get_field_violations()` converts Pydantic validation output into stable `FieldViolation` records.
+- `AppError.storage_unavailable()` and `AppError.storage_timeout()` translate MongoDB connectivity failures into
+  structured application errors.
 - The CLI owns the user-facing message catalog in `cli/constants/errors.py` and the render path in
   `cli/formatters/error_fmt.py`.
 - The CLI error copy for invalid account names and unknown accounts is currently stale; it still mentions abbreviations
@@ -139,8 +147,8 @@ balance pipeline or downstream reporting layer.
 ## Testing
 
 - Pytest is configured to collect tests from `tests/` and `src/pyledger/`.
-- Root-level `tests/` contains `conftest.py`, `fixtures/`, `factories/`, and `fakes/`.
-- `tests/conftest.py` registers the fixture modules as pytest plugins.
+- Root-level `tests/` contains `fixtures/`, `factories/`, and `fakes/`.
+- `src/pyledger/conftest.py` registers the fixture modules as pytest plugins.
 - `tests/fakes/account_repo.py`, `tests/fakes/journal_repo.py`, and `tests/fakes/posting_repo.py` provide in-memory
   repository fakes for service tests.
 - The journal fake issues journal numbers sequentially and stores entries in memory.
@@ -148,7 +156,7 @@ balance pipeline or downstream reporting layer.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
 - Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation,
-  `AccountService`, `JournalService`, and `PostingService`.
+  `AccountService`, `JournalService`, `PostingService`, and MongoDB infrastructure behavior.
 - Journal schema tests cover `JournalLine` and `JournalEntry`.
 - Journal DTO tests cover `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and `JournalViewModel`.
 - Journal service tests cover create, get, list, account validation, domain validation, and journal-number allocation.
@@ -156,12 +164,14 @@ balance pipeline or downstream reporting layer.
 - Posting DTO tests cover `PostingViewModel`.
 - Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval.
 - `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
-- There are no storage, reporting, or CLI workflow tests yet.
-- Settings tests live under `src/pyledger/config/tests/`.
 - MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
-- `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture.
-- `tests/fixtures/mongo.py` provides `mongo_connection` and `clean_db` fixtures for future integration tests.
-- `tests/conftest.py` provides an `isolate_settings_cache` autouse fixture that clears the `get_settings` LRU cache before and after every test.
+- MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
+- `tests/fixtures/settings.py` provides the session-scoped `test_settings` fixture and the `isolate_settings_cache`
+  autouse fixture that clears the `get_settings` LRU cache before and after every test.
+- `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed
+  integration tests.
+- There are no reporting or CLI workflow tests yet.
+- Settings tests live under `src/pyledger/config/tests/`.
 - Posting service tests cover `post_journal_entry`, `get_postings_by_account`, and `get_postings_by_journal_number` workflows including duplicate-posting detection.
 
 ## Known Issues
@@ -169,13 +179,13 @@ balance pipeline or downstream reporting layer.
 - Alias support is not implemented anywhere in the active code path.
 - The CLI invalid-account-name and unknown-account messages are out of sync with the actual account-name validator and
   chart lookup behavior.
-- There are no storage-backed repositories or concrete adapters yet.
+- There is no journal or posting storage adapter yet.
 - There are no operational CLI commands yet.
 
 ## Long-Term Direction
 
-- Add concrete repository implementations behind the existing async contracts.
-- Add storage adapters and persistence tests.
+- Add journal and posting repository implementations behind the existing async contracts.
+- Add storage adapters and persistence tests for the remaining workflows.
 - Wire posting, journal, and account workflows into the CLI.
 - Build trial balance and reporting support from validated data.
 - Add import/export and integration surfaces once the core bookkeeping workflow is stable.

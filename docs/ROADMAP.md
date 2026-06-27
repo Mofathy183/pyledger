@@ -2,9 +2,8 @@
 
 ## Purpose
 
-This roadmap reflects the current implementation state of the repository and the remaining work needed to turn the
-code into a complete bookkeeping application. The order is intentional: finish the domain and service boundaries
-before adding storage, reporting, or integration layers.
+This roadmap lists the remaining work needed to turn the code into a complete bookkeeping application. The order is
+intentional: finish the domain and service boundaries before adding storage, reporting, or integration layers.
 
 ## Roadmap Principles
 
@@ -12,205 +11,45 @@ before adding storage, reporting, or integration layers.
 - Keep the domain independent of the CLI and Rich formatting.
 - Add infrastructure only after the accounting model is stable.
 - Prefer small, testable increments.
-- Do not mark a phase complete unless the code exists in the repository and is coherent with the surrounding modules.
+- Do not mark a work item complete unless the code exists in the repository and is coherent with the surrounding modules.
 
-## Current Status
+## Remaining Work
 
-- Completed: project bootstrap, shared validation rules, shared error model, account model basics, chart-of-accounts
-  basics, journal line validation, journal entry validation, journal DTOs, journal repository contract, journal
-  service workflows, derived posting model, posting DTOs, posting repository contract, posting service workflows,
-  posting service tests, Typer/Rich scaffolding, journal rendering, account service, and journal/posting domain schema
-  tests.
-- Partial: CLI error formatting, CLI error presentation constants, and CLI command wiring.
-- Not started: concrete storage, trial balance reporting, historical reports, and import/export surfaces.
-- Removed: alias support is not a tracked roadmap item in the current codebase.
+- Reconcile the CLI account-name error copy with the active validator wording.
+- Wire operational account, journal, and posting commands into the CLI.
+- Implement storage adapters for the journal and posting repository contracts.
+- Add persistence and integration tests for the remaining storage adapters.
+- Add trial balance, reporting, and historical views.
+- Add import/export and external integration surfaces.
 
-## Phase 0: Project Bootstrap
+## Workstreams
 
-### Status
-
-Completed.
-
-### Completed Work
-
-- UV-based project setup.
-- Source-layout package structure.
-- Ruff configuration.
-- Pytest configuration and fixtures.
-- Ty configuration.
-- Typer application bootstrap.
-- Rich console and theme scaffolding.
-- Initial project documentation.
-
-## Phase 1: Shared Domain Infrastructure
-
-### Status
-
-Completed.
-
-### Completed Work
-
-- `clean_account_name()`.
-- `account_lookup_key()`.
-- `is_valid_line_amounts()`.
-- `ErrorCode`.
-- `AppError` and `ValidationAppError`.
-- Pydantic-to-domain error translation helpers.
-- Shared rule tests.
-
-## Phase 2: Account Domain Basics
-
-### Status
-
-Completed.
-
-### Completed Work
-
-- `AccountCategory`.
-- `Account`.
-- `ChartOfAccounts`.
-- Unique account-code validation.
-- Unique canonical-name validation.
-- Case-insensitive canonical name lookup.
-- Direct code lookup.
-- Account schema tests for the implemented behavior.
-
-### Removed Items
-
-- Alias support on `Account`.
-- Alias-aware uniqueness checks in `ChartOfAccounts`.
-- A `resolve()` method on `ChartOfAccounts`.
-- Alias-oriented test expectations.
-
-## Phase 3: Journal Domain Validation
-
-### Status
-
-Completed.
-
-### Completed Work
-
-- `JournalLine` validation.
-- `JournalEntry` validation and computed totals.
-- Balance enforcement.
-- Future-date rejection.
-- Minimum line-count validation.
-- Journal domain schema tests.
-
-## Phase 4: Posting Domain Model
-
-### Status
-
-Completed.
-
-### Completed Work
-
-- `LedgerPosting`.
-- Frozen posting records.
-- Single-side posting validation.
-- `PostingViewModel`.
-- `PostingRepo` contract.
-- Posting-domain schema tests.
-- Posting DTO tests.
-
-## Phase 5: Service Layer Completion
-
-### Status
-
-Completed.
-
-### Completed Work
-
-- `AccountService`.
-- `AccountRepo`.
-- `JournalRepo`.
-- `PostingRepo`.
-- DTOs for account, journal, and posting workflows.
-- Journal service create, get, and list workflows.
-- Journal and posting service tests.
-- `PostingService` with `post_journal_entry()`, `get_postings_by_account()`, `get_postings_by_journal_number()`
-- `PostingViewModel` DTO
-- `PostingRepo` contract
-- `FakePostingRepo` in-memory fake
-- Service-level tests for posting workflows
-
-## Phase 6: CLI Presentation Layer
-
-### Status
-
-Partial.
-
-### Completed Work
-
-- Root Typer application.
-- `journal` command group scaffold.
-- Rich console setup.
-- Theme detection and style definitions.
-- Journal entry formatter.
-- CLI error catalog and error formatter modules.
-
-### Partial Work
+### CLI Presentation
 
 - Reconcile CLI error copy with the shared error model and active validators.
-- Account commands.
-- Journal entry commands.
-- Posting inspection commands.
-- Trial balance commands.
-- CLI tests for user-facing behavior.
+- Add account, journal, and posting commands.
+- Add CLI tests for user-facing behavior.
 
-## Phase 7: Concrete Storage
+### Storage
 
-### Status
+- Implement journal and posting repository adapters.
+- Add MongoDB ODM document models for the remaining collections.
+- Add serialization and deserialization for domain models.
+- Add storage-level uniqueness enforcement where needed.
+- Add integration tests for the remaining repository adapters.
 
-Partial.
+### Reporting
 
-### Completed Work
+- Add trial balance calculation.
+- Add account balance summaries.
+- Add historical report views.
+- Add future financial statement support.
 
-- MongoDB connection bootstrap (`connect()`, `disconnect()`, `MongoConnection`).
-- Typed configuration layer (`Settings`, `TestSettings`, `MongoSettings`, `get_settings()`).
-- Environment-separated configuration (production `PYLEDGER_` prefix, test `PYLEDGER_TEST_` prefix).
-- MongoDB connection lifecycle tests.
-- Settings tests with LRU cache isolation.
-- `infrastructure/mongo/documents/` and `infrastructure/mongo/repositories/` reserved as empty packages.
+### Integrations
 
-### Remaining Work
-
-- Concrete repository implementations for `AccountRepo`, `JournalRepo`, and `PostingRepo`.
-- MongoDB ODM document models.
-- Serialization and deserialization for domain models.
-- Storage-level uniqueness enforcement.
-- Integration tests for concrete repository adapters.
-
-## Phase 8: Trial Balance and Reporting
-
-### Status
-
-Not started.
-
-### Expected Scope
-
-- Trial balance calculation.
-- Account balance summaries.
-- Historical report views.
-- Future financial statement support.
-
-## Phase 9: Import/Export and Integrations
-
-### Status
-
-Not started.
-
-### Expected Scope
-
-- CSV or structured import/export.
-- Machine-readable output formats.
-- External integration surfaces.
-
-## Known Issues
-
-- The CLI account-name error copy is still ahead of the validator wording and should be reconciled.
-- There are no storage-backed repositories, no operational CLI commands, and no reporting pipeline yet.
-- No concrete storage-backed repository adapters exist yet.
+- Add CSV or structured import/export.
+- Add machine-readable output formats.
+- Add external integration surfaces.
 
 ## Success Criteria
 
