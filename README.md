@@ -36,14 +36,14 @@ connection and error-translation helpers.
 - Journal service workflows for create, get, and list, including journal-number allocation.
 - Immutable LedgerPosting model with the same single-side posting rule.
 - Async repository contracts for accounts, journals, and postings.
-- MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and a concrete
-  MongoDB account repository.
+- MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and concrete
+  MongoDB account and journal repositories.
 - Shared validation helpers for account-name normalization and line-amount checks.
 - Shared error model and Pydantic error translation helpers.
 - Rich journal entry and journal list formatting helpers.
 - Typer application bootstrap with a `journal` command group scaffold.
 - Domain and service tests for account, journal, posting, and shared error behavior.
-- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account repository.
+- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account and journal repositories.
 
 ### Partial or Scaffolded
 
@@ -54,7 +54,7 @@ connection and error-translation helpers.
 
 ### Planned
 
-- Concrete storage adapters for journal and posting workflows.
+- Concrete storage adapter for posting workflows.
 - Trial balance and reporting support.
 - Operational CLI workflows for accounts, journals, and postings.
 - Import/export and integration surfaces.
@@ -225,8 +225,8 @@ cp .env.test.example .env.test
 - Journal DTOs, repository contract, and service workflows.
 - LedgerPosting model and posting service workflows.
 - Shared validation helpers and shared error translation.
-- MongoDB connection lifecycle helpers, error translation, timestamped documents, and a concrete MongoDB account
-  repository.
+- MongoDB connection lifecycle helpers, error translation, timestamped documents, and concrete MongoDB account and
+  journal repositories.
 - Typed configuration layer with isolated test settings.
 - Rich journal formatting helpers.
 - Typer application bootstrap and journal command group scaffold.
@@ -238,7 +238,7 @@ cp .env.test.example .env.test
 - CLI error formatter and CLI error catalog modules.
 - `modules/journal/rule.py`.
 - `modules/posting/rule.py`.
-- Concrete storage adapters for journal and posting workflows.
+- Concrete storage adapter for posting workflows.
 - Operational CLI commands beyond the journal group scaffold.
 
 ### Planned
@@ -249,9 +249,9 @@ cp .env.test.example .env.test
 
 ## Roadmap
 
-The next milestones are to add concrete journal and posting storage adapters and wire operational account, journal, and
-posting CLI workflows into the Typer app. After that, the project can move toward trial balance reporting, historical
-views, and import/export support.
+The next milestones are to add a concrete posting storage adapter and wire operational account, journal, and posting
+CLI workflows into the Typer app. After that, the project can move toward trial balance reporting, historical views,
+and import/export support.
 
 ## Design Principles
 
