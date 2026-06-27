@@ -8,6 +8,12 @@ test using delete_many({}) so that indexes are preserved across the
 session. Indexes must be preserved because beanie_init is session-scoped
 and will not re-create them after a drop.
 
+The ``counters`` collection used by ``MongoJournalRepo.next_journal_number()``
+is not a Beanie-registered document collection and does not exist until the
+first counter call. Once created, it appears in ``list_collection_names()``
+and is truncated by ``clean_db`` along with all other collections, so counter
+tests always start from a predictable state.
+
 Session teardown (inside mongo_connection) drops all collections once
 after the final test so the database is empty when pytest exits.
 Dropping at teardown is safe because no further tests will run.
@@ -19,6 +25,7 @@ from beanie import init_beanie
 from pyledger.config import TestSettings
 from pyledger.infrastructure.mongo import connect, disconnect
 from pyledger.infrastructure.mongo.account import AccountDocument
+from pyledger.infrastructure.mongo.journal import JournalDocument
 
 # ---------------------------------------------------------------------------
 # All Beanie document models registered in this session.
@@ -26,6 +33,7 @@ from pyledger.infrastructure.mongo.account import AccountDocument
 # ---------------------------------------------------------------------------
 DOCUMENT_MODELS = [
     AccountDocument,
+    JournalDocument,
 ]
 
 
@@ -79,6 +87,7 @@ async def clean_db(beanie_init, mongo_connection):
     can access collections directly:
 
         raw = await clean_db["accounts"].find_one({"code": "1001"})
+        raw = await clean_db["journal_entries"].find_one({"journal_number": 1})
     """
     db = mongo_connection.db
     for name in await db.list_collection_names():
