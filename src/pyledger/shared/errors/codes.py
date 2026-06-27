@@ -55,6 +55,7 @@ class ErrorCode(StrEnum):
     INVALID_LINE_AMOUNTS = "journal.invalid_line_amounts"
     UNBALANCED_ENTRY = "journal.unbalanced"
     UNKNOWN_JOURNAL_ENTRY = "journal.unknown_entry"
+    DUPLICATE_JOURNAL_NUMBER = "journal.duplicate_number"
 
     # ── Posting domain ─────────────────────────────────────────────────────
     JOURNAL_ALREADY_POSTED = "posting.already_posted"
