@@ -1,8 +1,9 @@
 # PyLedger
 
 PyLedger is a Python CLI bookkeeping application built around double-entry accounting. It focuses on domain modeling,
-validation, and service-layer workflows rather than storage or reporting. The codebase is intentionally structured as
-an educational, architecture-first prototype for exploring how bookkeeping rules can be enforced in Python.
+validation, service-layer workflows, and a small MongoDB infrastructure layer rather than reporting. The codebase is
+intentionally structured as an educational, architecture-first prototype for exploring how bookkeeping rules can be
+enforced in Python.
 
 ## Overview
 
@@ -17,8 +18,9 @@ The project is useful as a reference for:
 - keeping service orchestration independent of terminal presentation,
 - and demonstrating how Clean Architecture boundaries can be applied in a Python CLI project.
 
-The current implementation is deliberately limited. It validates account and journal data, provides service workflows
-for account and journal operations, and exposes repository contracts for future persistence adapters.
+The current implementation is deliberately limited. It validates account, journal, and posting data; provides service
+workflows for account, journal, and posting operations; and includes a MongoDB account repository plus the related
+connection and error-translation helpers.
 
 ## Current Features
 
@@ -34,25 +36,25 @@ for account and journal operations, and exposes repository contracts for future 
 - Journal service workflows for create, get, and list, including journal-number allocation.
 - Immutable LedgerPosting model with the same single-side posting rule.
 - Async repository contracts for accounts, journals, and postings.
+- MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and a concrete
+  MongoDB account repository.
 - Shared validation helpers for account-name normalization and line-amount checks.
 - Shared error model and Pydantic error translation helpers.
 - Rich journal entry and journal list formatting helpers.
 - Typer application bootstrap with a `journal` command group scaffold.
 - Domain and service tests for account, journal, posting, and shared error behavior.
+- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account repository.
 
 ### Partial or Scaffolded
 
 - CLI error formatting and message catalog modules exist, but no live command path uses them yet.
 - `src/pyledger/modules/journal/rule.py` is an empty scaffold.
-- `src/pyledger/modules/posting/dtos.py` is an empty scaffold.
 - `src/pyledger/modules/posting/rule.py` is an empty scaffold.
-- `src/pyledger/modules/posting/service.py` is a commented scaffold, not executable workflow code.
 - The CLI has no operational account, journal, or posting commands beyond the root app and journal group scaffold.
 
 ### Planned
 
-- Concrete storage adapters behind the repository contracts.
-- Posting DTOs and posting service workflows.
+- Concrete storage adapters for journal and posting workflows.
 - Trial balance and reporting support.
 - Operational CLI workflows for accounts, journals, and postings.
 - Import/export and integration surfaces.
@@ -79,8 +81,8 @@ Services
 Domain Models
  ↓
 Repository Contracts
- ↓
-Storage Adapters (future)
+↓
+Storage Adapters (remaining)
 ```
 
 ## Repository Structure
@@ -96,6 +98,7 @@ Storage Adapters (future)
 ├── pyproject.toml
 ├── src/
 │   └── pyledger/
+│       ├── conftest.py
 │       ├── main.py
 │       ├── cli/
 │       │   ├── app.py
@@ -111,6 +114,19 @@ Storage Adapters (future)
 │       │   └── theme/
 │       │       ├── detection.py
 │       │       └── styles.py
+│       ├── infrastructure/
+│       │   └── mongo/
+│       │       ├── account/
+│       │       │   ├── document.py
+│       │       │   ├── repository.py
+│       │       │   └── tests/
+│       │       ├── connection.py
+│       │       ├── error_translation.py
+│       │       ├── shared/
+│       │       │   ├── document.py
+│       │       │   ├── repository.py
+│       │       │   └── tests/
+│       │       └── tests/
 │       ├── modules/
 │       │   ├── account/
 │       │   │   ├── dtos.py
@@ -145,7 +161,6 @@ Storage Adapters (future)
 │           │   └── translators.py
 │           └── tests/
 └── tests/
-    ├── conftest.py
     ├── factories/
     ├── fakes/
     └── fixtures/
@@ -164,11 +179,15 @@ Storage Adapters (future)
 ## Development Setup
 
 ```bash
-uv sync
+uv sync --dev
 ```
 
 ```bash
-pytest
+pytest -m unit
+```
+
+```bash
+pytest -m integration
 ```
 
 ```bash
@@ -194,6 +213,7 @@ cp .env.test.example .env.test
 
 - `.env` contains settings for local development.
 - `.env.test` contains settings used by the test suite.
+- Test settings use nested environment variables such as `PYLEDGER_TEST_MONGO__URI` and `PYLEDGER_TEST_MONGO__DB`.
 - The test database should be separate from the development database to avoid accidental data loss.
 
 ## Current Project Status
@@ -203,34 +223,35 @@ cp .env.test.example .env.test
 - Account domain model, chart-of-accounts model, DTOs, repository contract, and service workflows.
 - Journal line and journal entry validation.
 - Journal DTOs, repository contract, and service workflows.
-- LedgerPosting model.
+- LedgerPosting model and posting service workflows.
 - Shared validation helpers and shared error translation.
+- MongoDB connection lifecycle helpers, error translation, timestamped documents, and a concrete MongoDB account
+  repository.
+- Typed configuration layer with isolated test settings.
 - Rich journal formatting helpers.
 - Typer application bootstrap and journal command group scaffold.
 - Account, journal, posting, and shared error tests.
+- MongoDB connection and repository tests.
 
 ### Partial
 
 - CLI error formatter and CLI error catalog modules.
 - `modules/journal/rule.py`.
-- `modules/posting/dtos.py`.
 - `modules/posting/rule.py`.
-- `modules/posting/service.py`.
+- Concrete storage adapters for journal and posting workflows.
 - Operational CLI commands beyond the journal group scaffold.
 
 ### Planned
 
-- Concrete repository implementations and storage adapters.
-- Posting service workflows and posting DTOs.
 - Trial balance and reporting support.
 - Operational account, journal, and posting CLI commands.
 - Import/export and integration surfaces.
 
 ## Roadmap
 
-The next milestones are to add concrete storage adapters behind the existing repository contracts, complete the posting
-DTO and service layer, and wire operational CLI workflows into the Typer app. After that, the project can move toward
-trial balance reporting, historical views, and import/export support.
+The next milestones are to add concrete journal and posting storage adapters and wire operational account, journal, and
+posting CLI workflows into the Typer app. After that, the project can move toward trial balance reporting, historical
+views, and import/export support.
 
 ## Design Principles
 
