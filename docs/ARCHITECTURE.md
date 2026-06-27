@@ -54,6 +54,11 @@ src/pyledger/
 │       │   └── tests/
 │       ├── connection.py
 │       ├── error_translation.py
+│       ├── journal/
+│       │   ├── __init__.py
+│       │   ├── document.py
+│       │   ├── repository.py
+│       │   └── tests/
 │       ├── shared/
 │       │   ├── __init__.py
 │       │   ├── document.py
@@ -125,6 +130,8 @@ no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
 - `src/pyledger/config/__init__.py` re-exports `get_settings`, `Settings`, `TestSettings`, and `MongoSettings`.
 - `src/pyledger/infrastructure/mongo/__init__.py` re-exports `MongoConnection`, `connect`, and `disconnect`.
 - `src/pyledger/infrastructure/mongo/account/__init__.py` re-exports `AccountDocument` and `MongoAccountRepo`.
+- `src/pyledger/infrastructure/mongo/journal/__init__.py` re-exports `JournalDocument`, `JournalLineSubDocument`,
+  and `MongoJournalRepo`.
 - `src/pyledger/infrastructure/mongo/shared/__init__.py` re-exports `TimestampedDocument` and `MongoExecutor`.
 - `src/pyledger/shared/errors/__init__.py` re-exports `ErrorCode`, `FieldViolation`, `AppError`,
   `ValidationAppError`, `pydantic_error`, `PYDANTIC_CODES`, and `get_field_violations`.
@@ -219,8 +226,10 @@ Current state:
 - `infrastructure/mongo/shared/` provides `TimestampedDocument`, `MongoExecutor`, and the shared MongoDB error
   translation helper.
 - `infrastructure/mongo/account/` provides `AccountDocument` and the concrete `MongoAccountRepo` implementation.
-- `infrastructure/mongo/tests/` and `infrastructure/mongo/account/tests/` cover the MongoDB connection helpers and the
-  account repository adapter.
+- `infrastructure/mongo/journal/` provides `JournalDocument`, `JournalLineSubDocument`, and the concrete
+  `MongoJournalRepo` implementation.
+- `infrastructure/mongo/tests/`, `infrastructure/mongo/account/tests/`, and `infrastructure/mongo/journal/tests/`
+  cover the MongoDB connection helpers and the account and journal repository adapters.
 
 Boundary rules:
 
@@ -462,7 +471,7 @@ The posting model is responsible for:
 
 ## Repository Architecture
 
-Repository abstractions currently exist only as contracts.
+Repository abstractions exist as contracts, and the journal contract now has a concrete MongoDB adapter.
 
 Implemented contracts:
 
@@ -470,9 +479,13 @@ Implemented contracts:
 - `JournalRepo`
 - `PostingRepo`
 
+Implemented adapters:
+
+- `MongoJournalRepo`
+
 Not yet implemented:
 
-- any storage-backed repository adapter
+- any posting storage-backed repository adapter
 
 Architectural intent:
 
@@ -510,6 +523,8 @@ Current shape:
 - `AccountService` is complete end to end.
 - `JournalService` is complete end to end for create, get, and list workflows.
 - `PostingService` is implemented end to end for journal-to-posting derivation, duplicate-posting prevention, and retrieval by account or journal number.
+- `MongoJournalRepo` is implemented end to end for journal persistence, lookup, list, and journal-number allocation.
+  Duplicate journal-number collisions translate to `ErrorCode.DUPLICATE_JOURNAL_NUMBER`.
 
 ## DTO Architecture
 
@@ -533,9 +548,11 @@ Current journal support is split across five layers:
 3. `JournalService` validates account references, allocates journal numbers, creates `JournalEntry`, persists it,
    fetches entries, and returns view models.
 4. `JournalRepo` is the async persistence boundary used by the service.
-5. `journal_fmt.py` renders view models for terminal output.
+5. `MongoJournalRepo` persists and reconstructs journal entries in MongoDB, translating duplicate journal-number
+   collisions to `ErrorCode.DUPLICATE_JOURNAL_NUMBER`.
+6. `journal_fmt.py` renders view models for terminal output.
 
-There is no journal storage adapter and no CLI command that creates or lists journal entries yet.
+There is no CLI command that creates or lists journal entries yet.
 
 ## Posting Architecture
 
@@ -647,8 +664,13 @@ tests.
 `tests/fakes/posting_repo.py` provides an in-memory `PostingRepo` for posting-service tests.
 `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 
-`src/pyledger/infrastructure/mongo/tests/` and `src/pyledger/infrastructure/mongo/account/tests/` cover the MongoDB
-connection helpers and account repository adapter.
+`tests/fixtures/journal.py` provides journal domain fixtures, a `MongoJournalRepo` fixture, and a stub that lets unit
+tests construct `JournalDocument` without Beanie initialization.
+`tests/fixtures/mongo.py` registers `JournalDocument` with Beanie and truncates the `counters` collection used by
+`MongoJournalRepo.next_journal_number()`.
+`src/pyledger/infrastructure/mongo/tests/`, `src/pyledger/infrastructure/mongo/account/tests/`, and
+`src/pyledger/infrastructure/mongo/journal/tests/` cover the MongoDB connection helpers and the account and journal
+repository adapters.
 
 There are no reporting or end-user CLI workflow tests yet.
 
@@ -695,15 +717,18 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - Typed configuration layer (`Settings`, `TestSettings`, `MongoSettings`, `get_settings()`)
 - MongoDB connection bootstrap (`connect()`, `disconnect()`, `MongoConnection`)
 - MongoDB account repository adapter (`AccountDocument`, `MongoAccountRepo`, `MongoExecutor`)
+- MongoDB journal repository adapter (`JournalDocument`, `JournalLineSubDocument`, `MongoJournalRepo`)
 - Settings tests
 - MongoDB connection tests
 - MongoDB account repository tests
+- MongoDB journal repository tests
 
 ### Partial
 
 - CLI error formatting.
 - CLI error presentation constants.
 - CLI command wiring beyond the journal group scaffold.
+- Posting repository adapter.
 
 ### Scaffold Only
 
@@ -712,7 +737,7 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 
 ### Planned
 
-- Journal and posting storage adapters.
+- Posting storage adapter.
 - Trial balance reporting.
 - Account, journal, and posting CLI workflows.
 - Higher-level reports and historical views.
@@ -723,8 +748,8 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - Alias support is not implemented.
 - The CLI invalid-account-name and unknown-account copy still mentions abbreviations and aliases, which does not match
   the active validator or chart lookup behavior.
-- There is no concrete storage implementation.
-- There is no journal or posting storage adapter.
+- There is no concrete posting storage implementation.
+- There is no posting storage adapter.
 - There is no trial balance or reporting pipeline.
 - `PostingService` is implemented, but it is not yet wired into the CLI.
 - `modules/posting/rule.py` is still an empty scaffold.

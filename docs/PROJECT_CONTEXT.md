@@ -5,8 +5,8 @@
 PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository is a
 feature-oriented domain prototype with working account, journal, and posting services; validated journal and posting
 models; journal and posting DTOs; journal and posting repository contracts; shared error translation; Rich-based
-journal rendering; and a concrete MongoDB account repository plus its supporting infrastructure. Journal and posting
-storage workflows, reporting, and operational CLI commands are not implemented yet.
+journal rendering; and concrete MongoDB account and journal repositories plus their supporting infrastructure.
+Posting storage workflows, reporting, and operational CLI commands are not implemented yet.
 
 ## Repository Shape
 
@@ -20,7 +20,7 @@ storage workflows, reporting, and operational CLI commands are not implemented y
 - `src/pyledger/modules/posting/` contains the immutable posting schema, the `PostingViewModel` DTO, the async
   repository contract, the implemented posting service, schema/DTO/service tests, and the empty `rule.py` scaffold.
 - `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error-translation
-  utilities, the MongoDB account document and repository, and infrastructure tests.
+  utilities, the MongoDB account and journal documents and repositories, and infrastructure tests.
 - `src/pyledger/shared/` contains reusable validation helpers, utility code, and the shared error model.
 - `src/pyledger/conftest.py` registers the shared pytest fixture plugins.
 - `tests/` contains shared fixtures, factories, and fakes, not application test cases.
@@ -37,19 +37,24 @@ storage workflows, reporting, and operational CLI commands are not implemented y
 - `JournalLine` enforces account normalization and debit/credit exclusivity.
 - `JournalEntry` enforces minimum line count, positive journal number, supported posting dates, and balanced totals.
 - `JournalRepo` defines async save, lookup, list, and journal-number allocation methods.
+- `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
 - `JournalService` validates account references, allocates journal numbers, persists entries, and returns view models.
 - `LedgerPosting` is an immutable derived record with the same single-side amount rule.
 - `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
-- `JournalRepo` and `PostingRepo` define async persistence and lookup methods, but no concrete implementation exists.
+- `MongoJournalRepo` is the concrete journal repository adapter and maps duplicate journal-number collisions to
+  `ErrorCode.DUPLICATE_JOURNAL_NUMBER`.
+- `JournalRepo` and `PostingRepo` define async persistence and lookup methods, but only the journal side has a concrete
+  implementation today.
 - `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`
   for journal-to-posting workflows, but it is not yet wired into the CLI.
 - `cli/formatters/journal_fmt.py` renders journal view models.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
-- There is no persistent journal or posting storage layer, trial balance, or reporting pipeline.
+- There is no persistent posting storage layer, trial balance, or reporting pipeline.
 - `pyledger.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `PYLEDGER_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `PYLEDGER_TEST_` and `.env.test`.
 - `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle
-  management. `pyledger.infrastructure.mongo.shared` exposes `MongoExecutor` and `TimestampedDocument`, and
-  `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`.
+  management. `pyledger.infrastructure.mongo.shared` exposes `MongoExecutor` and `TimestampedDocument`,
+  `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`, and
+  `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
 
 ## Accounting Model
 
@@ -166,10 +171,14 @@ balance pipeline or downstream reporting layer.
 - `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 - MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
 - MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
+- MongoDB journal repository tests live under `src/pyledger/infrastructure/mongo/journal/tests/`.
 - `tests/fixtures/settings.py` provides the session-scoped `test_settings` fixture and the `isolate_settings_cache`
   autouse fixture that clears the `get_settings` LRU cache before and after every test.
+- `tests/fixtures/journal.py` provides journal domain fixtures, a `MongoJournalRepo` fixture, and a document-settings
+  stub for unit tests that construct `JournalDocument` instances without Beanie initialization.
 - `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed
-  integration tests.
+  integration tests. It also registers `JournalDocument` with Beanie and truncates the `counters` collection used by
+  `MongoJournalRepo.next_journal_number()`.
 - There are no reporting or CLI workflow tests yet.
 - Settings tests live under `src/pyledger/config/tests/`.
 - Posting service tests cover `post_journal_entry`, `get_postings_by_account`, and `get_postings_by_journal_number` workflows including duplicate-posting detection.
@@ -179,13 +188,13 @@ balance pipeline or downstream reporting layer.
 - Alias support is not implemented anywhere in the active code path.
 - The CLI invalid-account-name and unknown-account messages are out of sync with the actual account-name validator and
   chart lookup behavior.
-- There is no journal or posting storage adapter yet.
+- There is no posting storage adapter yet.
 - There are no operational CLI commands yet.
 
 ## Long-Term Direction
 
-- Add journal and posting repository implementations behind the existing async contracts.
-- Add storage adapters and persistence tests for the remaining workflows.
+- Add a posting repository implementation behind the existing async contract.
+- Add storage adapters and persistence tests for the remaining workflow.
 - Wire posting, journal, and account workflows into the CLI.
 - Build trial balance and reporting support from validated data.
 - Add import/export and integration surfaces once the core bookkeeping workflow is stable.

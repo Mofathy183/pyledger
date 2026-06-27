@@ -22,7 +22,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `src/pyledger/main.py` is the console entry point.
 - `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and the journal command scaffold.
 - `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error translation,
-  the MongoDB account document and repository, and MongoDB infrastructure tests.
+  the MongoDB account and journal documents and repositories, and MongoDB infrastructure tests.
 - `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account, journal, and posting each have implemented service layers.
 - `src/pyledger/shared/` contains reusable validation helpers, utility functions, and the shared error model.
 
@@ -54,12 +54,16 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `JournalService` exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`, plus private mapping helpers.
 - `JournalService._to_entry_view()` is a normal instance method, not a broken staticmethod.
 - `JournalRepo` defines `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
+- `MongoJournalRepo` implements the journal repository contract against MongoDB and maps duplicate journal-number
+  collisions to `ErrorCode.DUPLICATE_JOURNAL_NUMBER`.
 - `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
 - `pyledger.infrastructure.mongo` exposes `MongoConnection`, `connect()`, and `disconnect()`.
 - `pyledger.infrastructure.mongo.shared` exposes `TimestampedDocument`, `MongoExecutor`, and the Mongo error translator.
 - `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`.
+- `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
 - `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
 - `modules/journal/repo.py` is an implemented async repository contract.
+- `infrastructure/mongo/journal/` contains the concrete MongoDB journal repository implementation.
 - `modules/journal/rule.py` remains an empty scaffold.
 - `modules/posting/dtos.py` defines `PostingViewModel`. `modules/posting/rule.py` remains an empty scaffold.
 - `modules/journal/__init__.py` re-exports the journal repo, service, and DTOs.
@@ -99,6 +103,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and the `MongoConnection` dataclass for MongoDB lifecycle management.
 - `pyledger.infrastructure.mongo.shared` provides `MongoExecutor`, `TimestampedDocument`, and error translation helpers.
 - `pyledger.infrastructure.mongo.account` provides the concrete MongoDB account repository.
+- `pyledger.infrastructure.mongo.journal` provides the concrete MongoDB journal repository.
 - Do not couple domain models, services, or CLI code to `MongoSettings`, `AsyncMongoClient`, `MongoExecutor`, or any infrastructure type.
 
 ## Testing Guidance
@@ -106,7 +111,9 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Domain tests live beside the feature code under `src/pyledger/modules/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
 - Shared rule tests live under `src/pyledger/shared/tests/`.
-- Shared fixtures, factories, and fakes live under `tests/`. `tests/factories/posting.py` and `tests/fakes/posting_repo.py` support posting service tests.
+- Shared fixtures, factories, and fakes live under `tests/`. `tests/fixtures/journal.py` and `tests/fixtures/mongo.py`
+  provide journal and MongoDB fixtures, while `tests/factories/posting.py` and `tests/fakes/posting_repo.py` support
+  posting service tests.
 - Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation, `AccountService`, `JournalService`, `PostingService`, and MongoDB infrastructure behavior.
 - Journal schema tests cover `JournalLine` and `JournalEntry` validation.
 - Journal DTO tests cover the journal input and view models.
@@ -116,11 +123,14 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Posting service tests cover journal-to-posting derivation, duplicate-posting prevention, and posting retrieval workflows.
 - MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
 - MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
-- There are no journal or posting storage adapter tests, reporting tests, or user-facing CLI workflow tests yet.
+- MongoDB journal repository tests live under `src/pyledger/infrastructure/mongo/journal/tests/`.
+- There are no posting storage adapter tests, reporting tests, or user-facing CLI workflow tests yet.
 - Settings tests live under `src/pyledger/config/tests/`.
 - `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture backed by `TestSettings` and the
   `isolate_settings_cache` autouse fixture that clears `get_settings.cache_clear()` before and after every test.
-- `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed integration tests.
+- `tests/fixtures/journal.py` provides journal-domain fixtures, a `MongoJournalRepo` fixture, and a stub for `JournalDocument`.
+- `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed
+  integration tests. It also registers `JournalDocument` and truncates the journal counter collection between tests.
 - `src/pyledger/conftest.py` registers all fixture modules.
 
 ## Error Handling
@@ -137,7 +147,8 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 
 - `AccountRepo`, `JournalRepo`, and `PostingRepo` are the repository contracts.
 - `MongoAccountRepo` is the concrete MongoDB account repository implementation.
-- There is no concrete journal or posting repository implementation in the repository today.
+- `MongoJournalRepo` is the concrete MongoDB journal repository implementation.
+- There is no concrete posting repository implementation in the repository today.
 - Service methods that talk to repos remain async.
 - Services should orchestrate domain objects and repositories, not render terminal output.
 - CLI code should consume DTOs or view models, not repository implementations or domain internals.
