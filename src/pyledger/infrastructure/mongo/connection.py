@@ -1,9 +1,10 @@
 """MongoDB connection lifecycle helpers.
 
 Provides the application's MongoDB connection bootstrap and shutdown
-functions. This module sits at the infrastructure boundary and is
-intended to support future concrete repository implementations without
-introducing database concerns into services, domain models, or CLI code.
+functions. This module sits at the infrastructure boundary and is used
+by the concrete MongoDB account repository and the MongoDB test
+fixtures without introducing database concerns into services, domain
+models, or CLI code.
 """
 
 from dataclasses import dataclass

@@ -7,7 +7,7 @@ driver-specific exceptions.
 
 DuplicateKeyError is intentionally excluded — callers that need to
 differentiate code vs name_key violations must catch it before entering
-this context. See MongoAccountRepo._translate_duplicate() for the pattern.
+this context. See MongoAccountRepo._on_duplicate() for the pattern.
 
 Exception hierarchy (most-specific first):
     ServerSelectionTimeoutError
@@ -59,7 +59,7 @@ async def translate_mongo_errors() -> AsyncGenerator[None]:
             async with translate_mongo_errors():
                 await doc.insert()
         except DuplicateKeyError as exc:
-            raise self._translate_duplicate(exc, account) from exc
+            raise self._on_duplicate(exc, account) from exc
 
     DuplicateKeyError is a PyMongoError subclass. If a write method
     enters this context without the outer DuplicateKeyError catch, a
