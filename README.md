@@ -120,6 +120,10 @@ Storage Adapters (remaining)
 │       │       │   ├── document.py
 │       │       │   ├── repository.py
 │       │       │   └── tests/
+│       │       ├── journal/
+│       │       │   ├── document.py
+│       │       │   ├── repository.py
+│       │       │   └── tests/
 │       │       ├── connection.py
 │       │       ├── error_translation.py
 │       │       ├── shared/
