@@ -26,6 +26,7 @@ from pyledger.config import TestSettings
 from pyledger.infrastructure.mongo import connect, disconnect
 from pyledger.infrastructure.mongo.account import AccountDocument
 from pyledger.infrastructure.mongo.journal import JournalDocument
+from pyledger.infrastructure.mongo.posting import PostingDocument
 
 # ---------------------------------------------------------------------------
 # All Beanie document models registered in this session.
@@ -34,6 +35,7 @@ from pyledger.infrastructure.mongo.journal import JournalDocument
 DOCUMENT_MODELS = [
     AccountDocument,
     JournalDocument,
+    PostingDocument,
 ]
 
 
@@ -88,6 +90,7 @@ async def clean_db(beanie_init, mongo_connection):
 
         raw = await clean_db["accounts"].find_one({"code": "1001"})
         raw = await clean_db["journal_entries"].find_one({"journal_number": 1})
+        raw = await clean_db["postings"].find_one({"journal_number": 1})
     """
     db = mongo_connection.db
     for name in await db.list_collection_names():
