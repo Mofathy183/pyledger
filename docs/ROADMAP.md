@@ -17,8 +17,7 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 - Reconcile the CLI account-name error copy with the active validator wording.
 - Wire operational account, journal, and posting commands into the CLI.
-- Implement a storage adapter for the posting repository contract.
-- Add persistence and integration tests for the posting storage adapter.
+- Add storage-level uniqueness enforcement where needed.
 - Add trial balance, reporting, and historical views.
 - Add import/export and external integration surfaces.
 
@@ -32,11 +31,7 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 ### Storage
 
-- Implement a posting repository adapter.
-- Add a MongoDB ODM document model for the remaining collection.
-- Add serialization and deserialization for domain models.
 - Add storage-level uniqueness enforcement where needed.
-- Add integration tests for the posting repository adapter.
 
 ### Reporting
 
