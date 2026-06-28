@@ -4,4 +4,5 @@ pytest_plugins = [
     "tests.fixtures.journal",
     "tests.fixtures.mongo",
     "tests.fixtures.settings",
+    "tests.fixtures.services",
 ]
