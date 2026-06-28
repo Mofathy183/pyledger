@@ -19,8 +19,8 @@ The project is useful as a reference for:
 - and demonstrating how Clean Architecture boundaries can be applied in a Python CLI project.
 
 The current implementation is deliberately limited. It validates account, journal, and posting data; provides service
-workflows for account, journal, and posting operations; and includes a MongoDB account repository plus the related
-connection and error-translation helpers.
+workflows for account, journal, and posting operations; and includes MongoDB account, journal, and posting
+repositories plus the related connection and error-translation helpers.
 
 ## Current Features
 
@@ -37,13 +37,13 @@ connection and error-translation helpers.
 - Immutable LedgerPosting model with the same single-side posting rule.
 - Async repository contracts for accounts, journals, and postings.
 - MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and concrete
-  MongoDB account and journal repositories.
+  MongoDB account, journal, and posting repositories.
 - Shared validation helpers for account-name normalization and line-amount checks.
 - Shared error model and Pydantic error translation helpers.
 - Rich journal entry and journal list formatting helpers.
 - Typer application bootstrap with a `journal` command group scaffold.
 - Domain and service tests for account, journal, posting, and shared error behavior.
-- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account and journal repositories.
+- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account, journal, and posting repositories.
 
 ### Partial or Scaffolded
 
@@ -54,7 +54,6 @@ connection and error-translation helpers.
 
 ### Planned
 
-- Concrete storage adapter for posting workflows.
 - Trial balance and reporting support.
 - Operational CLI workflows for accounts, journals, and postings.
 - Import/export and integration surfaces.
@@ -82,8 +81,10 @@ Domain Models
  ↓
 Repository Contracts
 ↓
-Storage Adapters (remaining)
+Storage Adapters
 ```
+
+MongoDB storage adapters are implemented for accounts, journals, and postings.
 
 ## Repository Structure
 
@@ -121,6 +122,10 @@ Storage Adapters (remaining)
 │       │       │   ├── repository.py
 │       │       │   └── tests/
 │       │       ├── journal/
+│       │       │   ├── document.py
+│       │       │   ├── repository.py
+│       │       │   └── tests/
+│       │       ├── posting/
 │       │       │   ├── document.py
 │       │       │   ├── repository.py
 │       │       │   └── tests/
@@ -229,8 +234,8 @@ cp .env.test.example .env.test
 - Journal DTOs, repository contract, and service workflows.
 - LedgerPosting model and posting service workflows.
 - Shared validation helpers and shared error translation.
-- MongoDB connection lifecycle helpers, error translation, timestamped documents, and concrete MongoDB account and
-  journal repositories.
+- MongoDB connection lifecycle helpers, error translation, timestamped documents, and concrete MongoDB account,
+  journal, and posting repositories.
 - Typed configuration layer with isolated test settings.
 - Rich journal formatting helpers.
 - Typer application bootstrap and journal command group scaffold.
@@ -242,7 +247,6 @@ cp .env.test.example .env.test
 - CLI error formatter and CLI error catalog modules.
 - `modules/journal/rule.py`.
 - `modules/posting/rule.py`.
-- Concrete storage adapter for posting workflows.
 - Operational CLI commands beyond the journal group scaffold.
 
 ### Planned
@@ -253,9 +257,8 @@ cp .env.test.example .env.test
 
 ## Roadmap
 
-The next milestones are to add a concrete posting storage adapter and wire operational account, journal, and posting
-CLI workflows into the Typer app. After that, the project can move toward trial balance reporting, historical views,
-and import/export support.
+The next milestones are to wire operational account, journal, and posting CLI workflows into the Typer app. After
+that, the project can move toward trial balance reporting, historical views, and import/export support.
 
 ## Design Principles
 
