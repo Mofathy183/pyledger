@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from pyledger.cli.console import console
-from pyledger.cli.formatters.base import console_panel, console_rule, console_table
+from pyledger.cli.render import console_panel, console_rule, console_table
 from pyledger.modules.journal.dtos import JournalLineViewModel, JournalViewModel
 
 # ---------------------------------------------------------------------------

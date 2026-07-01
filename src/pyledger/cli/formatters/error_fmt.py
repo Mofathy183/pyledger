@@ -2,9 +2,13 @@
 Validation error formatting for the PyLedger CLI.
 
 Translates Pydantic ValidationError instances and service-layer
-AppError instances into display-ready structures and renders them as
-Rich panels. Hint and field label resolution happens here — these are
-CLI-only presentation concerns and must not live in shared/.
+AppError instances into display-ready structures and builds Rich
+renderable from them. Hint and field label resolution happens here —
+these are CLI-only presentation concerns and must not live in shared/.
+
+This module performs no terminal I/O. It has no knowledge of the
+global console singleton — printing is the responsibility of the
+command layer, which owns output timing and side effects.
 """
 
 from collections.abc import Mapping
@@ -12,10 +16,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
+from rich.panel import Panel
 
-from pyledger.cli.console import console
 from pyledger.cli.constants import ERRORS, FIELD_LABELS, HINTS
-from pyledger.cli.formatters.base import console_panel
+from pyledger.cli.render import console_panel
 from pyledger.shared.errors import AppError
 from pyledger.shared.errors.codes import ErrorCode
 
@@ -47,7 +51,7 @@ def _resolve_field(error: Mapping[str, Any]) -> str:
     Returns:
         A display-ready field name.
     """
-    loc = ".".join(map(str, error.get("loc", [])))
+    loc = ".".join(map(str, error.get("loc", ())))
     if loc:
         return loc
     return FIELD_LABELS.get(error["type"], "unknown")
@@ -60,9 +64,9 @@ def format_validation_errors(exc: ValidationError) -> list[FormattedError]:
         exc: The ValidationError raised during model construction.
 
     Returns:
-        List of FormattedError ready for print_errors().
+        List of FormattedError ready for build_error_panels().
     """
-    result = []
+    result: list[FormattedError] = []
     for error in exc.errors():
         error_type = error["type"]
         detail = ERRORS.get(error_type, ERRORS[ErrorCode.UNKNOWN_ERROR])
@@ -91,7 +95,7 @@ def format_app_error(exc: AppError) -> FormattedError:
         exc: The AppError raised by a service method.
 
     Returns:
-        A single FormattedError ready for print_errors().
+        A single FormattedError ready for build_error_panels().
     """
     detail = ERRORS.get(exc.code, ERRORS[ErrorCode.UNKNOWN_ERROR])
     hint = HINTS.get(exc.code, HINTS[ErrorCode.UNKNOWN_ERROR])
@@ -105,8 +109,20 @@ def format_app_error(exc: AppError) -> FormattedError:
     )
 
 
-def print_errors(errors: list[FormattedError]) -> None:
-    """Render a list of FormattedErrors as Rich panels to the terminal."""
+def build_error_panels(errors: list[FormattedError]) -> list[Panel]:
+    """Build Rich panels from a list of FormattedErrors.
+
+    Pure transformation from FormattedError(s) to Rich Panel(s) — no
+    terminal output. Callers (command handlers) are responsible for
+    passing the returned panels to console.print().
+
+    Args:
+        errors: The formatted errors to render.
+
+    Returns:
+        One Rich Panel per FormattedError, in the same order.
+    """
+    panels: list[Panel] = []
     for error in errors:
         content = (
             f"Field:   {error.field}\n"
@@ -114,4 +130,5 @@ def print_errors(errors: list[FormattedError]) -> None:
             f"Code:    [warning]{error.code}[/]\n\n"
             f"Hint:\n  [info]{error.hint}[/]"
         )
-        console.print(console_panel(content, title="Validation Error", style="error"))
+        panels.append(console_panel(content, title="Validation Error", style="error"))
+    return panels
