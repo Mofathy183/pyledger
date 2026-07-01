@@ -18,8 +18,8 @@ from typing import Any
 from pydantic import ValidationError
 from rich.panel import Panel
 
-from pyledger.cli.constants import ERRORS, FIELD_LABELS, HINTS
-from pyledger.cli.render import console_panel
+from pyledger.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
+from pyledger.cli.shared.ui import panel
 from pyledger.shared.errors import AppError
 from pyledger.shared.errors.codes import ErrorCode
 
@@ -130,5 +130,5 @@ def build_error_panels(errors: list[FormattedError]) -> list[Panel]:
             f"Code:    [warning]{error.code}[/]\n\n"
             f"Hint:\n  [info]{error.hint}[/]"
         )
-        panels.append(console_panel(content, title="Validation Error", style="error"))
+        panels.append(panel(content, title="Validation Error", style="error"))
     return panels

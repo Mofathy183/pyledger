@@ -41,4 +41,4 @@ def _detect_color_level() -> str:
     return ""
 
 
-_BG = _detect_color_level()
+BG_COLOR = _detect_color_level()

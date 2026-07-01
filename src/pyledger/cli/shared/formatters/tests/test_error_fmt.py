@@ -2,8 +2,8 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError
 from rich.panel import Panel
 
-from pyledger.cli.constants import ERRORS, FIELD_LABELS, HINTS
-from pyledger.cli.formatters.error_fmt import (
+from pyledger.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
+from pyledger.cli.shared.formatters import (
     FormattedError,
     build_error_panels,
     format_app_error,
