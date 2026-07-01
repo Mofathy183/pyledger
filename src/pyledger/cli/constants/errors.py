@@ -29,6 +29,9 @@ valid as the domain model evolves. Dynamic field paths such as
 ``lines.0.account`` or ``lines.3.credit_amount`` resolve to the same
 error type regardless of their position, so no updates to this map
 are required when the model structure changes.
+
+Every member of ``ErrorCode`` must have an entry here -- this is
+verified by ``cli/constants/tests/test_errors.py``.
 """
 ERRORS: ErrorMap = {
     #
@@ -37,6 +40,10 @@ ERRORS: ErrorMap = {
     ErrorCode.UNKNOWN_ERROR: ErrorDetail(
         code=ErrorCode.UNKNOWN_ERROR,
         message="An unexpected validation error occurred.",
+    ),
+    ErrorCode.VALIDATION_ERROR: ErrorDetail(
+        code=ErrorCode.VALIDATION_ERROR,
+        message="One or more fields failed validation.",
     ),
     ErrorCode.REQUIRED_FIELD: ErrorDetail(
         code=ErrorCode.REQUIRED_FIELD,
@@ -49,6 +56,10 @@ ERRORS: ErrorMap = {
     ErrorCode.INVALID_DECIMAL: ErrorDetail(
         code=ErrorCode.INVALID_DECIMAL,
         message="A valid decimal amount is required.",
+    ),
+    ErrorCode.STRING_TYPE: ErrorDetail(
+        code=ErrorCode.STRING_TYPE,
+        message="This field must be text.",
     ),
     ErrorCode.STRING_TOO_SHORT: ErrorDetail(
         code=ErrorCode.STRING_TOO_SHORT,
@@ -90,18 +101,34 @@ ERRORS: ErrorMap = {
         message="The posting date is outside the supported accounting period.",
     ),
     #
-    # Account names
+    # Account domain
     #
     ErrorCode.INVALID_ACCOUNT_NAME: ErrorDetail(
         code=ErrorCode.INVALID_ACCOUNT_NAME,
-        message="Account names can only contain letters, spaces, commas, and '/'.",
+        message=(
+            "Account names must start with a letter and may otherwise contain "
+            "only letters, digits, spaces, and single separators (& - ' . /) "
+            "between words."
+        ),
     ),
     ErrorCode.UNKNOWN_ACCOUNT: ErrorDetail(
         code=ErrorCode.UNKNOWN_ACCOUNT,
         message="The referenced account does not exist in the chart of accounts.",
     ),
+    ErrorCode.DUPLICATE_ACCOUNT_CODE: ErrorDetail(
+        code=ErrorCode.DUPLICATE_ACCOUNT_CODE,
+        message="An account with this code already exists.",
+    ),
+    ErrorCode.DUPLICATE_ACCOUNT_NAME: ErrorDetail(
+        code=ErrorCode.DUPLICATE_ACCOUNT_NAME,
+        message="An account with this name already exists.",
+    ),
+    ErrorCode.ACCOUNT_HAS_POSTINGS: ErrorDetail(
+        code=ErrorCode.ACCOUNT_HAS_POSTINGS,
+        message="This account cannot be removed because it has ledger postings.",
+    ),
     #
-    # Journal lines
+    # Journal domain
     #
     ErrorCode.INVALID_LINE_AMOUNTS: ErrorDetail(
         code=ErrorCode.INVALID_LINE_AMOUNTS,
@@ -110,106 +137,34 @@ ERRORS: ErrorMap = {
             "not both and not neither."
         ),
     ),
-    #
-    # Journal entry
-    #
     ErrorCode.UNBALANCED_ENTRY: ErrorDetail(
         code=ErrorCode.UNBALANCED_ENTRY,
         message="The journal entry is not balanced. Total debits must equal total credits.",
     ),
-}
-
-"""
-User-facing resolution hints for validation errors.
-
-This module provides actionable guidance that helps users correct
-validation failures. Hints are intentionally kept separate from error
-messages so that message copy and resolution guidance can be updated
-independently.
-
-Like the error map, hints are keyed by error type rather than field
-name. This ensures hints remain valid as the domain model evolves and
-dynamic field paths such as ``lines.0.account`` are handled without
-any changes to this file.
-"""
-
-type HintMap = dict[str, str]
-"""
-Maps a validation error type to a plain-text resolution hint.
-
-Keys match the error type strings in ``ERRORS`` from. Values are plain text with no
-Rich markup. Markup is applied by the formatter at display time.
-"""
-
-
-HINTS: HintMap = {
-    #
-    # Generic validation
-    #
-    ErrorCode.UNKNOWN_ERROR: (
-        "An unexpected validation error occurred. Check the field value and try again."
+    ErrorCode.UNKNOWN_JOURNAL_ENTRY: ErrorDetail(
+        code=ErrorCode.UNKNOWN_JOURNAL_ENTRY,
+        message="No journal entry exists with that journal number.",
     ),
-    ErrorCode.REQUIRED_FIELD: "Provide a value for this field before continuing.",
-    ErrorCode.INVALID_NUMBER: (
-        "Enter a whole number for the journal entry, "
-        "or leave it blank and one will be assigned automatically."
-    ),
-    ErrorCode.INVALID_DECIMAL: "Enter a monetary amount such as 100 or 100.50.",
-    ErrorCode.STRING_TOO_SHORT: "Provide a longer value.",
-    ErrorCode.STRING_TOO_LONG: "Shorten the value and try again.",
-    ErrorCode.TOO_SHORT: "Provide at least the minimum number of items required.",
-    ErrorCode.TOO_LONG: "Remove items until the list meets the maximum allowed length.",
-    ErrorCode.GREATER_THAN: "Provide a value that is above the minimum allowed.",
-    ErrorCode.GREATER_THAN_EQUAL: (
-        "Provide a value that meets or exceeds the minimum allowed."
-    ),
-    ErrorCode.LESS_THAN_EQUAL: (
-        "Provide a value that does not exceed the allowed limit."
+    ErrorCode.DUPLICATE_JOURNAL_NUMBER: ErrorDetail(
+        code=ErrorCode.DUPLICATE_JOURNAL_NUMBER,
+        message="A journal entry with this journal number already exists.",
     ),
     #
-    # Posting date
+    # Posting domain
     #
-    ErrorCode.FUTURE_DATE: (
-        "Use today's date or a date in the past. "
-        "Leave it blank and today's date will be used automatically."
-    ),
-    ErrorCode.PAST_DATE: (
-        "Use a more recent posting date. "
-        "Dates before 2020 are outside the supported accounting period."
+    ErrorCode.JOURNAL_ALREADY_POSTED: ErrorDetail(
+        code=ErrorCode.JOURNAL_ALREADY_POSTED,
+        message="This journal entry has already been posted to the ledger.",
     ),
     #
-    # Account names
+    # Storage
     #
-    ErrorCode.INVALID_ACCOUNT_NAME: (
-        "Use the full account name or a recognised abbreviation, "
-        "such as Cash, Accounts Receivable, or A/R. "
-        "Numbers and special characters are not allowed."
+    ErrorCode.STORAGE_UNAVAILABLE: ErrorDetail(
+        code=ErrorCode.STORAGE_UNAVAILABLE,
+        message="The database could not be reached.",
     ),
-    ErrorCode.UNKNOWN_ACCOUNT: (
-        "This account does not exist in the chart of accounts. "
-        "Use an existing account name or alias, or add the account "
-        "to the chart of accounts before posting."
+    ErrorCode.STORAGE_TIMEOUT: ErrorDetail(
+        code=ErrorCode.STORAGE_TIMEOUT,
+        message="The database did not respond in time.",
     ),
-    #
-    # Journal lines
-    #
-    ErrorCode.INVALID_LINE_AMOUNTS: (
-        "Set either the debit amount or the credit amount to a value "
-        "greater than zero. A single line cannot carry both a debit and "
-        "a credit, and it cannot carry neither."
-    ),
-    #
-    # Journal entry
-    #
-    ErrorCode.UNBALANCED_ENTRY: (
-        "Check that the total of all debit amounts equals the total of "
-        "all credit amounts across every line in the entry."
-    ),
-}
-
-FIELD_LABELS: dict[str, str] = {
-    ErrorCode.UNBALANCED_ENTRY: "lines (balance)",
-    ErrorCode.INVALID_LINE_AMOUNTS: "lines (amounts)",
-    ErrorCode.FUTURE_DATE: "posting_date",
-    ErrorCode.DUPLICATE_ACCOUNT_CODE: "Account Code",
 }
