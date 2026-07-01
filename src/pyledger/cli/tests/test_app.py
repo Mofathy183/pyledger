@@ -40,6 +40,4 @@ class TestJournalSubcommandHelp:
 
         result = runner.invoke(app, ["journal", "--help"])
 
-        print(result)
-
         assert result.exit_code == 0
