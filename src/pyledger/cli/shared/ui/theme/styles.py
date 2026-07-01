@@ -8,7 +8,7 @@ imported without instantiating a console.
 
 from enum import Enum
 
-from .detection import _BG
+from .detection import BG_COLOR
 
 
 class ConsoleThemes(Enum):
@@ -38,20 +38,20 @@ class ConsoleThemes(Enum):
     into a Rich Theme instance.
     """
 
-    SUCCESS = f"bold green{_BG}"
-    ERROR = f"bold red{_BG}"
-    WARNING = f"italic #7a6200{_BG}"
-    INFO = f"italic #0f5a72{_BG}"
+    SUCCESS = f"bold green{BG_COLOR}"
+    ERROR = f"bold red{BG_COLOR}"
+    WARNING = f"italic #7a6200{BG_COLOR}"
+    INFO = f"italic #0f5a72{BG_COLOR}"
 
-    DEBIT = f"bold #5C4F4A{_BG}"
-    CREDIT = f"bold #8B6914{_BG}"
+    DEBIT = f"bold #5C4F4A{BG_COLOR}"
+    CREDIT = f"bold #8B6914{BG_COLOR}"
 
-    ASSETS = f"bold #547A95{_BG}"
-    LIABILITIES = f"bold #2a7a6e{_BG}"
-    EQUITY = f"bold #744577{_BG}"
+    ASSETS = f"bold #547A95{BG_COLOR}"
+    LIABILITIES = f"bold #2a7a6e{BG_COLOR}"
+    EQUITY = f"bold #744577{BG_COLOR}"
 
-    JOURNAL_ENTRIES = f"bold #5E0006{_BG}"
-    T_ACCOUNT = f"bold #462C7D{_BG}"
+    JOURNAL_ENTRIES = f"bold #5E0006{BG_COLOR}"
+    T_ACCOUNT = f"bold #462C7D{BG_COLOR}"
 
 
 THEME_MAP: dict[str, str] = {theme.name.lower(): theme.value for theme in ConsoleThemes}

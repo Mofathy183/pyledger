@@ -13,8 +13,7 @@ from rich.console import Group
 from rich.table import Table
 from rich.text import Text
 
-from pyledger.cli.console import console
-from pyledger.cli.render import console_panel, console_rule, console_table
+from pyledger.cli.shared.ui import console, panel, rule, table
 from pyledger.modules.journal.dtos import JournalLineViewModel, JournalViewModel
 
 # ---------------------------------------------------------------------------
@@ -84,20 +83,20 @@ def _build_lines_table(vm: JournalViewModel) -> Table:
     Returns:
         A configured Rich Table with all journal lines added.
     """
-    table = console_table(
+    t = table(
         ("Account", "left", "assets"),
         ("Debit", "right", "debit"),
         ("Credit", "right", "credit"),
     )
     for line in vm.lines:
         is_debit = _is_debit_line(line)
-        table.add_row(
+        t.add_row(
             line.account,
             _fmt_amount(line.debit_amount),
             _fmt_amount(line.credit_amount),
             style="debit" if is_debit else "credit",
         )
-    return table
+    return t
 
 
 # ---------------------------------------------------------------------------
@@ -122,11 +121,11 @@ def print_journal_entry(vm: JournalViewModel) -> None:
     content = Group(
         Text(f"Journal Entry  #  {vm.journal_number}", style="info"),
         Text(f"Posting Date:     {_fmt_posting_date(vm)}", style="info"),
-        console_rule(),
+        rule(),
         _build_lines_table(vm),
-        console_rule(),
+        rule(),
         Text(vm.description or "No description provided.", style="warning"),
-        console_rule(),
+        rule(),
         Text(
             f"Total Debit:   {vm.total_debits:>12,.2f}\n"
             f"Total Credit:  {vm.total_credits:>12,.2f}",
@@ -134,7 +133,7 @@ def print_journal_entry(vm: JournalViewModel) -> None:
         ),
     )
 
-    console.print(console_panel(content, title="Journal Entry"))
+    console.print(panel(content, title="Journal Entry"))
 
 
 def print_journal_list(entries: list[JournalViewModel]) -> None:
@@ -148,7 +147,7 @@ def print_journal_list(entries: list[JournalViewModel]) -> None:
     """
     if not entries:
         console.print(
-            console_panel(
+            panel(
                 Text("No journal entries found.", style="warning"),
                 title="Journal Entries",
                 style="warning",
@@ -156,7 +155,7 @@ def print_journal_list(entries: list[JournalViewModel]) -> None:
         )
         return
 
-    table = console_table(
+    t = table(
         ("#", "right", "info"),
         ("Date", "left", "info"),
         ("Description", "left", "warning"),
@@ -167,7 +166,7 @@ def print_journal_list(entries: list[JournalViewModel]) -> None:
 
     for vm in entries:
         is_balanced = vm.total_debits == vm.total_credits
-        table.add_row(
+        t.add_row(
             str(vm.journal_number),
             _fmt_posting_date(vm),
             vm.description or "—",
@@ -177,8 +176,8 @@ def print_journal_list(entries: list[JournalViewModel]) -> None:
         )
 
     console.print(
-        console_panel(
-            table,
+        panel(
+            t,
             title=f"Journal Entries  ({len(entries)} total)",
         )
     )

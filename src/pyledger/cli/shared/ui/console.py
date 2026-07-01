@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.traceback import install
 
-from pyledger.cli.theme.styles import THEME_MAP, ConsoleThemes
+from .theme import THEME_MAP, ConsoleThemes
 
 install(
     theme=THEME_MAP[ConsoleThemes.ERROR.name.lower()],

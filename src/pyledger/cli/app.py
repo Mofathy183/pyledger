@@ -22,7 +22,7 @@ import typer
 
 from pyledger.cli.bootstrap import build_context
 
-from .commands.journal_cmd import journal_app
+from .features.journal import journal_app
 
 app = typer.Typer(
     name="PyLedger",

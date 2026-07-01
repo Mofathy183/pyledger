@@ -24,7 +24,7 @@ type Justify = Literal[
 ]
 
 
-def console_panel(content, title: str, style: str = "success") -> Panel:
+def panel(content, title: str, style: str = "success") -> Panel:
     """Build a standard PyLedger panel.
 
     Args:
@@ -44,7 +44,7 @@ def console_panel(content, title: str, style: str = "success") -> Panel:
     )
 
 
-def console_rule(style: str = "success") -> Rule:
+def rule(style: str = "success") -> Rule:
     """Build a standard horizontal divider for panel sections.
 
     Args:
@@ -56,7 +56,7 @@ def console_rule(style: str = "success") -> Rule:
     return Rule(style=style)
 
 
-def console_table(*columns: tuple[str, Justify, str]) -> Table:
+def table(*columns: tuple[str, Justify, str]) -> Table:
     """Create a standard accounting table.
 
     Args:

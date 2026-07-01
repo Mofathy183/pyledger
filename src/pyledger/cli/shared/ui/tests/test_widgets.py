@@ -4,74 +4,74 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 
-from pyledger.cli.render.widgets import (
-    console_panel,
-    console_rule,
-    console_table,
+from pyledger.cli.shared.ui import (
+    panel,
+    rule,
+    table,
 )
 
 
 @pytest.mark.unit
 class TestConsolePanel:
     def test_builds_panel_with_default_configuration(self):
-        panel = console_panel("Hello", title="Success")
+        p = panel("Hello", title="Success")
 
-        assert isinstance(panel, Panel)
-        assert panel.title == "Success"
-        assert panel.style == "success"
-        assert panel.border_style == "success"
-        assert panel.padding == (1, 2)
+        assert isinstance(p, Panel)
+        assert p.title == "Success"
+        assert p.style == "success"
+        assert p.border_style == "success"
+        assert p.padding == (1, 2)
 
     def test_builds_panel_with_custom_style(self):
-        panel = console_panel(
+        p = panel(
             "Something went wrong",
             title="Error",
             style="error",
         )
 
-        assert panel.style == "error"
-        assert panel.border_style == "error"
+        assert p.style == "error"
+        assert p.border_style == "error"
 
 
 @pytest.mark.unit
 class TestConsoleRule:
     def test_builds_rule_with_default_style(self):
-        rule = console_rule()
+        r = rule()
 
-        assert isinstance(rule, Rule)
-        assert rule.style == "success"
+        assert isinstance(r, Rule)
+        assert r.style == "success"
 
     def test_builds_rule_with_custom_style(self):
-        rule = console_rule(style="warning")
+        r = rule(style="warning")
 
-        assert rule.style == "warning"
+        assert r.style == "warning"
 
 
 @pytest.mark.unit
 class TestConsoleTable:
     def test_builds_table_with_expected_configuration(self):
-        table = console_table(
+        t = table(
             ("Account", "left", "account"),
             ("Debit", "right", "debit"),
             ("Credit", "right", "credit"),
         )
 
-        assert isinstance(table, Table)
+        assert isinstance(t, Table)
 
-        assert table.box == box.SIMPLE
-        assert table.expand is True
-        assert len(table.columns) == 3
+        assert t.box == box.SIMPLE
+        assert t.expand is True
+        assert len(t.columns) == 3
 
     def test_adds_columns_in_order(self):
-        table = console_table(
+        t = table(
             ("Account", "left", "account"),
             ("Debit", "right", "debit"),
             ("Credit", "right", "credit"),
         )
 
-        account = table.columns[0]
-        debit = table.columns[1]
-        credit = table.columns[2]
+        account = t.columns[0]
+        debit = t.columns[1]
+        credit = t.columns[2]
 
         assert account.header == "Account"
         assert account.justify == "left"
@@ -86,9 +86,9 @@ class TestConsoleTable:
         assert credit.style == "credit"
 
     def test_returns_empty_table_when_no_columns_are_given(self):
-        table = console_table()
+        t = table()
 
-        assert isinstance(table, Table)
-        assert len(table.columns) == 0
-        assert table.expand is True
-        assert table.box == box.SIMPLE
+        assert isinstance(t, Table)
+        assert len(t.columns) == 0
+        assert t.expand is True
+        assert t.box == box.SIMPLE
