@@ -1,11 +1,11 @@
 """
-Shared Rich rendering helpers used across feature formatters.
+Generic Rich widget factories used across CLI formatters.
 
-These helpers produce consistent panels, rules, and table structures
-without duplicating Rich configuration in every formatter module.
-Every formatter in cli/formatters/ builds its Rich output through
-these three functions — no formatter constructs Panel, Rule, or Table
-directly.
+This module is a Rich toolkit for the CLI: it builds reusable panels,
+rules, and table shells without any knowledge of ViewModels, domain
+models, or business logic. No formatter in cli/formatters/ constructs
+Panel, Rule, or Table directly — every one builds through these three
+functions.
 """
 
 from typing import Literal
