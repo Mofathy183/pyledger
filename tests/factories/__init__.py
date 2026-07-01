@@ -5,6 +5,7 @@ from .account import (
     make_fake_account_repo,
     make_update_account_input,
 )
+from .cli import make_fake_cli_context
 from .journal import (
     make_create_journal_input,
     make_credit_line,
@@ -36,4 +37,5 @@ __all__ = [
     "make_create_journal_input",
     "make_fake_posting_repo",
     "make_posting_service",
+    "make_fake_cli_context",
 ]
