@@ -140,7 +140,7 @@ class TestFormatValidationAppError:
                     code=ErrorCode.STRING_TOO_SHORT,
                     value="A",
                 )
-            ]
+            ],
         )
 
         formatted = format_validation_app_error(error)
@@ -163,7 +163,7 @@ class TestFormatValidationAppError:
                     code=ErrorCode.UNKNOWN_ERROR,
                     value=ErrorCode.INVALID_ACCOUNT_NAME,
                 )
-            ]
+            ],
         )
 
         formatted = format_validation_app_error(error)
@@ -186,7 +186,7 @@ class TestFormatValidationAppError:
                     code=ErrorCode.UNKNOWN_ERROR,
                     value="not.a.real.error.code",
                 )
-            ]
+            ],
         )
 
         formatted = format_validation_app_error(error)
@@ -213,7 +213,7 @@ class TestFormatValidationAppError:
                     code=ErrorCode.UNKNOWN_ERROR,
                     value=ErrorCode.INVALID_ACCOUNT_NAME,
                 ),
-            ]
+            ],
         )
 
         formatted = format_validation_app_error(error)
