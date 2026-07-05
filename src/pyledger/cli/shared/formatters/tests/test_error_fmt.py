@@ -7,9 +7,15 @@ from pyledger.cli.shared.formatters import (
     FormattedError,
     build_error_panels,
     format_app_error,
+    format_validation_app_error,
     format_validation_errors,
 )
-from pyledger.shared.errors import AppError, ErrorCode
+from pyledger.shared.errors import (
+    AppError,
+    ErrorCode,
+    FieldViolation,
+    ValidationAppError,
+)
 
 
 @pytest.mark.unit
@@ -121,6 +127,104 @@ class TestFormatAppError:
         assert formatted.code == ErrorCode.UNKNOWN_ERROR
         assert formatted.message == ERRORS[ErrorCode.UNKNOWN_ERROR].message
         assert formatted.hint == HINTS[ErrorCode.UNKNOWN_ERROR]
+
+
+@pytest.mark.unit
+class TestFormatValidationAppError:
+    def test_formats_validation_app_error(self):
+        error = ValidationAppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            errors=[
+                FieldViolation(
+                    field="name",
+                    code=ErrorCode.STRING_TOO_SHORT,
+                    value="A",
+                )
+            ]
+        )
+
+        formatted = format_validation_app_error(error)
+
+        assert len(formatted) == 1
+
+        violation = formatted[0]
+
+        assert violation.field == "name"
+        assert violation.code == ErrorCode.STRING_TOO_SHORT
+        assert violation.message == ERRORS[ErrorCode.STRING_TOO_SHORT].message
+        assert violation.hint == HINTS[ErrorCode.STRING_TOO_SHORT]
+
+    def test_restores_domain_error_code_from_violation_value(self):
+        error = ValidationAppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            errors=[
+                FieldViolation(
+                    field="name",
+                    code=ErrorCode.UNKNOWN_ERROR,
+                    value=ErrorCode.INVALID_ACCOUNT_NAME,
+                )
+            ]
+        )
+
+        formatted = format_validation_app_error(error)
+
+        assert len(formatted) == 1
+
+        violation = formatted[0]
+
+        assert violation.field == "name"
+        assert violation.code == ErrorCode.INVALID_ACCOUNT_NAME
+        assert violation.message == ERRORS[ErrorCode.INVALID_ACCOUNT_NAME].message
+        assert violation.hint == HINTS[ErrorCode.INVALID_ACCOUNT_NAME]
+
+    def test_falls_back_to_unknown_error_when_value_is_not_known_error_code(self):
+        error = ValidationAppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            errors=[
+                FieldViolation(
+                    field="name",
+                    code=ErrorCode.UNKNOWN_ERROR,
+                    value="not.a.real.error.code",
+                )
+            ]
+        )
+
+        formatted = format_validation_app_error(error)
+
+        assert len(formatted) == 1
+
+        violation = formatted[0]
+
+        assert violation.code == ErrorCode.UNKNOWN_ERROR
+        assert violation.message == ERRORS[ErrorCode.UNKNOWN_ERROR].message
+        assert violation.hint == HINTS[ErrorCode.UNKNOWN_ERROR]
+
+    def test_formats_multiple_field_violations_in_order(self):
+        error = ValidationAppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            errors=[
+                FieldViolation(
+                    field="name",
+                    code=ErrorCode.STRING_TOO_SHORT,
+                    value="A",
+                ),
+                FieldViolation(
+                    field="category",
+                    code=ErrorCode.UNKNOWN_ERROR,
+                    value=ErrorCode.INVALID_ACCOUNT_NAME,
+                ),
+            ]
+        )
+
+        formatted = format_validation_app_error(error)
+
+        assert len(formatted) == 2
+
+        assert formatted[0].field == "name"
+        assert formatted[0].code == ErrorCode.STRING_TOO_SHORT
+
+        assert formatted[1].field == "category"
+        assert formatted[1].code == ErrorCode.INVALID_ACCOUNT_NAME
 
 
 @pytest.mark.unit

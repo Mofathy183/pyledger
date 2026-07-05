@@ -20,7 +20,7 @@ from rich.panel import Panel
 
 from pyledger.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
 from pyledger.cli.shared.ui import panel
-from pyledger.shared.errors import AppError
+from pyledger.shared.errors import AppError, ValidationAppError
 from pyledger.shared.errors.codes import ErrorCode
 
 
@@ -107,6 +107,54 @@ def format_app_error(exc: AppError) -> FormattedError:
         code=detail.code,
         hint=hint,
     )
+
+
+def format_validation_app_error(exc: ValidationAppError) -> list[FormattedError]:
+    """Convert a service-layer ValidationAppError into display-ready errors.
+
+    Mirrors format_validation_errors() for validation failures that
+    already arrived as FieldViolation records -- e.g. raised by a
+    service via ValidationAppError.validation() -- rather than as a
+    raw Pydantic ValidationError caught directly off model
+    construction.
+
+    get_field_violations() (shared/errors/translators.py) downgrades
+    any error type outside its PYDANTIC_CODES allow-list to
+    ErrorCode.UNKNOWN_ERROR, preserving the original domain code as a
+    plain string in FieldViolation.value. This is confirmed,
+    intentional behavior at the shared-error layer -- see
+    shared/errors/tests/test_translators.py, which locks it in -- not
+    a bug to fix there. This function resolves the real code back out
+    of `.value` when it names a known ErrorCode, so the CLI still
+    shows the actual message and hint for domain-raised violations
+    (e.g. account.invalid_name) instead of the generic unknown-error
+    fallback text.
+
+    Args:
+        exc: The ValidationAppError raised by a service method.
+
+    Returns:
+        One FormattedError per FieldViolation, in the same order,
+        ready for build_error_panels().
+    """
+    result: list[FormattedError] = []
+    for violation in exc.errors:
+        code = violation.code
+        if code == ErrorCode.UNKNOWN_ERROR and violation.value in ERRORS:
+            code = ErrorCode(violation.value)
+
+        detail = ERRORS.get(code, ERRORS[ErrorCode.UNKNOWN_ERROR])
+        hint = HINTS.get(code, HINTS[ErrorCode.UNKNOWN_ERROR])
+
+        result.append(
+            FormattedError(
+                field=violation.field,
+                message=detail.message,
+                code=detail.code,
+                hint=hint,
+            )
+        )
+    return result
 
 
 def build_error_panels(errors: list[FormattedError]) -> list[Panel]:
