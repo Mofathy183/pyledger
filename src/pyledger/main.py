@@ -1,52 +1,62 @@
 """Console-script entry point for the PyLedger CLI.
 
-This is the only place in the application that calls ``asyncio.run()``.
-It owns the single event loop for the entire CLI invocation and
-guarantees ``CliContext``'s resources are always released -- even if a
-command raises, and even on Click's normal ``SystemExit``-based exit
-path -- by running the whole Typer dispatch inside
-``async with build_context() as context: ...``.
-
-No command body, service, or repository may call ``asyncio.run()``
-anywhere else in the codebase. Everything reachable from ``main()`` runs
-on the single loop created here.
+This is the only place in the application that opens the CLI's single
+event loop, via ``start_blocking_portal()``. No command, service, or
+repository may create a second loop -- there is exactly one, for the
+life of the process.
 """
 
-import asyncio
+from anyio.from_thread import start_blocking_portal
 
 from pyledger.cli.app import app
 from pyledger.cli.bootstrap import build_context
+from pyledger.cli.context import CliContext
+from pyledger.cli.state import CliState
 
 
-async def _run() -> None:
-    """Build one ``CliContext`` for this invocation and guarantee cleanup.
+def run(context: CliContext, *, backend: str = "asyncio") -> None:
+    """Dispatch the Typer app against one ``CliContext`` and guarantee cleanup.
 
-    ``async with build_context() as context`` opens no resources by
-    itself -- ``build_context()`` performs no I/O -- but it guarantees
-    that ``context.aclose()`` runs when this block exits, whether
-    Typer's dispatch (``app(obj=context)``) returns normally, raises an
-    application exception, or exits via Click's normal
-    ``SystemExit``-based ``--help``/error handling. ``SystemExit`` is a
-    regular exception from the interpreter's perspective, so the
-    ``async with`` block's cleanup still runs before it propagates out
-    of ``_run()``.
+    Opens the CLI's single event loop on a background thread via
+    ``start_blocking_portal()`` and runs the full, synchronous Typer
+    dispatch (``app(obj=state)``) on the calling (main) thread.
+    ``CliState.call()`` is the only bridge a command may use to reach
+    ``context``'s async accessors.
 
-    The constructed context is passed to Typer via ``obj=``, so
-    ``cli.app.main_callback`` sees an already-populated ``ctx.obj`` and
-    does not construct a second, unmanaged ``CliContext`` of its own.
+    ``context.aclose()`` is guaranteed to run when this function returns
+    -- whether ``app(obj=state)`` returns normally, raises an application
+    exception, or exits via Click's normal ``SystemExit``-based
+    ``--help``/error handling.
+
+    Split out from ``main()`` so it can be exercised in tests against a
+    ``CliContext`` backed by fake repositories, without touching real
+    settings or MongoDB.
+
+    Args:
+        context: The ``CliContext`` for this invocation. Caller-owned;
+            this function does not construct one.
+        backend: The anyio backend to run the event loop on. Defaults to
+            ``"asyncio"``; tests may pass ``"trio"`` if ever needed.
     """
-    async with build_context() as context:
-        app(obj=context)
+    with start_blocking_portal(backend=backend) as portal:
+        state = CliState(context=context, portal=portal)
+        try:
+            app(obj=state)
+        finally:
+            # aclose() is async -- must run on the portal's loop, same
+            # as every other CliContext accessor.
+            portal.call(context.aclose)
 
 
 def main() -> None:
-    """Run the CLI inside a single asyncio event loop.
+    """Build the production ``CliContext`` and run the CLI.
 
-    Delegates to ``_run()``, the only coroutine this module defines, so
-    that ``asyncio.run()`` executes exactly once for the lifetime of the
-    process.
+    The only function in the codebase that calls ``build_context()``
+    with no explicit ``Settings`` -- meaning this is the only call site
+    that resolves real, environment-sourced configuration.
     """
-    asyncio.run(_run())
+    context = build_context()
+    run(context)
 
 
 if __name__ == "__main__":
