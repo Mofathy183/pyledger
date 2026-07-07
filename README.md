@@ -1,9 +1,9 @@
 # PyLedger
 
-PyLedger is a Python CLI bookkeeping application built around double-entry accounting. It focuses on domain modeling,
-validation, service-layer workflows, and a small MongoDB infrastructure layer rather than reporting. The codebase is
-intentionally structured as an educational, architecture-first prototype for exploring how bookkeeping rules can be
-enforced in Python.
+PyLedger is a Python CLI bookkeeping application built around double-entry accounting. It combines validated domain
+modeling, service-layer workflows, a MongoDB infrastructure layer, and a fully implemented Typer/Rich CLI, rather
+than reporting. The codebase is intentionally structured as an educational, architecture-first project for exploring
+how bookkeeping rules can be enforced in Python and exposed through a clean, layered command-line interface.
 
 ## Overview
 
@@ -18,9 +18,11 @@ The project is useful as a reference for:
 - keeping service orchestration independent of terminal presentation,
 - and demonstrating how Clean Architecture boundaries can be applied in a Python CLI project.
 
-The current implementation is deliberately limited. It validates account, journal, and posting data; provides service
-workflows for account, journal, and posting operations; and includes MongoDB account, journal, and posting
-repositories plus the related connection and error-translation helpers.
+The current implementation validates account, journal, and posting data; provides service workflows for account,
+journal, and posting operations; includes MongoDB account, journal, and posting repositories plus the related
+connection and error-translation helpers; and exposes all of it through a complete `account`/`journal`/`posting`
+CLI built on Typer and Rich. Reporting (trial balance, historical views) is the main area still deliberately out
+of scope — see `src/pyledger/cli/README.md` for full CLI architecture and `docs/ROADMAP.md` for what's next.
 
 ## Current Features
 
@@ -35,27 +37,29 @@ repositories plus the related connection and error-translation helpers.
 - Journal DTOs for service input and output contracts.
 - Journal service workflows for create, get, and list, including journal-number allocation.
 - Immutable LedgerPosting model with the same single-side posting rule.
+- Posting DTOs and posting service workflows for journal-to-posting derivation, duplicate-posting prevention, and
+  retrieval by account or journal number.
 - Async repository contracts for accounts, journals, and postings.
 - MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and concrete
   MongoDB account, journal, and posting repositories.
 - Shared validation helpers for account-name normalization and line-amount checks.
 - Shared error model and Pydantic error translation helpers.
-- Rich journal entry and journal list formatting helpers.
-- Typer application bootstrap with a `journal` command group scaffold.
+- A complete, feature-oriented CLI (`account`, `journal`, `posting` Typer command groups) with its own composition
+  root (`CliContext`, `CliState`), CLI-flag and interactive-prompt input paths, Rich-based formatters for every
+  command, and a shared error boundary that renders domain and validation failures as terminal panels. See
+  `src/pyledger/cli/README.md` for the full CLI architecture.
 - Domain and service tests for account, journal, posting, and shared error behavior.
+- CLI unit and integration tests for all three command groups, plus composition-root tests.
 - MongoDB infrastructure tests for the connection lifecycle and the MongoDB account, journal, and posting repositories.
 
 ### Partial or Scaffolded
 
-- CLI error formatting and message catalog modules exist, but no live command path uses them yet.
 - `src/pyledger/modules/journal/rule.py` is an empty scaffold.
 - `src/pyledger/modules/posting/rule.py` is an empty scaffold.
-- The CLI has no operational account, journal, or posting commands beyond the root app and journal group scaffold.
 
 ### Planned
 
 - Trial balance and reporting support.
-- Operational CLI workflows for accounts, journals, and postings.
 - Import/export and integration surfaces.
 
 ## Architecture
@@ -67,24 +71,35 @@ PyLedger follows Clean Architecture ideas in a lightweight form:
 - Services orchestrate validation and repository access.
 - Repository contracts define persistence boundaries.
 - Shared error types and validation helpers stay independent of the CLI.
+- The CLI is a thin, feature-oriented presentation layer over the service layer, with its own internal layering
+  (command → parser/prompt → handler → formatter) documented in `src/pyledger/cli/README.md`.
 
 The main validation boundary is in the feature modules. Pydantic models enforce structural rules, shared validation
 helpers normalize common inputs, and services perform cross-record checks such as account existence and journal-number
 allocation.
 
 ```text
-CLI
+User
  ↓
-Services
+Typer Command (cli/features/<feature>/command.py)
+ ↓
+Parser / Prompt
+ ↓
+Handler
+ ↓
+Service
  ↓
 Domain Models
  ↓
 Repository Contracts
-↓
-Storage Adapters
+ ↓
+Storage Adapters (MongoDB)
 ```
 
-MongoDB storage adapters are implemented for accounts, journals, and postings.
+MongoDB storage adapters are implemented for accounts, journals, and postings. The CLI bridges its synchronous
+Typer/Click dispatch onto this async stack through a single `BlockingPortal`, owned for the life of the process by
+`main.py`. Full CLI architecture — the composition root, async execution model, error handling, and layer-by-layer
+dependency rules — is documented in `src/pyledger/cli/README.md`.
 
 ## Repository Structure
 
@@ -103,18 +118,47 @@ MongoDB storage adapters are implemented for accounts, journals, and postings.
 │       ├── main.py
 │       ├── cli/
 │       │   ├── app.py
-│       │   ├── console.py
-│       │   ├── commands/
-│       │   │   └── journal_cmd.py
-│       │   ├── constants/
-│       │   │   └── errors.py
-│       │   ├── formatters/
-│       │   │   ├── base.py
-│       │   │   ├── error_fmt.py
-│       │   │   └── journal_fmt.py
-│       │   └── theme/
-│       │       ├── detection.py
-│       │       └── styles.py
+│       │   ├── bootstrap.py
+│       │   ├── context.py
+│       │   ├── state.py
+│       │   ├── features/
+│       │   │   ├── account/
+│       │   │   │   ├── command.py
+│       │   │   │   ├── parser.py
+│       │   │   │   ├── prompt.py
+│       │   │   │   ├── handler.py
+│       │   │   │   ├── formatter.py
+│       │   │   │   └── tests/
+│       │   │   ├── journal/
+│       │   │   │   ├── command.py
+│       │   │   │   ├── parser.py
+│       │   │   │   ├── prompt.py
+│       │   │   │   ├── handler.py
+│       │   │   │   ├── formatter.py
+│       │   │   │   └── tests/
+│       │   │   └── posting/
+│       │   │       ├── command.py
+│       │   │       ├── parser.py
+│       │   │       ├── prompt.py
+│       │   │       ├── handler.py
+│       │   │       ├── formatter.py
+│       │   │       └── tests/
+│       │   ├── shared/
+│       │   │   ├── error_boundary.py
+│       │   │   ├── interaction/
+│       │   │   │   └── prompt.py
+│       │   │   ├── ui/
+│       │   │   │   ├── console.py
+│       │   │   │   ├── widgets.py
+│       │   │   │   └── theme/
+│       │   │   │       ├── detection.py
+│       │   │   │       └── styles.py
+│       │   │   ├── errors/
+│       │   │   │   ├── errors.py
+│       │   │   │   └── hint.py
+│       │   │   └── formatters/
+│       │   │       └── error.py
+│       │   └── tests/
 │       ├── infrastructure/
 │       │   └── mongo/
 │       │       ├── account/
@@ -175,15 +219,19 @@ MongoDB storage adapters are implemented for accounts, journals, and postings.
     └── fixtures/
 ```
 
+See `src/pyledger/cli/README.md` for a full description of every file under `cli/`.
+
 ## Technology Stack
 
 - Python 3.14+ - modern typing features and the current runtime target.
 - UV - dependency and environment management.
-- Typer - command-line application framework for the CLI entry point and command groups.
-- Rich - terminal rendering for formatted journal output and styled panels.
+- Typer - command-line application framework for the CLI entry point and the `account`/`journal`/`posting`
+- Rich - terminal rendering for formatted account, journal, and posting output, styled panels, and error rendering.
 - Pydantic v2 - domain and DTO validation with structured error reporting.
 - Pytest - test runner for domain, service, and shared utility tests.
 - Ruff - linting and formatting.
+- AnyIO - bridges the CLI's synchronous Typer dispatch onto the async service/repository layer via a single
+  `BlockingPortal`.
 
 ## Development Setup
 
@@ -237,28 +285,29 @@ cp .env.test.example .env.test
 - MongoDB connection lifecycle helpers, error translation, timestamped documents, and concrete MongoDB account,
   journal, and posting repositories.
 - Typed configuration layer with isolated test settings.
-- Rich journal formatting helpers.
-- Typer application bootstrap and journal command group scaffold.
+- A complete CLI: Typer application bootstrap, composition root (`CliContext`/`CliState`), and fully wired
+  `account`, `journal`, and `posting` command groups with Rich-based formatting and a shared error-rendering
+  boundary.
 - Account, journal, posting, and shared error tests.
+- CLI unit and integration tests for all three feature groups, plus composition-root tests.
 - MongoDB connection and repository tests.
 
 ### Partial
 
-- CLI error formatter and CLI error catalog modules.
 - `modules/journal/rule.py`.
 - `modules/posting/rule.py`.
-- Operational CLI commands beyond the journal group scaffold.
 
 ### Planned
 
 - Trial balance and reporting support.
-- Operational account, journal, and posting CLI commands.
 - Import/export and integration surfaces.
 
 ## Roadmap
 
-The next milestones are to wire operational account, journal, and posting CLI workflows into the Typer app. After
-that, the project can move toward trial balance reporting, historical views, and import/export support.
+With the CLI now complete for account, journal, and posting workflows, the next milestones move toward trial
+balance reporting, historical views, and import/export support. See `docs/ROADMAP.md` for the full breakdown and
+`src/pyledger/cli/README.md`'s "Future Work" section for CLI-specific next steps (e.g. additional command groups
+once reporting exists, shell completion, richer interactive workflows).
 
 ## Design Principles
 
@@ -266,7 +315,9 @@ that, the project can move toward trial balance reporting, historical views, and
 - Explicit validation: invalid data should fail at the domain boundary with structured errors.
 - Type safety: Pydantic models and strict typing define the contracts between layers.
 - Testability: services depend on repository interfaces, which makes them easy to fake in tests.
-- Separation of concerns: CLI presentation, business logic, and persistence stay in separate layers.
+- Separation of concerns: CLI presentation, business logic, and persistence stay in separate layers — the CLI
+  itself is further layered internally (command → parser/prompt → handler → formatter), documented in
+  `src/pyledger/cli/README.md`.
 - Future extensibility: repository contracts and DTO boundaries leave room for storage adapters and more workflows.
 
 ## Contributing
