@@ -24,6 +24,7 @@ from pyledger.cli.bootstrap import build_context
 
 from .features.account import app as account_app
 from .features.journal import app as journal_app
+from .features.posting import app as posting_app
 
 app = typer.Typer(
     name="PyLedger",
@@ -34,6 +35,7 @@ app = typer.Typer(
 
 app.add_typer(journal_app, name="journal")
 app.add_typer(account_app, name="account")
+app.add_typer(posting_app, name="posting")
 
 
 @app.callback()
