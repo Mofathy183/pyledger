@@ -2,17 +2,21 @@
 
 ## Overview
 
-PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository is a
-feature-oriented domain prototype with working account, journal, and posting services; validated journal and posting
-models; journal and posting DTOs; journal and posting repository contracts; shared error translation; Rich-based
-journal rendering; and concrete MongoDB account, journal, and posting repositories plus their supporting
-infrastructure. Reporting and operational CLI commands are not implemented yet.
+PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository has
+working account, journal, and posting services; validated journal and posting models; account, journal, and
+posting DTOs; account, journal, and posting repository contracts with concrete MongoDB implementations; shared
+error translation; and a fully implemented, feature-oriented CLI (`account`, `journal`, `posting` command groups)
+with its own composition root, async execution bridge, and error-rendering pipeline. Reporting commands are not
+implemented yet; see `src/pyledger/cli/README.md` for full CLI architecture.
 
 ## Repository Shape
 
 - `src/pyledger/main.py` boots the Typer application. The file contains only the active entry point and invokes `app()`.
-- `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and a journal
-  command scaffold.
+- `src/pyledger/cli/` contains the Typer app (`app.py`), the composition root (`bootstrap.py`), the per-invocation
+  dependency container (`context.py`), the sync-to-async bridge (`state.py`), and the feature-oriented command
+  packages under `cli/features/{account,journal,posting}`/ (each with `command.py`, `parser.py`, `prompt.py`,
+  `handler.py`, `formatter.py`, and `tests/`), plus shared CLI concerns under `cli/shared/` (error boundary,
+  interactive prompt primitives, Rich UI, error/hint catalogs, and error formatting).
 - `src/pyledger/modules/account/` contains the active account domain, DTOs, async repository contract, service layer,
   and tests.
 - `src/pyledger/modules/journal/` contains journal schemas, DTOs, the async repository contract, a workflow service,
@@ -53,8 +57,10 @@ infrastructure. Reporting and operational CLI commands are not implemented yet.
   the account, journal, and posting repository contracts.
 - `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`
   for journal-to-posting workflows, but it is not yet wired into the CLI.
-- `cli/formatters/journal_fmt.py` renders journal view models.
-- `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no command currently uses them.
+- `cli/features/account/formatter.py`, `cli/features/journal/formatter.py`, and `cli/features/posting/formatter.py`  
+  render their respective ViewModels as Rich panels/tables.
+- `cli/shared/formatters/error.py` and `cli/shared/errors/{errors,hint}.py` are fully wired into every CLI command
+via `cli/shared/error_boundary.py`.
 - There is no trial balance or reporting pipeline.
 - `pyledger.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `PYLEDGER_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `PYLEDGER_TEST_` and `.env.test`.
 - `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle
@@ -139,9 +145,11 @@ balance pipeline or downstream reporting layer.
 - `JournalService` validates account references through `AccountService`, allocates journal numbers via `JournalRepo`,
   constructs `JournalEntry`, and persists or returns view models.
 - `PostingService` exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`. It derives postings from `JournalViewModel` instances returned by `JournalService` and persists them via `PostingRepo`.
-- The CLI currently registers the root app and a `journal` command group, but there are no operational subcommands.
-- The journal formatter can render `JournalViewModel` instances, but no command currently feeds it data.
-- The error formatter and CLI error catalog are present, but no live command path uses them yet.
+- The CLI is fully implemented: `cli/app.py` registers the `account`, `journal`, and `posting` Typer sub-apps, each
+  wired end to end (command → parser/prompt → handler → service → repository) through `cli/context.py::CliContext`.
+- Every feature's formatter renders its service's ViewModels; `cli/shared/error_boundary.py` renders every
+  `AppError`/`ValidationAppError`/`pydantic.ValidationError` raised along the way.
+- Full CLI layering, dependency rules, and the async execution model are documented in `src/pyledger/cli/README.md`.
 
 ## Error System
 
@@ -189,7 +197,10 @@ balance pipeline or downstream reporting layer.
 - `tests/fixtures/mongo.py` provides `mongo_connection`, `beanie_init`, and `clean_db` fixtures for Mongo-backed
   integration tests. It also registers `AccountDocument`, `JournalDocument`, and `PostingDocument` with Beanie and
   truncates the collections used by MongoDB integration tests.
-- There are no reporting or CLI workflow tests yet.
+- CLI workflow tests exist end-to-end for `account`, `journal`, and `posting`: fake-backed unit tests
+(`test_command_unit.py`) and MongoDB-backed integration tests (`test_command_integration.py`) per feature, plus
+parser/prompt/handler/formatter unit tests, plus composition-root tests (`CliContext`, `CliState`,
+`build_context()`, `app.py`) under `src/pyledger/cli/tests/`. There are still no reporting tests.
 - Settings tests live under `src/pyledger/config/tests/`.
 - Posting service tests cover `post_journal_entry`, `get_postings_by_account`, and `get_postings_by_journal_number` workflows including duplicate-posting detection.
 
@@ -200,11 +211,9 @@ balance pipeline or downstream reporting layer.
   chart lookup behavior.
 - `MongoPostingRepo.save_many()` uses a batch `insert_many()` call without transaction support, so a mid-batch
   interruption can partially persist a journal's postings and concurrent posting attempts can still race.
-- There are no operational CLI commands yet.
 
 ## Long-Term Direction
 
 - Harden posting persistence for stronger write-consistency guarantees if needed.
-- Wire posting, journal, and account workflows into the CLI.
 - Build trial balance and reporting support from validated data.
 - Add import/export and integration surfaces once the core bookkeeping workflow is stable.

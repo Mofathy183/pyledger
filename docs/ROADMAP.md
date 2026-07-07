@@ -15,8 +15,6 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 ## Remaining Work
 
-- Reconcile the CLI account-name error copy with the active validator wording.
-- Wire operational account, journal, and posting commands into the CLI.
 - Add storage-level uniqueness enforcement where needed.
 - Add trial balance, reporting, and historical views.
 - Add import/export and external integration surfaces.
@@ -25,9 +23,12 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 ### CLI Presentation
 
-- Reconcile CLI error copy with the shared error model and active validators.
-- Add account, journal, and posting commands.
-- Add CLI tests for user-facing behavior.
+- CLI presentation is complete for account, journal, and posting workflows: Typer command groups, parsers, prompts,
+  handlers, formatters, shared Rich UI, and the shared error boundary are all implemented and tested.
+- Add CLI tests for any new feature as it's introduced (pattern established — see `src/pyledger/cli/README.md`
+  §16, "Adding a New Feature").
+- Future CLI work is limited to new command groups (e.g. reporting commands, once a reporting pipeline exists) and
+  any shell-completion or interactive-workflow enhancements — see `src/pyledger/cli/README.md` §18, "Future Work".
 
 ### Storage
 
@@ -55,7 +56,7 @@ PyLedger should be considered on track when:
 - posting derivation remains deterministic,
 - repository contracts are stable,
 - storage is isolated behind interfaces,
-- CLI error rendering matches the shared error model,
+- CLI error rendering matches the shared error model (confirmed implemented and tested via `error_boundary()`),
 - trial balance reporting is available,
 - the CLI stays thin,
 - future features do not weaken the accounting model.

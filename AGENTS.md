@@ -19,18 +19,23 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 ## Repository Layout
 
 - `src/pyledger/conftest.py` registers the shared pytest fixture plugins.
-- `src/pyledger/main.py` is the console entry point.
-- `src/pyledger/cli/` contains the Typer app, Rich console setup, themes, formatters, CLI constants, and the journal command scaffold.
-- `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error translation,
-  the MongoDB account, journal, and posting documents and repositories, and MongoDB infrastructure tests.
+- `src/pyledger/main.py` is the console entry point. It builds the production `CliContext` via `bootstrap.build_context()` and calls `run()`, which opens the CLI's single `BlockingPortal`, constructs `CliState`, and dispatches the Typer app, guaranteeing `context.aclose()` runs in a `finally` block regardless of outcome.
+- `src/pyledger/cli/` contains the Typer app (`app.py`), the composition root (`bootstrap.py`), the per-invocation dependency container (`context.py`), the sync-to-async bridge (`state.py`), and the feature-oriented command packages under `cli/features/`.
+- `src/pyledger/cli/features/{account,journal,posting}/` each contain `command.py` (Typer command group), `parser.py` (CLI-flag input → DTO), `prompt.py` (interactive input → DTO), `handler.py` (DTO → service call), `formatter.py` (ViewModel → Rich renderable), and `tests/`.
+- `src/pyledger/cli/shared/` contains the error boundary (`error_boundary.py`), generic interactive prompt primitives (`interaction/`), the shared themed Rich console and widget factories (`ui/`), the CLI-owned error message/hint catalogs (`errors/`), and Pydantic/AppError-to-panel formatting (`formatters/`).
+- `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error translation, the MongoDB account, journal, and posting documents and repositories, and MongoDB infrastructure tests.
 - `src/pyledger/modules/` contains the account, journal, and posting feature packages. Account, journal, and posting each have implemented service layers.
 - `src/pyledger/shared/` contains reusable validation helpers, utility functions, and the shared error model.
 
 - `tests/` contains shared test infrastructure only: `fixtures/`, `factories/`, and `fakes/`.
 - Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
+- CLI feature tests live beside the CLI feature code under `src/pyledger/cli/features/**/tests/`, split into fake-backed unit tests and MongoDB-backed integration tests.
+- CLI composition-root tests (`CliContext`, `CliState`, `bootstrap.build_context()`, `app.py`) live under `src/pyledger/cli/tests/`.
 - MongoDB infrastructure tests live under `src/pyledger/infrastructure/mongo/**/tests/`.
 - Shared error tests live under `src/pyledger/shared/errors/tests/`.
-- There is no `src/pyledger/cli/tests/` directory today.
+- `src/pyledger/cli/tests/` now exists and contains CliContext, CliState, bootstrap, and app-level tests, per the completed CLI README.
+
+For full CLI architecture, layering rules, and extension guidance, see `src/pyledger/cli/README.md` — this file only summarizes CLI-related facts relevant to cross-cutting repository conventions.
 
 ## Current Domain Rules
 
@@ -62,7 +67,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `pyledger.infrastructure.mongo.shared` exposes `TimestampedDocument`, `MongoExecutor`, and the Mongo error translator.
 - `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`.
 - `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
-- `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist and import, but no CLI command currently wires them into a user-facing workflow.
+- `cli/shared/formatters/error.py` and `cli/shared/errors/{errors,hint}.py` are fully wired into every CLI command via `cli/shared/error_boundary`.py, which every command uses to catch `AppError/ValidationAppError/pydantic.ValidationError` and render them as Rich panels with a typer.Exit(code=1).
 - `modules/journal/repo.py` is an implemented async repository contract.
 - `infrastructure/mongo/journal/` contains the concrete MongoDB journal repository implementation.
 - `infrastructure/mongo/posting/` contains the concrete MongoDB posting repository implementation.
@@ -70,7 +75,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - `modules/posting/dtos.py` defines `PostingViewModel`. `modules/posting/rule.py` remains an empty scaffold.
 - `modules/journal/__init__.py` re-exports the journal repo, service, and DTOs.
 - `modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
-- `main.py` is a thin console entry point that only invokes `app()`.
+- `main.py` is a thin console entry point. `main()` builds the production CliContext via `bootstrap.build_context()` and calls `run()`, which owns the CLI's single BlockingPortal for the life of the process and guarantees `context.aclose()` runs on exit.
 - `cli/constants/errors.py` still has wording drift for invalid account names and unknown accounts; its copy mentions abbreviations and aliases even though alias support is not implemented and `clean_account_name()` does not allow commas.
 - `CreateJournalInput` omits `journal_number`; `JournalService` assigns it via `JournalRepo.next_journal_number()`.
 - `PostingService` is implemented and available for journal-to-posting workflows, though it is not yet wired into the CLI.
@@ -127,7 +132,7 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
 - MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
 - MongoDB journal repository tests live under `src/pyledger/infrastructure/mongo/journal/tests/`.
-- There are no reporting tests or user-facing CLI workflow tests yet.
+- CLI workflow tests exist for all three feature groups (`account`, `journal`, `posting`), split into fake-backed unit tests (`test_command_unit.py`) and MongoDB-backed integration tests (`test_command_integration.py`) under each feature's `tests/` directory, plus composition-root tests (`CliContext`, `CliState`, `build_context()`, `app.py`) under `src/pyledger/cli/tests/`. There are still no reporting tests, since no reporting pipeline exists yet.
 - Settings tests live under `src/pyledger/config/tests/`.
 - `tests/fixtures/settings.py` provides a session-scoped `test_settings` fixture backed by `TestSettings` and the
   `isolate_settings_cache` autouse fixture that clears `get_settings.cache_clear()` before and after every test.
@@ -158,3 +163,13 @@ PyLedger is a Python CLI bookkeeping application built around double-entry accou
 - Service methods that talk to repos remain async.
 - Services should orchestrate domain objects and repositories, not render terminal output.
 - CLI code should consume DTOs or view models, not repository implementations or domain internals.
+
+## CLI Architecture
+
+- The CLI is a feature-complete presentation layer over `AccountService`, `JournalService`, and `PostingService`, exposing `account`, `journal`, and `posting` Typer command groups.
+- `cli/bootstrap.py::build_context()` is the CLI's single composition root. Constructing a `CliContext` performs no I/O — every repository and service is created lazily on first access.
+- `CliContext` (`cli/context.py`) is the per-invocation dependency container: it lazily opens the shared MongoDB connection, initializes Beanie, and builds/caches repositories and services, translating connection failures to `AppError.storage_timeout()`/`AppError.storage_unavailable()`.
+- `CliState` (`cli/state.py`) pairs a `CliContext` with an `anyio` `BlockingPortal` and exposes `state.call(func, *args)` as the only sanctioned bridge from a synchronous Typer command into async service/repository code.
+- Each feature under `cli/features/<name>/` follows the same internal layering: `command.py` (Typer wiring) → `parser.py`/`prompt.py` (input → DTO) → `handler.py` (DTO → service call) → `formatter.py` (ViewModel → Rich renderable). Commands never call repositories or services directly, never construct domain models, and never render Rich components outside their feature's formatter.
+- `cli/shared/error_boundary.py` is the single error-handling seam: it wraps one `state.call(...)` per command, catches `AppError`/`ValidationAppError`/`pydantic.ValidationError`, formats them via `cli/shared/formatters/error.py` and the CLI-owned catalogs in `cli/shared/errors/`, prints Rich panels, and raises `typer.Exit(code=1)`.
+- The full CLI architecture, layer-by-layer dependency rules, async execution model, and feature-extension guide are documented in `src/pyledger/cli/README.md`, which is the authoritative reference for CLI internals.

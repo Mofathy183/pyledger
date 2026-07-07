@@ -23,22 +23,57 @@ src/pyledger/
 ├── cli/
 │   ├── __init__.py
 │   ├── app.py
-│   ├── console.py
-│   ├── commands/
+│   ├── bootstrap.py
+│   ├── context.py
+│   ├── state.py
+│   ├── features/
 │   │   ├── __init__.py
-│   │   └── journal_cmd.py
-│   ├── constants/
+│   │   ├── account/
+│   │   │   ├── __init__.py
+│   │   │   ├── command.py
+│   │   │   ├── parser.py
+│   │   │   ├── prompt.py
+│   │   │   ├── handler.py
+│   │   │   ├── formatter.py
+│   │   │   └── tests/
+│   │   ├── journal/
+│   │   │   ├── __init__.py
+│   │   │   ├── command.py
+│   │   │   ├── parser.py
+│   │   │   ├── prompt.py
+│   │   │   ├── handler.py
+│   │   │   ├── formatter.py
+│   │   │   └── tests/
+│   │   └── posting/
+│   │       ├── __init__.py
+│   │       ├── command.py
+│   │       ├── parser.py
+│   │       ├── prompt.py
+│   │       ├── handler.py
+│   │       ├── formatter.py
+│   │       └── tests/
+│   ├── shared/
 │   │   ├── __init__.py
-│   │   └── errors.py
-│   ├── formatters/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── error_fmt.py
-│   │   └── journal_fmt.py
-│   └── theme/
-│       ├── __init__.py
-│       ├── detection.py
-│       └── styles.py
+│   │   ├── error_boundary.py
+│   │   ├── interaction/
+│   │   │   ├── __init__.py
+│   │   │   └── prompt.py
+│   │   ├── ui/
+│   │   │   ├── __init__.py
+│   │   │   ├── console.py
+│   │   │   ├── widgets.py
+│   │   │   └── theme/
+│   │   │       ├── __init__.py
+│   │   │       ├── detection.py
+│   │   │       └── styles.py
+│   │   ├── errors/
+│   │   │   ├── __init__.py
+│   │   │   ├── errors.py
+│   │   │   └── hint.py
+│   │   └── formatters/
+│   │       ├── __init__.py
+│   │       └── error.py
+│   └── tests/
 ├── config/
 │   ├── __init__.py
 │   ├── settings.py
@@ -121,8 +156,9 @@ tests/
 └── fakes/
 ```
 
-There is a `src/pyledger/conftest.py` that registers the shared fixture plugins. There is no `tests/conftest.py`,
-no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
+There is a `src/pyledger/conftest.py` that registers the shared fixture plugins. There is no `tests/conftest.py`
+and no `tests/helpers.py`. `src/pyledger/cli/tests/` exists and holds `CliContext`, `CliState`, `bootstrap`, and
+`app.py`-level tests.
 
 ## Public Exports
 
@@ -130,7 +166,6 @@ no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
   `UpdateAccountInput`, `AccountViewModel`, and `ChartOfAccountsViewModel`.
 - `src/pyledger/modules/journal/__init__.py` re-exports `JournalRepo`, `JournalService`, `CreateJournalInput`,
   `JournalLineInput`, `JournalLineViewModel`, and `JournalViewModel`.
-- `src/pyledger/cli/constants/__init__.py` re-exports `ERRORS`, `HINTS`, and `FIELD_LABELS`.
 - `src/pyledger/modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
 - `src/pyledger/config/__init__.py` re-exports `get_settings`, `Settings`, `TestSettings`, and `MongoSettings`.
 - `src/pyledger/infrastructure/mongo/__init__.py` re-exports `MongoConnection`, `connect`, and `disconnect`.
@@ -141,14 +176,27 @@ no `tests/helpers.py`, and no `src/pyledger/cli/tests/` directory.
 - `src/pyledger/infrastructure/mongo/shared/__init__.py` re-exports `TimestampedDocument` and `MongoExecutor`.
 - `src/pyledger/shared/errors/__init__.py` re-exports `ErrorCode`, `FieldViolation`, `AppError`,
   `ValidationAppError`, `pydantic_error`, `PYDANTIC_CODES`, and `get_field_violations`.
-- `src/pyledger/cli/formatters/__init__.py`, `src/pyledger/shared/__init__.py`, and `src/pyledger/__init__.py` are empty today.
+- `src/pyledger/cli/features/account/__init__.py`, `src/pyledger/cli/features/journal/__init__.py`, and
+  `src/pyledger/cli/features/posting/__init__.py` each re-export their feature's Typer `app`.
+- `src/pyledger/cli/shared/ui/__init__.py` re-exports `panel`, `rule`, `table`, and `console`.
+- `src/pyledger/cli/shared/interaction/__init__.py` re-exports `ask`, `select`, and `confirm`.
+- `src/pyledger/cli/shared/errors/__init__.py` re-exports `ERRORS`, `HINTS`, `ErrorDetail`, and `FIELD_LABELS`.
+- `src/pyledger/cli/shared/formatters/__init__.py` re-exports `FormattedError`, `build_error_panels`,
+  `format_app_error`, `format_validation_errors`, and `format_validation_app_error`.
+- `src/pyledger/shared/__init__.py` and `src/pyledger/__init__.py` are empty today.
 
 ## Dependency Direction
 
 The live dependency direction is:
 
 ```text
-main.py -> cli.app -> cli.commands -> cli.formatters -> modules.*.dtos/schemas/services -> shared.*
+main.py -> cli.bootstrap.build_context() -> cli.context.CliContext
+main.py -> cli.state.CliState -> cli.app (Typer dispatch, via BlockingPortal)
+cli.app -> cli.features.*.command -> cli.features.*.{parser,prompt} -> DTOs
+cli.features.*.command -> cli.state.CliState.call(...) -> cli.features.*.handler
+cli.features.*.handler -> cli.context.CliContext -> modules.*.service
+cli.features.*.command -> cli.features.*.formatter -> cli.shared.ui
+cli.features.*.command -> cli.shared.error_boundary -> cli.shared.formatters.error + cli.shared.errors + cli.shared.ui
 modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors + peer services when needed
 modules.*.schemas -> shared.rule + shared.errors
 src/pyledger/conftest.py -> tests/fixtures/*
@@ -165,6 +213,9 @@ Important boundary rules:
 - Feature modules should not import Rich or Typer.
 - Shared validation helpers should not depend on CLI presentation code.
 - Repositories must remain behind interfaces.
+- `cli.features.*.handler` must not import Typer, Click, or Rich.
+- `cli.features.*.formatter` must not import repositories, services, or domain schemas — only DTOs/ViewModels.
+- No command, service, or repository may open a second `BlockingPortal` or event loop; `main.py` opens exactly one for the life of the process.
 
 ## Layer Boundaries
 
@@ -177,20 +228,39 @@ Location:
 
 Responsibilities:
 
-- define the Typer application,
-- register command groups,
-- render accounting output,
-- render validation errors,
+- define the Typer application and its composition root,
+- register feature command groups,
+- bridge synchronous Typer dispatch onto the CLI's single async event loop,
+- resolve raw input (CLI flags or interactive prompts) into validated DTOs,
+- render accounting output and validation errors via Rich,
 - keep user interaction separate from accounting rules.
 
 Current state:
 
-- `main.py` boots the Typer app. The file contains only the active entry point and invokes `app()`.
-- `cli/app.py` creates the root app and registers the `journal` sub-app.
-- `cli/commands/journal_cmd.py` defines a command namespace but no operational subcommands.
-- `cli/formatters/journal_fmt.py` renders journal entries and journal lists from view models.
-- `cli/formatters/error_fmt.py` and `cli/constants/errors.py` exist but are not wired into a live command path.
-- `cli/console.py` configures the Rich console.
+- `main.py::main()` builds the production `CliContext` via `bootstrap.build_context()` and calls `run()`, which
+  opens the CLI's one `BlockingPortal`, constructs `CliState`, dispatches `app(obj=state)` synchronously, and
+  guarantees `context.aclose()` runs in a `finally` block regardless of outcome.
+- `cli/app.py` creates the root Typer app, registers the `account`, `journal`, and `posting` sub-apps, and defines
+  a defensive `main_callback()` that builds a fallback `CliContext` only when `ctx.obj` is `None` (never true for a
+  real invocation dispatched through `main.py`).
+- `cli/bootstrap.py::build_context()` is the CLI's single composition root; constructing a `CliContext` performs
+  no I/O.
+- `cli/context.py::CliContext` lazily creates and caches the shared MongoDB connection, repositories, and services
+  for one CLI invocation, translating connection failures to `AppError.storage_timeout()`/
+  `AppError.storage_unavailable()`.
+- `cli/state.py::CliState` pairs a `CliContext` with a `BlockingPortal` and exposes `state.call(...)` as the only
+  sanctioned bridge from a synchronous command into async service/repository code.
+- `cli/features/{account,journal,posting}/` each implement the full `command.py` → `parser.py`/`prompt.py` →
+  `handler.py` → `formatter.py` pipeline for their feature, fully wired to `AccountService`, `JournalService`, and
+  `PostingService` respectively.
+- `cli/shared/error_boundary.py` is fully wired into every command: it catches `AppError`, `ValidationAppError`,
+  and raw `pydantic.ValidationError`, formats them via `cli/shared/formatters/error.py` and the CLI-owned catalogs
+  in `cli/shared/errors/`, prints Rich panels, and exits with code 1.
+- `cli/shared/ui/` provides the shared themed `console` singleton and the `panel`/`rule`/`table` widget factories
+  used by every feature's formatter.
+
+For the full CLI architecture — layer-by-layer responsibilities, the async execution model, the command lifecycle,
+and the feature-extension guide — see `src/pyledger/cli/README.md`.
 
 ### Configuration Layer
 
@@ -292,42 +362,38 @@ Responsibilities:
 - Owns CLI-level configuration.
 - Registers the journal command namespace.
 
-### `src/pyledger/cli/commands/journal_cmd.py`
+### `src/pyledger/cli/features/{account,journal,posting}/command.py`
 
-- Defines the `journal` command group.
-- Currently a scaffold with no subcommands.
+- Defines each feature's Typer command group (`account`: create/get/list/update/delete; `journal`: create/get/list;
+  `posting`: post/get-by-account/get-by-journal).
+- Resolves input via the feature's own `parser.py`/`prompt.py`, dispatches to `handler.py` via
+  `state.call(...)` inside `error_boundary()`, and renders results via `formatter.py`.
+- Never calls a repository or service directly, never constructs a domain model, never renders Rich components
+  outside its own formatter.
 
-### `src/pyledger/cli/console.py`
+### `src/pyledger/cli/shared/ui/console.py`
 
 - Creates the shared Rich console instance.
 - Installs traceback styling.
 
-### `src/pyledger/cli/theme/*`
+### `src/pyledger/cli/shared/ui/theme/*`
 
 - Defines terminal theme detection and style names.
 - Keeps style selection separate from rendering code.
 
-### `src/pyledger/cli/formatters/base.py`
+### `src\pyledger\cli\shared\ui\widgets.py`
 
 - Builds reusable Rich panels, rules, and tables.
 - Keeps layout choices out of the feature formatters.
 
-### `src/pyledger/cli/formatters/journal_fmt.py`
+### `src/pyledger/cli/shared/error_boundary.py`, `cli/shared/formatters/error.py`, `cli/shared/errors/{errors,hint}.py`
 
-- Renders journal entries and journal lists.
-- Consumes `JournalViewModel` and `JournalLineViewModel`.
-
-### `src/pyledger/cli/formatters/error_fmt.py`
-
-- Formats validation and application errors for terminal output.
-- Uses CLI-owned message and hint catalogs.
-- Is currently unused by any operational command.
-
-### `src/pyledger/cli/constants/errors.py`
-
-- Defines CLI-facing error messages, hints, and field labels.
-- Is currently only consumed by `cli/formatters/error_fmt.py`.
-- Still mentions abbreviations and aliases in several messages even though alias support is not implemented.
+- `error_boundary.py` is the CLI's single error-handling seam, wrapping one `state.call(...)` per command.
+- `formatters/error.py` converts `pydantic.ValidationError`, `AppError`, and `ValidationAppError` into
+  `FormattedError` instances and Rich panels — no terminal I/O of its own.
+- `errors/errors.py` and `errors/hint.py` are the CLI-owned message and hint catalogs, keyed by `ErrorCode`,
+  kept deliberately separate from `shared/errors` so presentation wording never leaks into the domain error model.
+- Fully wired into every command in every feature group — this is no longer a dormant or partially-used path.
 
 ### `src/pyledger/modules/account/schemas/account.py`
 
@@ -688,22 +754,32 @@ truncates the collections used by MongoDB integration tests.
 `src/pyledger/infrastructure/mongo/journal/tests/`, and `src/pyledger/infrastructure/mongo/posting/tests/` cover the
 MongoDB connection helpers and the account, journal, and posting repository adapters.
 
-There are no reporting or end-user CLI workflow tests yet.
+CLI workflow tests exist end-to-end for `account`, `journal`, and `posting`, split into fake-backed unit tests
+and MongoDB-backed integration tests per feature, plus dedicated composition-root tests for `CliContext`,
+`CliState`, `bootstrap.build_context()`, and `app.py` under `src/pyledger/cli/tests/`. There are still no
+reporting tests, since no reporting pipeline exists yet.
 
 ## Application Flow
 
 The current executable flow is:
 
 1. The `pyledger` console script imports `pyledger.main:main`.
-2. `main.py` invokes the Typer application.
-3. Typer dispatches into the registered command groups.
-4. Command handlers would construct DTOs and call feature services.
-5. `AccountService`, `JournalService`, and `PostingService` build or validate domain models and coordinate repository access.
-6. Shared error translation converts validation failures into structured errors.
-7. CLI formatters render view models or error objects with Rich.
+2. `main.py::main()` builds the production `CliContext` and calls `run()`, which opens the CLI's single
+`BlockingPortal`, constructs `CliState`, and dispatches the Typer application via `app(obj=state)`.
+3. Typer dispatches into the matched feature command group (`account`, `journal`, or `posting`).
+4. The command resolves input via its feature's `parser.py` (CLI flags) or `prompt.py` (interactive), builds a
+DTO, and calls its `handler.py` via `state.call(...)`.
+5. The handler resolves the relevant service from `CliContext` and calls it. `AccountService`, `JournalService`,
+and `PostingService` build or validate domain models and coordinate repository access.
+6. On success, the service returns a ViewModel, which the command renders via its feature's `formatter.py`
+through the shared Rich `console`.
+7. On failure, `error_boundary()` catches `AppError/ValidationAppError/pydantic.ValidationError`, formats
+them via `cli/shared/formatters/error.py` and the CLI-owned catalogs, prints Rich panels, and exits with
+code 1.
+8. `context.aclose()` runs in a finally block in `main.py::run()`, regardless of outcome.
 
-The CLI currently stops at the scaffold stage for operational commands, so the flow is mostly structural rather than
-user-facing. Posting workflows exist in the service layer, but they are not yet wired into commands.
+This flow is now fully implemented and user-facing for account, journal, and posting workflows — it is no longer
+structural-only.
 
 ## Implementation Status
 
@@ -740,12 +816,20 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - MongoDB account repository tests
 - MongoDB journal repository tests
 - MongoDB posting repository tests
-
-### Partial
-
 - CLI error formatting.
 - CLI error presentation constants.
 - CLI command wiring beyond the journal group scaffold.
+- CLI composition root (`bootstrap.build_context()`, `CliContext`, `CliState`)
+- CLI account, journal, and posting command groups, fully wired to their respective services
+- CLI parser/prompt/handler/formatter layering for all three feature groups
+- CLI shared error boundary, error formatting, and error/hint catalogs
+- CLI shared Rich UI (console, theme, widgets)
+- CLI unit and integration test suites for all three feature groups
+- CLI composition-root tests (`CliContext`, `CliState`, `build_context()`, `app.py`)
+
+### Partial
+
+(none currently — CLI implementation is complete for account, journal, and posting workflows)
 
 ### Scaffold Only
 
@@ -767,6 +851,5 @@ user-facing. Posting workflows exist in the service layer, but they are not yet 
 - `MongoPostingRepo.save_many()` uses a batch `insert_many()` call without transaction support, so a mid-batch
   interruption can partially persist a journal's postings and concurrent posting attempts can still race.
 - There is no trial balance or reporting pipeline.
-- `PostingService` is implemented, but it is not yet wired into the CLI.
 - `modules/posting/rule.py` is still an empty scaffold.
 - There are no operational CLI commands yet.
