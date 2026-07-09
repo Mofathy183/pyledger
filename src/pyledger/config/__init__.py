@@ -1,3 +1,3 @@
-from .settings import MongoSettings, Settings, TestSettings, get_settings
+from .settings import ApiSettings, MongoSettings, Settings, TestSettings, get_settings
 
-__all__ = ["get_settings", "Settings", "TestSettings", "MongoSettings"]
+__all__ = ["get_settings", "Settings", "TestSettings", "MongoSettings", "ApiSettings"]
