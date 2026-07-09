@@ -29,6 +29,23 @@ class MongoSettings(BaseModel):
         description="The name of the MongoDB database.",
     )
 
+    server_selection_timeout_ms: int = Field(
+        default=5000,
+        description="Maximum time in milliseconds to wait for MongoDB server selection.",
+    )
+    min_pool_size: int = Field(
+        default=1,
+        description="Minimum number of connections maintained in the MongoDB connection pool.",
+    )
+    retry_reads: bool = Field(
+        default=True,
+        description="Whether retryable reads are enabled.",
+    )
+    retry_writes: bool = Field(
+        default=True,
+        description="Whether retryable writes are enabled.",
+    )
+
 
 class Settings(BaseSettings):
     """Root application configuration.
