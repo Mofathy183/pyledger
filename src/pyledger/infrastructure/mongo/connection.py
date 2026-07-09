@@ -54,7 +54,10 @@ async def connect(mongo: MongoSettings) -> MongoConnection:
     """
     client = AsyncMongoClient(
         mongo.uri,
-        serverSelectionTimeoutMS=5000,
+        serverSelectionTimeoutMS=mongo.server_selection_timeout_ms,
+        minPoolSize=mongo.min_pool_size,
+        retryWrites=mongo.retry_writes,
+        retryReads=mongo.retry_reads,
     )
 
     try:
