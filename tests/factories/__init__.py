@@ -5,6 +5,7 @@ from .account import (
     make_fake_account_repo,
     make_update_account_input,
 )
+from .api import build_url, make_headers
 from .cli import make_fake_cli_context
 from .journal import (
     make_create_journal_input,
@@ -38,4 +39,6 @@ __all__ = [
     "make_fake_posting_repo",
     "make_posting_service",
     "make_fake_cli_context",
+    "make_headers",
+    "build_url",
 ]
