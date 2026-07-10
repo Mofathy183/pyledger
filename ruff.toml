@@ -5,6 +5,9 @@ target-version = "py314"
 select = ["E", "F", "I", "B", "UP", "C4"]
 ignore = ["E501"]
 
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends"]
+
 [format]
 quote-style = "double"
 indent-style = "space"
