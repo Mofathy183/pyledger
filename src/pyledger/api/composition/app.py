@@ -10,6 +10,7 @@ Typer app.
 from fastapi import FastAPI
 
 from pyledger.api.features.system import router as system_router
+from pyledger.api.shared.errors import register_exception_handlers
 from pyledger.config import Settings, get_settings
 
 from .bootstrap import make_lifespan
@@ -38,6 +39,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description=settings.api.description,
         lifespan=make_lifespan(settings),
     )
+
+    register_exception_handlers(app)
 
     app.include_router(router=system_router)
 

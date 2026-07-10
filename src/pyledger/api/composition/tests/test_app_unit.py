@@ -12,8 +12,11 @@ build_container()'s wiring (see test_container.py).
 
 import pytest
 from fastapi import FastAPI
+from pydantic import ValidationError as PydanticValidationError
 
 from pyledger.api.composition.app import create_app
+from pyledger.shared.errors import AppError, ErrorCode, ValidationAppError
+from tests.factories import make_account
 
 
 @pytest.mark.unit
@@ -80,3 +83,73 @@ class TestCreateApp:
         app = create_app()
 
         assert isinstance(app, FastAPI)
+
+
+@pytest.mark.unit
+class TestRegisterExceptionHandlersWiring:
+    async def test_app_error_returns_standard_envelope(
+        self, api_app: FastAPI, api_client
+    ):
+        @api_app.get("/__test/not_found")
+        async def _boom_not_found():
+            raise AppError.not_found(
+                code=ErrorCode.UNKNOWN_ACCOUNT, resource="account", identifier="9999"
+            )
+
+        response = await api_client.get("/__test/not_found")
+
+        assert response.status_code == 404
+        body = response.json()
+        assert body["success"] is False
+        assert body["error_code"] == ErrorCode.UNKNOWN_ACCOUNT.value
+        assert "9999" in body["message"]
+
+    async def test_validation_app_error_returns_standard_envelope(
+        self, api_app: FastAPI, api_client
+    ):
+        @api_app.get("/__test/validation")
+        async def _boom_validation():
+            try:
+                make_account(name="???")
+            except PydanticValidationError as exc:
+                raise ValidationAppError.validation(exc) from exc
+
+        response = await api_client.get("/__test/validation")
+
+        assert response.status_code == 422
+        body = response.json()
+        assert body["success"] is False
+        assert len(body["details"]) > 0
+
+    async def test_request_validation_error_returns_standard_envelope(
+        self, api_app: FastAPI, api_client
+    ):
+        from pydantic import BaseModel
+
+        class _Payload(BaseModel):
+            required_field: str
+
+        @api_app.post("/__test/request_validation")
+        async def _boom_request_validation(payload: _Payload):
+            return payload
+
+        response = await api_client.post("/__test/request_validation", json={})
+
+        assert response.status_code == 422
+        body = response.json()
+        assert body["error_code"] == "request.invalid"
+        assert any(d["field"] == "required_field" for d in body["details"])
+
+    async def test_unexpected_error_returns_standard_envelope_not_default_500(
+        self, api_app: FastAPI, api_client_no_raise
+    ):
+        @api_app.get("/__test/unexpected")
+        async def _boom_unexpected():
+            raise KeyError("unexpected")
+
+        response = await api_client_no_raise.get("/__test/unexpected")
+
+        assert response.status_code == 500
+        body = response.json()
+        assert body["success"] is False
+        assert body["error_code"] == ErrorCode.UNKNOWN_ERROR.value

@@ -26,6 +26,7 @@ class ErrorCode(StrEnum):
     # ── Generic ────────────────────────────────────────────────────────────
     UNKNOWN_ERROR = "error.unknown"
     VALIDATION_ERROR = "error.validation"
+    REQUEST_VALIDATION_ERROR = "request.invalid"
 
     # ── Pydantic built-in types ──────────────
     REQUIRED_FIELD = "missing"
