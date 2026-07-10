@@ -24,7 +24,7 @@ class TestCreateApp:
         assert isinstance(app, FastAPI)
 
     def test_uses_settings_title(self, test_settings):
-        settings = test_settings
+        settings = test_settings.model_copy(deep=True)
         settings.api.title = "Custom Title"
 
         app = create_app(settings)
@@ -32,7 +32,7 @@ class TestCreateApp:
         assert app.title == "Custom Title"
 
     def test_uses_settings_version(self, test_settings):
-        settings = test_settings
+        settings = test_settings.model_copy(deep=True)
         settings.api.version = "9.9.9"
 
         app = create_app(settings)
@@ -40,7 +40,7 @@ class TestCreateApp:
         assert app.version == "9.9.9"
 
     def test_uses_settings_description(self, test_settings):
-        settings = test_settings
+        settings = test_settings.model_copy(deep=True)
         settings.api.description = "Custom description"
 
         app = create_app(settings)
@@ -48,7 +48,7 @@ class TestCreateApp:
         assert app.description == "Custom description"
 
     def test_two_calls_produce_independent_app_instances(self, test_settings):
-        settings = test_settings
+        settings = test_settings.model_copy(deep=True)
 
         first = create_app(settings)
         second = create_app(settings)
@@ -60,7 +60,7 @@ class TestCreateApp:
         in create_app()'s own docstring: two app instances must not leak
         mutable state (e.g. app.state.container) between each other.
         """
-        settings = test_settings
+        settings = test_settings.model_copy(deep=True)
 
         first = create_app(settings)
         second = create_app(settings)
