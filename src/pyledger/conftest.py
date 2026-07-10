@@ -6,4 +6,5 @@ pytest_plugins = [
     "tests.fixtures.settings",
     "tests.fixtures.services",
     "tests.fixtures.cli",
+    "tests.fixtures.api",
 ]
