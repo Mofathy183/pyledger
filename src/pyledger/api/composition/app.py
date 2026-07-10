@@ -7,19 +7,11 @@ infrastructure types — the same rule cli/app.py already follows for the
 Typer app.
 """
 
-from dataclasses import dataclass
-
 from fastapi import FastAPI
 
 from pyledger.config import Settings, get_settings
 
 from .bootstrap import make_lifespan
-
-
-@dataclass(frozen=True)
-class RootEndPoint:
-    service: dict[str, str]
-    docs: str
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

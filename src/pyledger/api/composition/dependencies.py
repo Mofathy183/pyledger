@@ -13,15 +13,21 @@ wrapping them in a coroutine would add overhead with no benefit.
 
 from fastapi import Request
 
-from pyledger.config import ApiSettings, Settings, get_settings
+from pyledger.config import ApiSettings, get_settings
 from pyledger.modules.account.service import AccountService
 from pyledger.modules.journal.service import JournalService
 from pyledger.modules.posting.service import PostingService
 
 
 def get_settings_dep() -> ApiSettings:
-    settings: Settings = get_settings()
-    return settings.api
+    """Provide the API-layer settings section for request handlers.
+
+    Returns:
+        The cached ``ApiSettings`` slice of the application settings.
+        Cheap to call per-request since ``get_settings()`` itself is
+        ``lru_cache``d — this does no I/O.
+    """
+    return get_settings().api
 
 
 def get_account_service(request: Request) -> AccountService:
