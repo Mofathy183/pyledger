@@ -2,13 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 
 from pyledger.modules.account import AccountService
-from pyledger.modules.account.schemas import ChartOfAccounts
+from pyledger.modules.account.schemas import AccountCategory, ChartOfAccounts
 from pyledger.modules.journal import JournalService
 from pyledger.modules.posting import PostingService
 from pyledger.modules.posting.schemas.ledger_posting import LedgerPosting
 from tests.factories.account import make_fake_account_repo
 from tests.factories.journal import make_fake_journal_repo
 from tests.fakes import FakePostingRepo
+
+from .account import make_account, make_chart_of_accounts
 
 
 def make_debit_posting(
@@ -47,6 +49,23 @@ def make_credit_posting(
 
 def make_fake_posting_repo() -> FakePostingRepo:
     return FakePostingRepo()
+
+
+def make_posting_feature_chart() -> ChartOfAccounts:
+    """The Cash / Sales Revenue chart every default journal input balances against.
+
+    Mirrors _simple_chart() in modules/posting/tests/test_service_unit.py.
+    """
+    return make_chart_of_accounts(
+        accounts=[
+            make_account(code="1001", name="Cash", category=AccountCategory.ASSET),
+            make_account(
+                code="4001",
+                name="Sales Revenue",
+                category=AccountCategory.REVENUE,
+            ),
+        ]
+    )
 
 
 def make_posting_service(
