@@ -10,11 +10,13 @@ from .account import (
 from .api import build_url, make_headers
 from .cli import make_fake_cli_context
 from .journal import (
+    make_create_journal_entry_request,
     make_create_journal_input,
     make_credit_line,
     make_debit_line,
     make_fake_journal_repo,
     make_journal_entry,
+    make_journal_line_request,
     make_journal_service,
 )
 from .posting import (
@@ -40,6 +42,8 @@ __all__ = [
     "make_fake_journal_repo",
     "make_journal_service",
     "make_create_journal_input",
+    "make_create_journal_entry_request",
+    "make_journal_line_request",
     "make_fake_posting_repo",
     "make_posting_service",
     "make_fake_cli_context",
