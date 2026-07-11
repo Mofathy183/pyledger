@@ -23,6 +23,7 @@ from .posting import (
     make_credit_posting,
     make_debit_posting,
     make_fake_posting_repo,
+    make_posting_feature_chart,
     make_posting_service,
 )
 
@@ -46,6 +47,7 @@ __all__ = [
     "make_journal_line_request",
     "make_fake_posting_repo",
     "make_posting_service",
+    "make_posting_feature_chart",
     "make_fake_cli_context",
     "make_headers",
     "build_url",
