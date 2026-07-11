@@ -2,8 +2,10 @@ from .account import (
     make_account,
     make_chart_of_accounts,
     make_create_account_input,
+    make_create_account_request,
     make_fake_account_repo,
     make_update_account_input,
+    make_update_account_request,
 )
 from .api import build_url, make_headers
 from .cli import make_fake_cli_context
@@ -33,6 +35,8 @@ __all__ = [
     "make_chart_of_accounts",
     "make_create_account_input",
     "make_update_account_input",
+    "make_update_account_request",
+    "make_create_account_request",
     "make_fake_journal_repo",
     "make_journal_service",
     "make_create_journal_input",
