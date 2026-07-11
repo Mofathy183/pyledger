@@ -137,6 +137,29 @@ def api_client_no_raise(api_app: FastAPI) -> AsyncClient:
     )
 
 
+@pytest.fixture
+def override_service():
+    """Register a dependency override on api_app and guarantee cleanup.
+
+    Usage:
+        override_service(api_app, get_account_service, fake_account_service)
+
+    Mirrors how fake_cli_context injects Fake*Repo instances directly —
+    this is the API-layer equivalent for a single service, without
+    faking the whole Container.
+    """
+    overridden_apps = []
+
+    def _override(app, provider, fake_service):
+        app.dependency_overrides[provider] = lambda: fake_service
+        overridden_apps.append((app, provider))
+
+    yield _override
+
+    for app, provider in overridden_apps:
+        app.dependency_overrides.pop(provider, None)
+
+
 @pytest_asyncio.fixture
 async def real_api_app(
     test_settings: TestSettings,
