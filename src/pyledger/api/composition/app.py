@@ -10,6 +10,7 @@ Typer app.
 from fastapi import FastAPI
 
 from pyledger.api.features.account import router as account_router
+from pyledger.api.features.journal import router as journal_router
 from pyledger.api.features.system import router as system_router
 from pyledger.api.shared.errors import register_exception_handlers
 from pyledger.config import Settings, get_settings
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(router=system_router)
     app.include_router(router=account_router)
+    app.include_router(router=journal_router)
 
     return app
 

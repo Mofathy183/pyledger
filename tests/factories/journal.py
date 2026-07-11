@@ -81,6 +81,47 @@ def make_fake_journal_repo() -> FakeJournalRepo:
     return FakeJournalRepo()
 
 
+def make_journal_line_request(
+    *,
+    account: str = "Cash",
+    debit_amount: str = "100",
+    credit_amount: str = "0",
+) -> dict:
+    """Build a single journal-line payload for a create request."""
+    return {
+        "account": account,
+        "debit_amount": debit_amount,
+        "credit_amount": credit_amount,
+    }
+
+
+def make_create_journal_entry_request(
+    *,
+    posting_date: str = "2025-01-01T00:00:00",
+    lines: list[dict] | None = None,
+    description: str | None = "Test entry",
+) -> dict:
+    """Build a POST /journal-entries request payload.
+
+    Defaults to a balanced two-line entry (Cash debit 100 / Sales
+    Revenue credit 100), mirroring
+    `tests/factories/journal.py::make_create_journal_input`'s defaults,
+    so tests reading both side by side see the same entry.
+    """
+    if lines is None:
+        lines = [
+            make_journal_line_request(account="Cash", debit_amount="100"),
+            make_journal_line_request(
+                account="Sales Revenue", debit_amount="0", credit_amount="100"
+            ),
+        ]
+
+    payload: dict = {"posting_date": posting_date, "lines": lines}
+    if description is not None:
+        payload["description"] = description
+    return payload
+
+
 def make_journal_service(
     *,
     chart: ChartOfAccounts | None = None,
