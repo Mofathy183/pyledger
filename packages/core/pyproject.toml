@@ -1,0 +1,31 @@
+[project]
+name = "pyledger-core"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "pydantic>=2.13.3",
+    "pyledger-shared",
+]
+
+[tool.uv.sources]
+pyledger-shared = { workspace = true }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+[tool.importlinter]
+root_package = "pyledger.core"
+
+[[tool.importlinter.contracts]]
+name = "Core account -> journal -> posting layering"
+type = "layers"
+layers = [
+    "pyledger.core.posting",
+    "pyledger.core.journal",
+    "pyledger.core.account",
+]
