@@ -1,5 +1,4 @@
 import pytest
-
 from pyledger.shared.errors import (
     AppError,
     ErrorCode,

@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 import pytest
-
 from pyledger.shared.rule import (
     account_lookup_key,
     clean_account_name,
