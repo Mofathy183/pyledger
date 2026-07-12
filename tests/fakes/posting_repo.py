@@ -5,8 +5,8 @@ any storage backend. Test cases inspect ``saved_batches`` to verify that
 the service persisted the correct records.
 """
 
-from pyledger.modules.posting.repo import PostingRepo
-from pyledger.modules.posting.schemas.ledger_posting import LedgerPosting
+from pyledger.core.posting.repo import PostingRepo
+from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
 from pyledger.shared.rule import account_lookup_key
 
 

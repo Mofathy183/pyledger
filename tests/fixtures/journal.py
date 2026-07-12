@@ -4,17 +4,17 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-
-from pyledger.infrastructure.mongo.journal import MongoJournalRepo
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.modules.account.schemas import AccountCategory, ChartOfAccounts
-from pyledger.modules.journal import (
+from pyledger.core.account.schemas import AccountCategory, ChartOfAccounts
+from pyledger.core.journal import (
     CreateJournalInput,
     JournalLineInput,
     JournalRepo,
     JournalService,
 )
-from pyledger.modules.journal.schemas import JournalEntry, JournalLine
+from pyledger.core.journal.schemas import JournalEntry, JournalLine
+from pyledger.infrastructure.mongo.journal import MongoJournalRepo
+from pyledger.infrastructure.mongo.shared import MongoExecutor
+
 from tests.factories import (
     make_credit_line,
     make_debit_line,

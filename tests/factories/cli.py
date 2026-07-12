@@ -1,9 +1,10 @@
 from pyledger.cli.context import CliContext
 from pyledger.config import TestSettings
-from pyledger.modules.account import AccountRepo
-from pyledger.modules.account.schemas import ChartOfAccounts
-from pyledger.modules.journal import JournalRepo
-from pyledger.modules.posting import PostingRepo
+from pyledger.core.account import AccountRepo
+from pyledger.core.account.schemas import ChartOfAccounts
+from pyledger.core.journal import JournalRepo
+from pyledger.core.posting import PostingRepo
+
 from tests.factories.account import make_fake_account_repo
 from tests.factories.journal import make_fake_journal_repo
 from tests.factories.posting import make_fake_posting_repo

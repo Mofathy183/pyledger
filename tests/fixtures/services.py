@@ -17,11 +17,11 @@ once per test regardless of how many repo fixtures pull it in.
 """
 
 import pytest
+from pyledger.core.account.schemas.account import AccountCategory
+from pyledger.core.account.service import AccountService
+from pyledger.core.journal.service import JournalService
+from pyledger.core.posting.service import PostingService
 
-from pyledger.modules.account.schemas.account import AccountCategory
-from pyledger.modules.account.service import AccountService
-from pyledger.modules.journal.service import JournalService
-from pyledger.modules.posting.service import PostingService
 from tests.factories import make_create_account_input
 
 

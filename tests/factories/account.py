@@ -1,5 +1,6 @@
-from pyledger.modules.account import CreateAccountInput, UpdateAccountInput
-from pyledger.modules.account.schemas import Account, AccountCategory, ChartOfAccounts
+from pyledger.core.account import CreateAccountInput, UpdateAccountInput
+from pyledger.core.account.schemas import Account, AccountCategory, ChartOfAccounts
+
 from tests.fakes import FakeAccountRepo
 
 
