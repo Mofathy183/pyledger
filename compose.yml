@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    ports:
+      - "8000:8000"
+    environment:
+      PYLEDGER_MONGO__URI: mongodb://mongo:27017
+      PYLEDGER_MONGO__DB: pyledger
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
