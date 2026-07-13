@@ -208,7 +208,7 @@ class TestLedgerPosting:
         posting = make_debit_posting()
 
         with pytest.raises(ValidationError) as exc_info:
-            posting.account = "Equipment"
+            posting.account = "Equipment"  # ty:ignore[invalid-assignment]
 
         errors = exc_info.value.errors()
 

@@ -122,7 +122,7 @@ class TestGetFieldViolations:
             children: list[Child]
 
         with pytest.raises(ValidationError) as exc_info:
-            Parent(children=[{"name": 123}])  # ty:ignore[invalid-argument-type]
+            Parent(children=[{"name": 123}])
 
         violations = get_field_violations(exc_info.value)
 

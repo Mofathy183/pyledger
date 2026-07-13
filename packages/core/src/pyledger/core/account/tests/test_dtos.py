@@ -137,7 +137,7 @@ class TestUpdateAccountInput:
         payload[field_name] = value
 
         with pytest.raises(ValidationError) as exc_info:
-            UpdateAccountInput(**payload)  # type: ignore
+            UpdateAccountInput(**payload)
 
         errors = exc_info.value.errors()
 
