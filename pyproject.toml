@@ -38,6 +38,7 @@ skip_empty = true
 
 [tool.importlinter]
 root_packages = ["pyledger"]
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Core must not depend on infrastructure or presentation"
