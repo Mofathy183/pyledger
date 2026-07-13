@@ -5,23 +5,24 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PYLEDGER_TEST_MONGO__URI: mongodb://localhost:27017
-  PYLEDGER_TEST_MONGO__DB: pyledger_test
+permissions:
+  contents: read
 
 jobs:
   # ── Quality Gate 1: Static Analysis ──────────────────────────────
   static_analysis:
     name: "QG1 · Static Analysis"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: astral-sh/setup-uv@v6
         with: { enable-cache: true }
 
@@ -46,10 +47,16 @@ jobs:
         run: uv run pytest --collect-only -q
 
   # ── Quality Gate 2: Foundation Packages (shared, config) ─────────
+  # Not folded into _test-layer.yml: no Mongo service, no integration
+  # tier today — a genuinely different shape, not just fewer lines.
   foundation:
     name: "QG2 · Shared & Config Unit Tests"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: static_analysis
+    env:
+      PYLEDGER_TEST_MONGO__URI: mongodb://localhost:27017
+      PYLEDGER_TEST_MONGO__DB: pyledger_test
     steps:
       - uses: actions/checkout@v4
 
@@ -60,143 +67,51 @@ jobs:
         with: { python-version: "3.14" }
 
       - run: uv sync --all-packages --frozen
-      
-      - run: uv run pytest -m "unit and shared" --cov=pyledger --cov-report=term-missing
 
-  # ── Quality Gate 3: Core Modules ─────────────────────────────────
+      - run: chmod +x tools/ci/pytest-optional.sh
+
+      - run: >
+          tools/ci/pytest-optional.sh "unit and shared"
+          --cov=pyledger --cov-report=term-missing
+
+  # ── Quality Gates 3–5: Mongo-backed layers ───────────────────────
+  # Each of these calls the shared _test-layer.yml reusable workflow
+  # rather than repeating the checkout/setup/sync/mongo-service/test
+  # steps per job. The `needs:` chain below is still what enforces
+  # ordering — reusable workflows don't change dependency semantics.
   core:
-    name: "QG3 · Core (unit + integration)"
-    runs-on: ubuntu-latest
+    name: "QG3 · Core"
     needs: foundation
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
+    uses: ./.github/workflows/_test-layer.yml
+    with:
+      marker: core
 
-      - uses: astral-sh/setup-uv@v6
-        with: { enable-cache: true }
-
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-
-      - run: uv sync --all-packages --frozen
-
-      - name: Unit tests
-        run: uv run pytest -m "unit and core" --cov=pyledger --cov-report=term-missing
-
-      - name: Integration tests
-        run: |
-          uv run pytest -m "integration and core"
-          code=$?
-          [ $code -eq 5 ] && { echo "No integration tests collected."; exit 0; }
-          exit $code
-
-  # ── Quality Gate 4: Infrastructure ───────────────────────────────
   infrastructure:
-    name: "QG4 · Infrastructure (unit + integration)"
-    runs-on: ubuntu-latest
+    name: "QG4 · Infrastructure"
     needs: core
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
+    uses: ./.github/workflows/_test-layer.yml
+    with:
+      marker: infra
 
-      - uses: astral-sh/setup-uv@v6
-        with: { enable-cache: true }
-
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-
-      - run: uv sync --all-packages --frozen
-
-      - name: Unit tests
-        run: uv run pytest -m "unit and infra" --cov=pyledger --cov-report=term-missing
-
-      - name: Integration tests
-        run: |
-          uv run pytest -m "integration and infra"
-          code=$?
-          [ $code -eq 5 ] && { echo "No integration tests collected."; exit 0; }
-          exit $code
-
-  # ── Quality Gate 5: Applications (parallel lanes) ────────────────
   cli:
-    name: "QG5 · CLI App (unit + integration)"
-    runs-on: ubuntu-latest
+    name: "QG5 · CLI App"
     needs: infrastructure
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v6
-        with: { enable-cache: true }
-
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-
-      - run: uv sync --all-packages --frozen
-
-      - name: Unit tests
-        run: uv run pytest -m "unit and cli" --cov=pyledger --cov-report=term-missing
-
-      - name: Integration tests
-        run: |
-          uv run pytest -m "integration and cli"
-          code=$?
-          [ $code -eq 5 ] && { echo "No integration tests collected."; exit 0; }
-          exit $code
+    uses: ./.github/workflows/_test-layer.yml
+    with:
+      marker: cli
 
   api:
-    name: "QG5 · API App (unit + integration)"
-    runs-on: ubuntu-latest
+    name: "QG5 · API App"
     needs: infrastructure
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v6
-        with: { enable-cache: true }
-
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.14" }
-      - run: uv sync --all-packages --frozen
-
-      - name: Unit tests
-        run: uv run pytest -m "unit and api" --cov=pyledger --cov-report=term-missing
-
-      - name: Integration tests
-        run: |
-          uv run pytest -m "integration and api"
-          code=$?
-          [ $code -eq 5 ] && { echo "No integration tests collected."; exit 0; }
-          exit $code
+    uses: ./.github/workflows/_test-layer.yml
+    with:
+      marker: api
 
   # ── Quality Gate 6: Build ─────────────────────────────────────────
   build:
     name: "QG6 · Build"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [cli, api]
     steps:
       - uses: actions/checkout@v4
@@ -206,13 +121,13 @@ jobs:
 
       - uses: actions/setup-python@v5
         with: { python-version: "3.14" }
+
       - run: uv sync --all-packages --frozen
 
+      # Builds every workspace member, pyledger-cli and pyledger-api
+      # included. Scoped `uv build --package ...` steps were removed —
+      # they were fully redundant with --all-packages. Re-add one only
+      # if a later step needs to consume that specific package's wheel
+      # (e.g. an upload-artifact step for a release job).
       - name: Build all packages
         run: uv build --all-packages
-
-      - name: Build CLI
-        run: uv build --package pyledger-cli
-
-      - name: Build API
-        run: uv build --package pyledger-api
