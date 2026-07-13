@@ -41,17 +41,26 @@ root_packages = ["pyledger"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Core must not depend on infrastructure or presentation"
-type = "independence"
-modules = [
-    "pyledger.core",
+name = "Layered architecture: apps -> infrastructure -> core -> shared/config"
+type = "layers"
+layers = [
+    "pyledger.cli | pyledger.api",
     "pyledger.infrastructure",
-    "pyledger.cli",
-    "pyledger.api",
-]   
+    "pyledger.core",
+    "pyledger.shared | pyledger.config",
+]
 
 [[tool.importlinter.contracts]]
 name = "Core must have zero Mongo/Beanie awareness"
 type = "forbidden"
 source_modules = ["pyledger.core"]
 forbidden_modules = ["beanie", "pymongo"]
+
+[[tool.importlinter.contracts]]
+name = "Core account -> journal -> posting layering"
+type = "layers"
+layers = [
+    "pyledger.core.posting",
+    "pyledger.core.journal",
+    "pyledger.core.account",
+]

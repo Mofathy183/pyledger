@@ -2,10 +2,7 @@
 name = "pyledger-core"
 version = "0.1.0"
 requires-python = ">=3.14"
-dependencies = [
-    "pydantic>=2.13.3",
-    "pyledger-shared",
-]
+dependencies = ["pydantic>=2.13.3", "pyledger-shared"]
 
 [tool.uv.sources]
 pyledger-shared = { workspace = true }
