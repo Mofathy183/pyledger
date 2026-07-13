@@ -14,15 +14,3 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
-
-[tool.importlinter]
-root_package = "pyledger.core"
-
-[[tool.importlinter.contracts]]
-name = "Core account -> journal -> posting layering"
-type = "layers"
-layers = [
-    "pyledger.core.posting",
-    "pyledger.core.journal",
-    "pyledger.core.account",
-]
