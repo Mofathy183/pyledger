@@ -1,4 +1,4 @@
-.PHONY: bootstrap install-api install-cli install-core fix pre-push
+.PHONY: bootstrap install-api install-cli install-core fix pre-push docker-build docker-smoke docker-dev
 
 bootstrap:
 	bash tools/bootstrap.sh
@@ -17,3 +17,12 @@ fix:
 
 pre-push:
 	bash tools/pre-push.sh
+
+docker-build:
+	bash tools/docker-build.sh
+
+docker-smoke:
+	bash tools/docker-smoke.sh
+
+docker-dev:
+	bash tools/docker-dev.sh

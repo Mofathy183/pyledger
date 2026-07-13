@@ -1,0 +1,33 @@
+# Version control / editor
+.git/
+.github/
+.gitignore
+.vscode/
+.idea/
+
+# Python / uv artifacts (rebuilt inside the image, never copied in)
+.venv/
+**/__pycache__/
+**/*.pyc
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Tests and docs — not needed inside the image
+tests/
+docs/
+*.md
+!README.md
+
+# Local env files — never bake secrets/config into the image;
+# these are passed in via compose `environment:` instead
+.env
+.env.test
+.env.example
+.env.test.example
+
+# Docker's own files (irrelevant to include in their own build context)
+compose*.yml
+**/Dockerfile
+.dockerignore

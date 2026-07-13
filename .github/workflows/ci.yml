@@ -131,3 +131,16 @@ jobs:
       # (e.g. an upload-artifact step for a release job).
       - name: Build all packages
         run: uv build --all-packages
+
+  # ── Quality Gate 7: Docker Smoke Test ─────────────────────────────────────────
+  smoke:
+    name: "QG7 · Docker Smoke Test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke test API image
+        run: |
+          chmod +x tools/docker-build.sh tools/docker-smoke.sh
+          tools/docker-smoke.sh

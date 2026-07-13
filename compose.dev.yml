@@ -1,0 +1,64 @@
+# Local development override. Requires Compose 2.22+ for `develop.watch`
+# (Docker Desktop 4.24+, or the standalone compose plugin at that version
+# on Linux).
+#
+# Usage:
+#   docker compose -f compose.yml -f compose.dev.yml watch
+#   (or: tools/docker-dev.sh)
+#
+# This is a zero-setup onboarding path (no local Python/uv/Mongo install
+# required) and a way to test against the same image shape that ships to
+# prod. It is not a required part of the day-to-day dev loop — running
+# `uv run --package pyledger-api uvicorn pyledger.api.main:app --reload`
+# directly on the host will always be faster for a single contributor
+# iterating locally.
+
+services:
+  api:
+    build:
+      target: dev
+    volumes:
+      # Anonymous volume shadows the image's built .venv so the watch
+      # sync never overlays or races against it. Only `uv sync` (triggered
+      # here via the `rebuild` action below) should ever touch this path.
+      #
+      # Path matches the Dockerfile's WORKDIR (/app) for both the
+      # `builder` and `dev` stages — see the WORKDIR note in
+      # apps/api/Dockerfile. If that WORKDIR ever changes, this path and
+      # every target: path below must change with it.
+      - /app/.venv
+    develop:
+      watch:
+        # Source changes: synced into the running container. Workspace
+        # members are installed editable, so uvicorn's --reload picks
+        # these up immediately — no reinstall needed.
+        - action: sync
+          path: ./apps/api/src
+          target: /app/apps/api/src
+        - action: sync
+          path: ./packages/core/src
+          target: /app/packages/core/src
+        - action: sync
+          path: ./packages/config/src
+          target: /app/packages/config/src
+        - action: sync
+          path: ./packages/infrastructure/src
+          target: /app/packages/infrastructure/src
+        - action: sync
+          path: ./packages/shared/src
+          target: /app/packages/shared/src
+
+        # Manifest/lock changes: real dependency-resolution events, not
+        # something file-sync can safely paper over — force a rebuild.
+        - action: rebuild
+          path: ./uv.lock
+        - action: rebuild
+          path: ./apps/api/pyproject.toml
+        - action: rebuild
+          path: ./packages/core/pyproject.toml
+        - action: rebuild
+          path: ./packages/config/pyproject.toml
+        - action: rebuild
+          path: ./packages/infrastructure/pyproject.toml
+        - action: rebuild
+          path: ./packages/shared/pyproject.toml
