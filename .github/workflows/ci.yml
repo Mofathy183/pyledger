@@ -149,5 +149,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-packages --frozen
 
-      - name: Build package
-        run: uv run python -m build
+      - name: Build all packages
+        run: uv build --all-packages
