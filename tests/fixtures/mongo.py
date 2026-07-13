@@ -21,7 +21,6 @@ Dropping at teardown is safe because no further tests will run.
 
 import pytest_asyncio
 from beanie import init_beanie
-
 from pyledger.config import TestSettings
 from pyledger.infrastructure.mongo import connect, disconnect
 from pyledger.infrastructure.mongo.account import AccountDocument

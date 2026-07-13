@@ -3,12 +3,12 @@ from types import SimpleNamespace
 
 import pytest
 from anyio.from_thread import start_blocking_portal
-
 from pyledger.cli.state import CliState
+from pyledger.core.account import AccountRepo
+from pyledger.core.account.schemas import Account, AccountCategory, ChartOfAccounts
 from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
 from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.modules.account import AccountRepo
-from pyledger.modules.account.schemas import Account, AccountCategory, ChartOfAccounts
+
 from tests.factories import (
     make_account,
     make_chart_of_accounts,

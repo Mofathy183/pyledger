@@ -1,28 +1,15 @@
 [project]
-name = "pyledger"
+name = "pyledger-workspace"
 version = "0.1.0"
 description = "A simple command-line bookkeeping system built in Python that simulates how a real accounting system works."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "anyio>=4.14.1",
-    "beanie>=2.1.0",
-    "fastapi[standard]>=0.139.0",
-    "pydantic>=2.13.3",
-    "pydantic-settings>=2.14.2",
-    "pymongo>=4.17.0",
-    "rich>=15.0.0",
-    "strawberry-graphql[fastapi]>=0.320.3",
-    "typer>=0.25.1",
-    "uvicorn[standard]>=0.51.0",
-]
-
-[project.scripts]
-pyledger = "pyledger.main:main"
-pyledger-api = "pyledger.api.main:main"
 
 [tool.uv]
-package = true
+package = false
+
+[tool.uv.workspace]
+members = ["apps/*", "packages/*"]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -32,15 +19,13 @@ build-backend = "setuptools.build_meta"
 dev = [
     "build>=1.5.0",
     "httpx>=0.28.1",
+    "import-linter>=2.13",
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.16",
     "ty>=0.0.51",
 ]
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.coverage.run]
 source = ["pyledger"]
@@ -50,3 +35,22 @@ concurrency = ["thread"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
+
+[tool.importlinter]
+root_packages = ["pyledger"]
+
+[[tool.importlinter.contracts]]
+name = "Core must not depend on infrastructure or presentation"
+type = "independence"
+modules = [
+    "pyledger.core",
+    "pyledger.infrastructure",
+    "pyledger.cli",
+    "pyledger.api",
+]   
+
+[[tool.importlinter.contracts]]
+name = "Core must have zero Mongo/Beanie awareness"
+type = "forbidden"
+source_modules = ["pyledger.core"]
+forbidden_modules = ["beanie", "pymongo"]

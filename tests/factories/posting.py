@@ -1,11 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pyledger.modules.account import AccountService
-from pyledger.modules.account.schemas import AccountCategory, ChartOfAccounts
-from pyledger.modules.journal import JournalService
-from pyledger.modules.posting import PostingService
-from pyledger.modules.posting.schemas.ledger_posting import LedgerPosting
+from pyledger.core.account import AccountService
+from pyledger.core.account.schemas import AccountCategory, ChartOfAccounts
+from pyledger.core.journal import JournalService
+from pyledger.core.posting import PostingService
+from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
+
 from tests.factories.account import make_fake_account_repo
 from tests.factories.journal import make_fake_journal_repo
 from tests.fakes import FakePostingRepo

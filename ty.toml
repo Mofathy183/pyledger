@@ -2,10 +2,7 @@
 python-version = "3.14"
 
 [src]
-include = [
-    "src",
-    "tests",
-]
+include = ["apps", "packages", "tests"]
 
 [terminal]
 error-on-warning = true

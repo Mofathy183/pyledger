@@ -2,11 +2,11 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-
+from pyledger.core.posting.repo import PostingRepo
+from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
 from pyledger.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
 from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.modules.posting.repo import PostingRepo
-from pyledger.modules.posting.schemas.ledger_posting import LedgerPosting
+
 from tests.factories import make_credit_posting, make_debit_posting
 
 

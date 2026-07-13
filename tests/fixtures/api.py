@@ -50,13 +50,13 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-
 from pyledger.api.composition.app import create_app
 from pyledger.api.composition.container import Container
 from pyledger.config import TestSettings
-from pyledger.modules.account.service import AccountService
-from pyledger.modules.journal.service import JournalService
-from pyledger.modules.posting.service import PostingService
+from pyledger.core.account.service import AccountService
+from pyledger.core.journal.service import JournalService
+from pyledger.core.posting.service import PostingService
+
 from tests.factories import (
     make_fake_account_repo,
     make_fake_journal_repo,

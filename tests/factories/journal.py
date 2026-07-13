@@ -1,14 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pyledger.modules.account import AccountService
-from pyledger.modules.account.schemas import ChartOfAccounts
-from pyledger.modules.journal import (
+from pyledger.core.account import AccountService
+from pyledger.core.account.schemas import ChartOfAccounts
+from pyledger.core.journal import (
     CreateJournalInput,
     JournalLineInput,
     JournalService,
 )
-from pyledger.modules.journal.schemas import JournalEntry, JournalLine
+from pyledger.core.journal.schemas import JournalEntry, JournalLine
+
 from tests.factories import make_fake_account_repo
 from tests.fakes import FakeJournalRepo
 

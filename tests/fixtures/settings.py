@@ -1,5 +1,4 @@
 import pytest
-
 from pyledger.config import TestSettings, get_settings
 
 
