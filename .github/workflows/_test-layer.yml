@@ -1,0 +1,63 @@
+name: Test Layer (Mongo-backed)
+
+# Reusable workflow for the four Mongo-backed layers in ci.yml (core,
+# infrastructure, cli, api). Each of those jobs was previously a 15-line
+# copy-paste of checkout/setup-uv/setup-python/uv sync/mongo-service/
+# pytest-optional steps, differing only in which marker they filtered on.
+# This file exists so that shape lives once; ci.yml calls it four times
+# with a different `marker` input per layer.
+#
+# NOT used by `foundation` (no Mongo service, no integration tests — a
+# genuinely different shape) or `static_analysis`/`build` (no tests at
+# all). Don't force those into this workflow just to reduce job count —
+# only fold a job in here if its steps are actually identical apart from
+# the marker.
+
+on:
+  workflow_call:
+    inputs:
+      marker:
+        description: >-
+          The layer marker to filter tests by (e.g. "core", "infra",
+          "cli", "api"). Combined with "unit"/"integration" as
+          "<speed> and <marker>", matching the two-axis marker
+          discipline enforced in the root conftest.py.
+        required: true
+        type: string
+
+env:
+  PYLEDGER_TEST_MONGO__URI: mongodb://localhost:27017
+  PYLEDGER_TEST_MONGO__DB: pyledger_test
+
+jobs:
+  test:
+    name: "${{ inputs.marker }} (unit + integration)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:8
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.14" }
+
+      - run: uv sync --all-packages --frozen
+
+      - run: chmod +x tools/ci/pytest-optional.sh
+
+      - name: Unit tests
+        run: >
+          tools/ci/pytest-optional.sh "unit and ${{ inputs.marker }}"
+          --cov=pyledger --cov-report=term-missing
+
+      - name: Integration tests
+        run: tools/ci/pytest-optional.sh "integration and ${{ inputs.marker }}"
