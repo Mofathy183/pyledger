@@ -1,7 +1,7 @@
 """
 Domain-level error types shared across all interfaces.
 
-Defines the stable error contract used throughout PyLedger.
+Defines the stable error contract used throughout Trutina.
 AppError is the only exception type permitted to cross a feature
 service boundary. Adapters such as the CLI translate ErrorCode values
 into user-facing messages, hints, and presentation metadata.

@@ -1,5 +1,5 @@
 import pytest
-from pyledger.shared.errors import (
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     FieldViolation,
@@ -145,7 +145,7 @@ class TestValidationAppError:
             return translated
 
         monkeypatch.setattr(
-            "pyledger.shared.errors.translators.get_field_violations",
+            "trutina.shared.errors.translators.get_field_violations",
             fake_get_field_violations,
         )
 

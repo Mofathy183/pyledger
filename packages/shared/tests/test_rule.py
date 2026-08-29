@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import pytest
-from pyledger.shared.rule import (
+from trutina.shared.rule import (
     account_lookup_key,
     clean_account_name,
     is_valid_line_amounts,

@@ -1,9 +1,9 @@
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic_core import PydanticCustomError
-from pyledger.shared.errors import ErrorCode
-from pyledger.shared.errors.errors import FieldViolation
-from pyledger.shared.errors.translators import (
+from trutina.shared.errors import ErrorCode
+from trutina.shared.errors.errors import FieldViolation
+from trutina.shared.errors.translators import (
     get_field_violations,
     pydantic_error,
 )

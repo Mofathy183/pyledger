@@ -1,12 +1,12 @@
-# pyledger-shared — Context
+# trutina-shared — Context
 
-Architectural rationale for `pyledger-shared`. This document explains why the
+Architectural rationale for `trutina-shared`. This document explains why the
 package is shaped the way it is, not how to call it — see `README.md` for
 usage.
 
 ## Why This Package Exists
 
-PyLedger is organized as a workspace of independent packages (`core`, `cli`,
+Trutina is organized as a workspace of independent packages (`core`, `cli`,
 `api`, `infrastructure`, and others), each of which needs two things that
 must behave identically everywhere they're used:
 
@@ -21,8 +21,8 @@ these rules (and drift out of sync) or depend directly on `core`'s internal
 schema modules just to reach a validation helper — coupling adapters to
 domain internals they have no business knowing about.
 
-`pyledger-shared` is deliberately the _lowest_ dependency in the workspace.
-Everything can depend on it; it depends on nothing PyLedger-specific.
+`trutina-shared` is deliberately the _lowest_ dependency in the workspace.
+Everything can depend on it; it depends on nothing Trutina-specific.
 
 ## Design Decisions and Trade-offs
 
@@ -122,7 +122,7 @@ secondary string to accidentally rely on.
 
 **Why:** `casefold()` is the Unicode-correct choice for caseless matching —
 it correctly folds characters like German `ß` to `ss`, which `lower()` does
-not. Since account names are free-text and PyLedger doesn't restrict input
+not. Since account names are free-text and Trutina doesn't restrict input
 to ASCII, `lower()` would silently under-match on non-ASCII names. This is
 a one-line difference that is easy to "fix" back to `lower()` during a
 refactor without realizing it's a regression — hence calling it out here as
@@ -137,7 +137,7 @@ an invariant, not an implementation detail.
 
 **Forbidden (this package must never depend on):**
 
-- `pyledger.core`, `pyledger.cli`, `pyledger.api`, `pyledger.infrastructure`,
+- `trutina.core`, `trutina.cli`, `trutina.api`, `trutina.infrastructure`,
   or any other workspace package. `shared` sits below all of them; if a
   helper here ever needs something from one of those packages, the helper
   is in the wrong package.
@@ -145,11 +145,11 @@ an invariant, not an implementation detail.
   storage-driver library. `shared` has no I/O and no terminal/HTTP
   awareness.
 
-**Direction:** every other workspace package may depend on `pyledger-shared`.
-`pyledger-shared` depends on nothing PyLedger-specific. This is enforced
+**Direction:** every other workspace package may depend on `trutina-shared`.
+`trutina-shared` depends on nothing Trutina-specific. This is enforced
 structurally today (nothing in this package imports a sibling package); if
-the workspace's `import-linter` contracts are extended beyond `pyledger.core`
-in the root `pyproject.toml`, `pyledger.shared` is a natural candidate for
+the workspace's `import-linter` contracts are extended beyond `trutina.core`
+in the root `pyproject.toml`, `trutina.shared` is a natural candidate for
 the same independence contract.
 
 ## Control Flow

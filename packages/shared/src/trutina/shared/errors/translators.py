@@ -1,5 +1,5 @@
 """
-Translation utilities between Pydantic validation errors and PyLedger's
+Translation utilities between Pydantic validation errors and Trutina's
 domain error model.
 
 Provides helpers that allow domain validators to raise ErrorCode-backed
@@ -61,7 +61,7 @@ def get_field_violations(exc: PydanticValidationError) -> list[FieldViolation]:
     """Translate framework validation failures into domain error records.
 
     Converts a Pydantic ValidationError into the stable FieldViolation
-    structure used throughout PyLedger's error architecture. This isolates
+    structure used throughout Trutina's error architecture. This isolates
     Pydantic-specific error formats from adapters and service-layer code,
     allowing the rest of the application to work exclusively with
     ErrorCode values and FieldViolation records.
