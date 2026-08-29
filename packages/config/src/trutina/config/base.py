@@ -19,12 +19,12 @@ class Settings(BaseSettings):
     """Root application configuration.
 
     Loads application settings from the environment using the
-    ``PYLEDGER_`` namespace and exposes strongly typed configuration
+    ``TRUTINA_`` namespace and exposes strongly typed configuration
     objects to the rest of the application.
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="PYLEDGER_",
+        env_prefix="TRUTINA_",
         env_file=".env",
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
@@ -45,7 +45,7 @@ class TestSettings(Settings):
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="PYLEDGER_TEST_",
+        env_prefix="TRUTINA_TEST_",
         env_file=".env.test",
         env_file_encoding="utf-8",
         env_nested_delimiter="__",

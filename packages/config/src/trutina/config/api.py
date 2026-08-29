@@ -13,7 +13,7 @@ class ApiSettings(BaseModel):
     """API-layer configuration, independent of Mongo/domain settings."""
 
     title: str = Field(
-        default="PyLedger API",
+        default="Trutina API",
         description="Title displayed in the OpenAPI schema.",
     )
     version: str = Field(
@@ -21,7 +21,7 @@ class ApiSettings(BaseModel):
         description="Current API version.",
     )
     description: str = Field(
-        default="REST API for the PyLedger accounting engine.",
+        default="REST API for the Trutina accounting engine.",
         description="Description displayed in the OpenAPI schema.",
     )
 

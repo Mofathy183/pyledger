@@ -22,7 +22,7 @@ class MongoSettings(BaseModel):
         description="The URI of the MongoDB database.",
     )
     db: str = Field(
-        default="pyledger",
+        default="trutina",
         description="The name of the MongoDB database.",
     )
 

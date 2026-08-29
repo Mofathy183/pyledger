@@ -1,11 +1,11 @@
-# pyledger-config
+# trutina-config
 
-Typed, environment-driven configuration for PyLedger.
+Typed, environment-driven configuration for Trutina.
 
 ## What is this package?
 
-`pyledger-config` (import path `pyledger.config`) provides the strongly
-typed settings models every PyLedger application and storage adapter
+`trutina-config` (import path `trutina.config`) provides the strongly
+typed settings models every Trutina application and storage adapter
 reads its configuration from. It defines how configuration is sourced
 (environment variables and optional dotenv files) and gives the rest of
 the workspace one place to ask "what's the Mongo URI?" or "what port
@@ -13,8 +13,8 @@ should the API bind to?" instead of reading `os.environ` directly.
 
 ## Why does it exist?
 
-Every app (`pyledger-cli`, `pyledger-api`) and the storage adapter
-(`pyledger-infrastructure`) needs the same kind of information — where
+Every app (`trutina-cli`, `trutina-api`) and the storage adapter
+(`trutina-infrastructure`) needs the same kind of information — where
 MongoDB lives, what host/port the API binds to — but none of them
 should each invent their own env-var parsing, their own test/production
 isolation, or their own caching. This package is that one shared
@@ -33,7 +33,7 @@ answer.
 
 ## Public API
 
-Everything below is re-exported from `pyledger.config`:
+Everything below is re-exported from `trutina.config`:
 
 | Name             | What it is                                                            |
 | ---------------- | --------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ Everything below is re-exported from `pyledger.config`:
 | `ApiSettings`    | Nested API-layer settings (host, port, reload, OpenAPI metadata).     |
 | `get_settings()` | Cached (`lru_cache`) accessor returning a `Settings` instance.        |
 
-This package has no other public surface — nothing under `pyledger.config`
+This package has no other public surface — nothing under `trutina.config`
 outside of `__init__.py`'s re-exports should be imported directly.
 
 ## Installation / usage
@@ -52,16 +52,16 @@ Within the workspace, add it as a dependency in your package's
 `pyproject.toml`:
 
 ```toml
-dependencies = ["pyledger-config"]
+dependencies = ["trutina-config"]
 
 [tool.uv.sources]
-pyledger-config = { workspace = true }
+trutina-config = { workspace = true }
 ```
 
 Then:
 
 ```python
-from pyledger.config import get_settings
+from trutina.config import get_settings
 
 settings = get_settings()
 print(settings.mongo.uri)
@@ -72,30 +72,30 @@ For an isolated instance instead of the cached singleton (e.g. when
 you need to pass explicit values), construct the model directly:
 
 ```python
-from pyledger.config import Settings, MongoSettings
+from trutina.config import Settings, MongoSettings
 
 settings = Settings(mongo=MongoSettings(uri="mongodb://localhost:27017"))
 ```
 
 ### Environment variables
 
-Production configuration reads from `PYLEDGER_`-prefixed variables and
+Production configuration reads from `TRUTINA_`-prefixed variables and
 an optional `.env` file at the repo root. Nested settings use a double
 underscore (`__`) as the delimiter:
 
 ```bash
-PYLEDGER_MONGO__URI=mongodb://localhost:27017
-PYLEDGER_MONGO__DB=pyledger
-PYLEDGER_API__HOST=127.0.0.1
-PYLEDGER_API__PORT=8000
+TRUTINA_MONGO__URI=mongodb://localhost:27017
+TRUTINA_MONGO__DB=trutina
+TRUTINA_API__HOST=127.0.0.1
+TRUTINA_API__PORT=8000
 ```
 
-Test configuration reads the same shape under a `PYLEDGER_TEST_` prefix
+Test configuration reads the same shape under a `TRUTINA_TEST_` prefix
 from `.env.test`:
 
 ```bash
-PYLEDGER_TEST_MONGO__URI=mongodb://localhost:27017
-PYLEDGER_TEST_MONGO__DB=pyledger_test
+TRUTINA_TEST_MONGO__URI=mongodb://localhost:27017
+TRUTINA_TEST_MONGO__DB=trutina_test
 ```
 
 See `.env.example` and `.env.test.example` at the repo root for the
@@ -103,12 +103,12 @@ full set of currently supported keys.
 
 ## Integration with the rest of the repository
 
-- `pyledger-infrastructure` accepts a `MongoSettings` instance (never
+- `trutina-infrastructure` accepts a `MongoSettings` instance (never
   calls `get_settings()` itself — see that package's own docs).
-- `pyledger-cli` and `pyledger-api` each call `get_settings()` at their
+- `trutina-cli` and `trutina-api` each call `get_settings()` at their
   own composition root and pass the nested settings down to whatever
   needs them.
-- Nothing in `pyledger-config` imports from any other `pyledger-*`
+- Nothing in `trutina-config` imports from any other `trutina-*`
   package — it sits at the root of the dependency graph.
 
 ## Extending this package
@@ -126,12 +126,12 @@ Do not give a nested settings model its own `BaseSettings` /
 `SettingsConfigDict` — only `Settings`/`TestSettings` own the
 env-prefix and dotenv-file configuration. A nested model that tried to
 load its own environment independently would silently stop respecting
-`PYLEDGER_`/`PYLEDGER_TEST_` prefixing and nested-delimiter parsing.
+`TRUTINA_`/`TRUTINA_TEST_` prefixing and nested-delimiter parsing.
 
 ## Testing
 
 - Use `TestSettings()` directly for a settings instance that reads the
-  `PYLEDGER_TEST_` namespace and `.env.test`.
+  `TRUTINA_TEST_` namespace and `.env.test`.
 - If a test mutates environment variables that affect settings, clear
   `get_settings`'s cache before and after — the shared
   `isolate_settings_cache` autouse fixture (`tests/fixtures/settings.py`)
@@ -145,7 +145,7 @@ load its own environment independently would silently stop respecting
 
 ```python
 # Composition root of an app, reading real settings
-from pyledger.config import get_settings
+from trutina.config import get_settings
 
 settings = get_settings()
 connection = await connect(settings.mongo)
@@ -153,9 +153,9 @@ connection = await connect(settings.mongo)
 
 ```python
 # A test overriding a single nested value
-from pyledger.config import TestSettings, MongoSettings
+from trutina.config import TestSettings, MongoSettings
 
-settings = TestSettings(mongo=MongoSettings(db="pyledger_scratch"))
+settings = TestSettings(mongo=MongoSettings(db="trutina_scratch"))
 ```
 
 ## What consumers should know
