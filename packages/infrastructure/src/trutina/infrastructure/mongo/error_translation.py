@@ -25,13 +25,13 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from beanie.exceptions import DocumentNotFound
-from pyledger.shared.errors import AppError
 from pymongo.errors import (
     ConnectionFailure,
     DuplicateKeyError,
     PyMongoError,
     ServerSelectionTimeoutError,
 )
+from trutina.shared.errors import AppError
 
 
 def violated_index(exc: DuplicateKeyError) -> str | None:

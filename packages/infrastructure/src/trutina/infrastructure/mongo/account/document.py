@@ -48,9 +48,9 @@ using the updated normalization logic before rebuilding the
 uq_account_name_key index.
 """
 
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.infrastructure.mongo.shared import TimestampedDocument
 from pymongo import ASCENDING, IndexModel
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.infrastructure.mongo.shared import TimestampedDocument
 
 
 class AccountDocument(TimestampedDocument):

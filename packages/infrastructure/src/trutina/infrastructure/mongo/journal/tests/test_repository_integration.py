@@ -1,7 +1,7 @@
 """Integration tests for MongoJournalRepo against a real MongoDB instance.
 
 These tests require a running MongoDB database configured via
-``PYLEDGER_TEST_MONGO__URI`` and ``PYLEDGER_TEST_MONGO__DB`` in ``.env.test``.
+``TRUTINA_TEST_MONGO__URI`` and ``TRUTINA_TEST_MONGO__DB`` in ``.env.test``.
 Mark: ``@pytest.mark.integration`` — excluded from the fast unit-test run.
 
 Fixture stack
@@ -42,10 +42,10 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.core.journal.repo import JournalRepo
-from pyledger.core.journal.schemas import JournalEntry
-from pyledger.infrastructure.mongo.journal import JournalDocument
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.journal.repo import JournalRepo
+from trutina.core.journal.schemas import JournalEntry
+from trutina.infrastructure.mongo.journal import JournalDocument
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_credit_line,

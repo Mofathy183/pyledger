@@ -86,11 +86,11 @@ Callers must ensure ``init_beanie()`` has been executed with
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from pyledger.core.posting.repo import PostingRepo
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
-from pyledger.infrastructure.mongo.posting.document import PostingDocument
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.rule import account_lookup_key
+from trutina.core.posting.repo import PostingRepo
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.infrastructure.mongo.posting.document import PostingDocument
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.rule import account_lookup_key
 
 
 class MongoPostingRepo(PostingRepo):

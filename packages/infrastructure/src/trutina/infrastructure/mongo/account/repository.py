@@ -47,14 +47,14 @@ preserve the AccountRepo contract.
 from datetime import UTC, datetime
 
 from beanie.exceptions import DocumentNotFound
-from pyledger.core.account.repo import AccountRepo
-from pyledger.core.account.schemas import Account
-from pyledger.infrastructure.mongo.account.document import AccountDocument
-from pyledger.infrastructure.mongo.error_translation import violated_index
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import AppError, ErrorCode
-from pyledger.shared.rule import account_lookup_key
 from pymongo.errors import DuplicateKeyError
+from trutina.core.account.repo import AccountRepo
+from trutina.core.account.schemas import Account
+from trutina.infrastructure.mongo.account.document import AccountDocument
+from trutina.infrastructure.mongo.error_translation import violated_index
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import AppError, ErrorCode
+from trutina.shared.rule import account_lookup_key
 
 
 class MongoAccountRepo(AccountRepo):

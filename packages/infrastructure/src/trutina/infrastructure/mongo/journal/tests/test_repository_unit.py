@@ -2,15 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.core.journal.schemas import JournalEntry, JournalLine
-from pyledger.infrastructure.mongo.journal import (
+from pymongo.errors import DuplicateKeyError
+from trutina.core.journal.schemas import JournalEntry, JournalLine
+from trutina.infrastructure.mongo.journal import (
     JournalDocument,
     JournalLineSubDocument,
     MongoJournalRepo,
 )
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import ErrorCode
-from pymongo.errors import DuplicateKeyError
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import make_credit_line, make_debit_line, make_journal_entry
 

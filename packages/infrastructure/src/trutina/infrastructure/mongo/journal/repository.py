@@ -69,20 +69,20 @@ Callers must ensure ``init_beanie()`` has been executed with
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from pyledger.core.journal.repo import JournalRepo
-from pyledger.core.journal.schemas import JournalEntry, JournalLine
-from pyledger.infrastructure.mongo.error_translation import (
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
+from trutina.core.journal.repo import JournalRepo
+from trutina.core.journal.schemas import JournalEntry, JournalLine
+from trutina.infrastructure.mongo.error_translation import (
     translate_mongo_errors,
     violated_index,
 )
-from pyledger.infrastructure.mongo.journal.document import (
+from trutina.infrastructure.mongo.journal.document import (
     JournalDocument,
     JournalLineSubDocument,
 )
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import AppError, ErrorCode
-from pymongo import ReturnDocument
-from pymongo.errors import DuplicateKeyError
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import AppError, ErrorCode
 
 _COUNTER_KEY = "journal_number"
 

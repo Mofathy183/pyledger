@@ -9,10 +9,10 @@ models, or CLI code.
 
 from dataclasses import dataclass
 
-from pyledger.config import MongoSettings
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import ConnectionFailure
+from trutina.config import MongoSettings
 
 
 @dataclass(frozen=True, slots=True)

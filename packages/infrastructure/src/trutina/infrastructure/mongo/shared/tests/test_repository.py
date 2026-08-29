@@ -1,7 +1,7 @@
 import pytest
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import AppError, ErrorCode
 from pymongo.errors import ConnectionFailure
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import AppError, ErrorCode
 
 
 @pytest.mark.unit

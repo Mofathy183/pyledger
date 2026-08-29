@@ -4,9 +4,9 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
-from pyledger.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
-from pyledger.infrastructure.mongo.shared import MongoExecutor
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
+from trutina.infrastructure.mongo.shared import MongoExecutor
 
 from tests.factories import make_credit_posting, make_debit_posting
 

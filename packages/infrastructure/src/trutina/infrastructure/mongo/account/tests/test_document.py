@@ -1,7 +1,7 @@
 import pytest
-from pyledger.core.account.schemas import AccountCategory
-from pyledger.infrastructure.mongo.account import AccountDocument
 from pymongo import IndexModel
+from trutina.core.account.schemas import AccountCategory
+from trutina.infrastructure.mongo.account import AccountDocument
 
 
 @pytest.mark.unit

@@ -82,8 +82,8 @@ corruption immediately rather than propagating it silently.
 
 from datetime import datetime
 
-from pyledger.infrastructure.mongo.shared import TimestampedDocument
 from pymongo import ASCENDING, IndexModel
+from trutina.infrastructure.mongo.shared import TimestampedDocument
 
 
 class PostingDocument(TimestampedDocument):

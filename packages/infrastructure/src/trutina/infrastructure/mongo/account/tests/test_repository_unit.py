@@ -2,12 +2,12 @@ from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
-from pyledger.core.account.schemas.account import Account, AccountCategory
-from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import ErrorCode
-from pyledger.shared.rule import account_lookup_key
 from pymongo.errors import DuplicateKeyError
+from trutina.core.account.schemas.account import Account, AccountCategory
+from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import ErrorCode
+from trutina.shared.rule import account_lookup_key
 
 from tests.factories import make_account
 

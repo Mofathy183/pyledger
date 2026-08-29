@@ -1,7 +1,7 @@
 """Integration tests for MongoAccountRepo against a real MongoDB instance.
 
 These tests require a running MongoDB database configured via
-PYLEDGER_TEST_MONGO__URI and PYLEDGER_TEST_MONGO__DB in .env.test.
+TRUTINA_TEST_MONGO__URI and TRUTINA_TEST_MONGO__DB in .env.test.
 Mark: @pytest.mark.integration — excluded from the fast unit-test run.
 
 Fixture stack
@@ -45,10 +45,10 @@ import asyncio
 from datetime import UTC, datetime
 
 import pytest
-from pyledger.core.account.repo import AccountRepo
-from pyledger.core.account.schemas.account import Account, AccountCategory
-from pyledger.infrastructure.mongo.account import AccountDocument
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account.repo import AccountRepo
+from trutina.core.account.schemas.account import Account, AccountCategory
+from trutina.infrastructure.mongo.account import AccountDocument
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import make_account
 

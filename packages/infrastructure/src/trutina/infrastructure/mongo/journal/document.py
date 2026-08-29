@@ -77,8 +77,8 @@ queries are introduced.
 from datetime import datetime
 
 from pydantic import BaseModel
-from pyledger.infrastructure.mongo.shared import TimestampedDocument
 from pymongo import ASCENDING, IndexModel
+from trutina.infrastructure.mongo.shared import TimestampedDocument
 
 
 class JournalLineSubDocument(BaseModel):

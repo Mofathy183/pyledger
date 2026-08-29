@@ -1,14 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pyledger.config import MongoSettings
-from pyledger.infrastructure.mongo import MongoConnection, connect, disconnect
 from pymongo.errors import ConnectionFailure
+from trutina.config import MongoSettings
+from trutina.infrastructure.mongo import MongoConnection, connect, disconnect
 
 
 @pytest.mark.unit
 class TestConnect:
-    @patch("pyledger.infrastructure.mongo.connection.AsyncMongoClient")
+    @patch("trutina.infrastructure.mongo.connection.AsyncMongoClient")
     async def test_returns_connection_when_ping_succeeds(
         self,
         client_cls,
@@ -23,7 +23,7 @@ class TestConnect:
         connection = await connect(
             MongoSettings(
                 uri="mongodb://localhost:27017",
-                db="pyledger",
+                db="trutina",
             )
         )
 
@@ -32,7 +32,7 @@ class TestConnect:
         assert connection.client is client
         assert connection.db == "db"
 
-    @patch("pyledger.infrastructure.mongo.connection.AsyncMongoClient")
+    @patch("trutina.infrastructure.mongo.connection.AsyncMongoClient")
     async def test_closes_client_when_ping_fails(
         self,
         client_cls,

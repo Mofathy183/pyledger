@@ -1,7 +1,7 @@
 """Integration tests for MongoPostingRepo against a real MongoDB instance.
 
 These tests require a running MongoDB database configured via
-``PYLEDGER_TEST_MONGO__URI`` and ``PYLEDGER_TEST_MONGO__DB`` in
+``TRUTINA_TEST_MONGO__URI`` and ``TRUTINA_TEST_MONGO__DB`` in
 ``.env.test``. Mark: ``@pytest.mark.integration`` — excluded from the
 fast unit-test run.
 
@@ -35,9 +35,9 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.core.posting.repo import PostingRepo
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
-from pyledger.infrastructure.mongo.posting import PostingDocument
+from trutina.core.posting.repo import PostingRepo
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.infrastructure.mongo.posting import PostingDocument
 
 from tests.factories import make_credit_posting, make_debit_posting
 

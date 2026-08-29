@@ -1,8 +1,8 @@
 from datetime import datetime
 
 import pytest
-from pyledger.infrastructure.mongo.posting import PostingDocument
 from pymongo import IndexModel
+from trutina.infrastructure.mongo.posting import PostingDocument
 
 
 @pytest.mark.unit

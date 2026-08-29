@@ -1,9 +1,9 @@
 import pytest
-from pyledger.infrastructure.mongo.journal import (
+from pymongo import IndexModel
+from trutina.infrastructure.mongo.journal import (
     JournalDocument,
     JournalLineSubDocument,
 )
-from pymongo import IndexModel
 
 
 @pytest.mark.unit

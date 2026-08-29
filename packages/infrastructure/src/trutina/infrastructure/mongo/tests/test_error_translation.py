@@ -1,15 +1,15 @@
 import pytest
-from pyledger.infrastructure.mongo.error_translation import (
-    translate_mongo_errors,
-    violated_index,
-)
-from pyledger.shared.errors import AppError, ErrorCode
 from pymongo.errors import (
     ConnectionFailure,
     DuplicateKeyError,
     ServerSelectionTimeoutError,
     WriteError,
 )
+from trutina.infrastructure.mongo.error_translation import (
+    translate_mongo_errors,
+    violated_index,
+)
+from trutina.shared.errors import AppError, ErrorCode
 
 
 def _make_duplicate_key_error(
