@@ -1,4 +1,4 @@
-# PyLedger Roadmap
+# Trutina Roadmap
 
 ## Purpose
 
@@ -25,10 +25,10 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 - CLI presentation is complete for account, journal, and posting workflows: Typer command groups, parsers, prompts,
   handlers, formatters, shared Rich UI, and the shared error boundary are all implemented and tested.
-- Add CLI tests for any new feature as it's introduced (pattern established — see `src/pyledger/cli/README.md`
+- Add CLI tests for any new feature as it's introduced (pattern established — see `src/trutina/cli/README.md`
   §16, "Adding a New Feature").
 - Future CLI work is limited to new command groups (e.g. reporting commands, once a reporting pipeline exists) and
-  any shell-completion or interactive-workflow enhancements — see `src/pyledger/cli/README.md` §18, "Future Work".
+  any shell-completion or interactive-workflow enhancements — see `src/trutina/cli/README.md` §18, "Future Work".
 
 ### Storage
 
@@ -49,7 +49,7 @@ intentional: finish the domain and service boundaries before adding storage, rep
 
 ## Success Criteria
 
-PyLedger should be considered on track when:
+Trutina should be considered on track when:
 
 - journal entries are always validated before acceptance,
 - journal numbering remains deterministic,

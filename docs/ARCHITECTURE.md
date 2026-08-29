@@ -1,8 +1,8 @@
-# PyLedger Architecture
+# Trutina Architecture
 
 ## Purpose
 
-This document describes the current structure of PyLedger as it exists in the repository today. The codebase is
+This document describes the current structure of Trutina as it exists in the repository today. The codebase is
 feature-oriented and is organized around account, journal, and posting modules, with separate CLI and shared support
 packages.
 
@@ -16,7 +16,7 @@ The architectural goals are:
 ## Actual Folder Structure
 
 ```text
-src/pyledger/
+src/trutina/
 ├── conftest.py
 ├── __init__.py
 ├── main.py
@@ -156,34 +156,34 @@ tests/
 └── fakes/
 ```
 
-There is a `src/pyledger/conftest.py` that registers the shared fixture plugins. There is no `tests/conftest.py`
-and no `tests/helpers.py`. `src/pyledger/cli/tests/` exists and holds `CliContext`, `CliState`, `bootstrap`, and
+There is a `src/trutina/conftest.py` that registers the shared fixture plugins. There is no `tests/conftest.py`
+and no `tests/helpers.py`. `src/trutina/cli/tests/` exists and holds `CliContext`, `CliState`, `bootstrap`, and
 `app.py`-level tests.
 
 ## Public Exports
 
-- `src/pyledger/modules/account/__init__.py` re-exports `AccountRepo`, `AccountService`, `CreateAccountInput`,
+- `src/trutina/modules/account/__init__.py` re-exports `AccountRepo`, `AccountService`, `CreateAccountInput`,
   `UpdateAccountInput`, `AccountViewModel`, and `ChartOfAccountsViewModel`.
-- `src/pyledger/modules/journal/__init__.py` re-exports `JournalRepo`, `JournalService`, `CreateJournalInput`,
+- `src/trutina/modules/journal/__init__.py` re-exports `JournalRepo`, `JournalService`, `CreateJournalInput`,
   `JournalLineInput`, `JournalLineViewModel`, and `JournalViewModel`.
-- `src/pyledger/modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
-- `src/pyledger/config/__init__.py` re-exports `get_settings`, `Settings`, `TestSettings`, and `MongoSettings`.
-- `src/pyledger/infrastructure/mongo/__init__.py` re-exports `MongoConnection`, `connect`, and `disconnect`.
-- `src/pyledger/infrastructure/mongo/account/__init__.py` re-exports `AccountDocument` and `MongoAccountRepo`.
-- `src/pyledger/infrastructure/mongo/journal/__init__.py` re-exports `JournalDocument`, `JournalLineSubDocument`,
+- `src/trutina/modules/posting/__init__.py` re-exports `PostingRepo`, `PostingService`, and `PostingViewModel`.
+- `src/trutina/config/__init__.py` re-exports `get_settings`, `Settings`, `TestSettings`, and `MongoSettings`.
+- `src/trutina/infrastructure/mongo/__init__.py` re-exports `MongoConnection`, `connect`, and `disconnect`.
+- `src/trutina/infrastructure/mongo/account/__init__.py` re-exports `AccountDocument` and `MongoAccountRepo`.
+- `src/trutina/infrastructure/mongo/journal/__init__.py` re-exports `JournalDocument`, `JournalLineSubDocument`,
   and `MongoJournalRepo`.
-- `src/pyledger/infrastructure/mongo/posting/__init__.py` re-exports `PostingDocument` and `MongoPostingRepo`.
-- `src/pyledger/infrastructure/mongo/shared/__init__.py` re-exports `TimestampedDocument` and `MongoExecutor`.
-- `src/pyledger/shared/errors/__init__.py` re-exports `ErrorCode`, `FieldViolation`, `AppError`,
+- `src/trutina/infrastructure/mongo/posting/__init__.py` re-exports `PostingDocument` and `MongoPostingRepo`.
+- `src/trutina/infrastructure/mongo/shared/__init__.py` re-exports `TimestampedDocument` and `MongoExecutor`.
+- `src/trutina/shared/errors/__init__.py` re-exports `ErrorCode`, `FieldViolation`, `AppError`,
   `ValidationAppError`, `pydantic_error`, `PYDANTIC_CODES`, and `get_field_violations`.
-- `src/pyledger/cli/features/account/__init__.py`, `src/pyledger/cli/features/journal/__init__.py`, and
-  `src/pyledger/cli/features/posting/__init__.py` each re-export their feature's Typer `app`.
-- `src/pyledger/cli/shared/ui/__init__.py` re-exports `panel`, `rule`, `table`, and `console`.
-- `src/pyledger/cli/shared/interaction/__init__.py` re-exports `ask`, `select`, and `confirm`.
-- `src/pyledger/cli/shared/errors/__init__.py` re-exports `ERRORS`, `HINTS`, `ErrorDetail`, and `FIELD_LABELS`.
-- `src/pyledger/cli/shared/formatters/__init__.py` re-exports `FormattedError`, `build_error_panels`,
+- `src/trutina/cli/features/account/__init__.py`, `src/trutina/cli/features/journal/__init__.py`, and
+  `src/trutina/cli/features/posting/__init__.py` each re-export their feature's Typer `app`.
+- `src/trutina/cli/shared/ui/__init__.py` re-exports `panel`, `rule`, `table`, and `console`.
+- `src/trutina/cli/shared/interaction/__init__.py` re-exports `ask`, `select`, and `confirm`.
+- `src/trutina/cli/shared/errors/__init__.py` re-exports `ERRORS`, `HINTS`, `ErrorDetail`, and `FIELD_LABELS`.
+- `src/trutina/cli/shared/formatters/__init__.py` re-exports `FormattedError`, `build_error_panels`,
   `format_app_error`, `format_validation_errors`, and `format_validation_app_error`.
-- `src/pyledger/shared/__init__.py` and `src/pyledger/__init__.py` are empty today.
+- `src/trutina/shared/__init__.py` and `src/trutina/__init__.py` are empty today.
 
 ## Dependency Direction
 
@@ -199,7 +199,7 @@ cli.features.*.command -> cli.features.*.formatter -> cli.shared.ui
 cli.features.*.command -> cli.shared.error_boundary -> cli.shared.formatters.error + cli.shared.errors + cli.shared.ui
 modules.*.service -> modules.*.repo + modules.*.schemas + modules.*.dtos + shared.errors + peer services when needed
 modules.*.schemas -> shared.rule + shared.errors
-src/pyledger/conftest.py -> tests/fixtures/*
+src/trutina/conftest.py -> tests/fixtures/*
 shared.* -> stdlib + pydantic
 tests -> public modules + tests/fixtures + tests/factories + tests/fakes
 config.* -> pydantic-settings + stdlib
@@ -223,8 +223,8 @@ Important boundary rules:
 
 Location:
 
-- `src/pyledger/main.py`
-- `src/pyledger/cli/`
+- `src/trutina/main.py`
+- `src/trutina/cli/`
 
 Responsibilities:
 
@@ -260,13 +260,13 @@ Current state:
   used by every feature's formatter.
 
 For the full CLI architecture — layer-by-layer responsibilities, the async execution model, the command lifecycle,
-and the feature-extension guide — see `src/pyledger/cli/README.md`.
+and the feature-extension guide — see `src/trutina/cli/README.md`.
 
 ### Configuration Layer
 
 Location:
 
-- `src/pyledger/config/`
+- `src/trutina/config/`
 
 Responsibilities:
 
@@ -277,8 +277,8 @@ Responsibilities:
 
 Current state:
 
-- `Settings` loads from `PYLEDGER_` environment variables and an optional `.env` file.
-- `TestSettings` loads from `PYLEDGER_TEST_` environment variables and an optional `.env.test` file.
+- `Settings` loads from `TRUTINA_` environment variables and an optional `.env` file.
+- `TestSettings` loads from `TRUTINA_TEST_` environment variables and an optional `.env.test` file.
 - `MongoSettings` is nested inside both settings models and carries `uri` and `db` fields.
 - `get_settings()` uses `lru_cache`; the cache is cleared in `tests/fixtures/settings.py` before and after every
   test via `isolate_settings_cache`.
@@ -287,8 +287,8 @@ Current state:
 
 Location:
 
-- `src/pyledger/infrastructure/`
-- `src/pyledger/infrastructure/mongo/`
+- `src/trutina/infrastructure/`
+- `src/trutina/infrastructure/mongo/`
 
 Responsibilities:
 
@@ -321,7 +321,7 @@ Boundary rules:
 
 Location:
 
-- `src/pyledger/modules/`
+- `src/trutina/modules/`
 
 Responsibilities:
 
@@ -337,7 +337,7 @@ This is where the current accounting domain lives.
 
 Location:
 
-- `src/pyledger/shared/`
+- `src/trutina/shared/`
 
 Responsibilities:
 
@@ -350,19 +350,19 @@ Responsibilities:
 
 ## Responsibility Map
 
-### `src/pyledger/main.py`
+### `src/trutina/main.py`
 
 - Console-script entry point.
 - Imports and invokes the Typer app.
 - Does not contain active accounting logic.
 
-### `src/pyledger/cli/app.py`
+### `src/trutina/cli/app.py`
 
 - Constructs the root Typer application.
 - Owns CLI-level configuration.
 - Registers the journal command namespace.
 
-### `src/pyledger/cli/features/{account,journal,posting}/command.py`
+### `src/trutina/cli/features/{account,journal,posting}/command.py`
 
 - Defines each feature's Typer command group (`account`: create/get/list/update/delete; `journal`: create/get/list;
   `posting`: post/get-by-account/get-by-journal).
@@ -371,22 +371,22 @@ Responsibilities:
 - Never calls a repository or service directly, never constructs a domain model, never renders Rich components
   outside its own formatter.
 
-### `src/pyledger/cli/shared/ui/console.py`
+### `src/trutina/cli/shared/ui/console.py`
 
 - Creates the shared Rich console instance.
 - Installs traceback styling.
 
-### `src/pyledger/cli/shared/ui/theme/*`
+### `src/trutina/cli/shared/ui/theme/*`
 
 - Defines terminal theme detection and style names.
 - Keeps style selection separate from rendering code.
 
-### `src\pyledger\cli\shared\ui\widgets.py`
+### `src\trutina\cli\shared\ui\widgets.py`
 
 - Builds reusable Rich panels, rules, and tables.
 - Keeps layout choices out of the feature formatters.
 
-### `src/pyledger/cli/shared/error_boundary.py`, `cli/shared/formatters/error.py`, `cli/shared/errors/{errors,hint}.py`
+### `src/trutina/cli/shared/error_boundary.py`, `cli/shared/formatters/error.py`, `cli/shared/errors/{errors,hint}.py`
 
 - `error_boundary.py` is the CLI's single error-handling seam, wrapping one `state.call(...)` per command.
 - `formatters/error.py` converts `pydantic.ValidationError`, `AppError`, and `ValidationAppError` into
@@ -395,14 +395,14 @@ Responsibilities:
   kept deliberately separate from `shared/errors` so presentation wording never leaks into the domain error model.
 - Fully wired into every command in every feature group — this is no longer a dormant or partially-used path.
 
-### `src/pyledger/modules/account/schemas/account.py`
+### `src/trutina/modules/account/schemas/account.py`
 
 - Defines `AccountCategory`.
 - Defines `Account`.
 - Derives `normal_balance` from category.
 - Normalizes account names.
 
-### `src/pyledger/modules/account/schemas/chart.py`
+### `src/trutina/modules/account/schemas/chart.py`
 
 - Defines `ChartOfAccounts`.
 - Builds code and name indexes.
@@ -410,41 +410,41 @@ Responsibilities:
 - Resolves account codes directly with `get_by_code()`.
 - Does not expose a `resolve()` method.
 
-### `src/pyledger/modules/account/dtos.py`
+### `src/trutina/modules/account/dtos.py`
 
 - Defines create, update, and view DTOs for account workflows.
 
-### `src/pyledger/modules/account/repo.py`
+### `src/trutina/modules/account/repo.py`
 
 - Defines the async account repository contract.
 - `MongoAccountRepo` in `infrastructure/mongo/account/` implements the contract.
 
-### `src/pyledger/modules/account/service.py`
+### `src/trutina/modules/account/service.py`
 
 - Orchestrates account creation, update, lookup, listing, resolution, and deletion.
 - Converts validated accounts into view models.
 - Rebuilds the chart of accounts when a full snapshot is needed.
 
-### `src/pyledger/modules/journal/schemas/line.py`
+### `src/trutina/modules/journal/schemas/line.py`
 
 - Defines `JournalLine`.
 - Enforces debit/credit exclusivity.
 - Normalizes account references.
 
-### `src/pyledger/modules/journal/schemas/journal.py`
+### `src/trutina/modules/journal/schemas/journal.py`
 
 - Defines `JournalEntry`.
 - Enforces balanced entries and a minimum line count.
 - Computes totals and balance state.
 
-### `src/pyledger/modules/journal/dtos.py`
+### `src/trutina/modules/journal/dtos.py`
 
 - Defines `JournalLineInput`, `CreateJournalInput`, `JournalLineViewModel`, and `JournalViewModel`.
 - Input DTOs perform structural validation only; accounting rules are enforced when the service constructs domain
   models.
 - `CreateJournalInput` does not carry `journal_number`; `JournalService` assigns it via the repository.
 
-### `src/pyledger/modules/journal/service.py`
+### `src/trutina/modules/journal/service.py`
 
 - Validates account references against a chart snapshot from `AccountService`.
 - Requests journal numbers from `JournalRepo`.
@@ -452,31 +452,31 @@ Responsibilities:
 - Exposes `create_journal_entry()`, `get_journal_entry()`, and `list_journal_entries()`.
 - Includes private mapping helpers `_to_line_view()` and `_to_entry_view()`.
 
-### `src/pyledger/modules/journal/repo.py`
+### `src/trutina/modules/journal/repo.py`
 
 - Defines the async journal repository contract.
 - Requires `save()`, `get_by_number()`, `list_entries()`, and `next_journal_number()`.
 - `MongoJournalRepo` in `infrastructure/mongo/journal/` implements the contract.
 
-### `src/pyledger/modules/journal/rule.py`
+### `src/trutina/modules/journal/rule.py`
 
 - Present as an empty scaffold.
 - No journal-specific rule helpers are defined yet.
 
-### `src/pyledger/modules/posting/schemas/ledger_posting.py`
+### `src/trutina/modules/posting/schemas/ledger_posting.py`
 
 - Defines `LedgerPosting`.
 - Makes postings immutable.
 - Validates account names, amounts, and posting dates.
 
-### `src/pyledger/modules/posting/dtos.py`
+### `src/trutina/modules/posting/dtos.py`
 
 - Defines `PostingViewModel`.
 - Debit postings carry a non-None `debit_amount` and a None `credit_amount`; credit postings are the reverse.
 - `is_debit` is a `computed_field` derived from `debit_amount` so it cannot diverge from the stored amounts.
 - There is no input DTO; postings are derived internally by `PostingService` from `JournalViewModel` instances.
 
-### `src/pyledger/modules/posting/service.py`
+### `src/trutina/modules/posting/service.py`
 
 - Implements `PostingService`.
 - Exposes `post_journal_entry()`, `get_postings_by_account()`, and `get_postings_by_journal_number()`.
@@ -485,12 +485,12 @@ Responsibilities:
 - Delegates posting batch persistence to `PostingRepo.save_many()`.
 - Returns `PostingViewModel` instances to callers.
 
-### `src/pyledger/modules/posting/repo.py`
+### `src/trutina/modules/posting/repo.py`
 
 - Defines the async posting repository contract with `save_many()`, `get_by_account()`, and `get_by_journal_number()`.
 - `MongoPostingRepo` in `infrastructure/mongo/posting/` implements the contract.
 
-### `src/pyledger/modules/posting/rule.py`
+### `src/trutina/modules/posting/rule.py`
 
 - Present as an empty scaffold.
 - No posting-specific rule helpers are defined yet.
@@ -654,7 +654,7 @@ The error system is split between shared domain errors and CLI presentation.
 
 ### Shared Error Model
 
-`src/pyledger/shared/errors/` defines:
+`src/trutina/shared/errors/` defines:
 
 - `ErrorCode`
 - `AppError`
@@ -671,13 +671,13 @@ This layer provides stable error identity and structured context.
 
 ### CLI Error Rendering
 
-`src/pyledger/cli/constants/errors.py` defines:
+`src/trutina/cli/constants/errors.py` defines:
 
 - user-facing error messages,
 - user-facing hints,
 - field labels for presentation.
 
-`src/pyledger/cli/formatters/error_fmt.py` turns validation and application errors into terminal output.
+`src/trutina/cli/formatters/error_fmt.py` turns validation and application errors into terminal output.
 
 ### Boundary Rule
 
@@ -725,12 +725,12 @@ Current coverage:
 
 Current test organization:
 
-- `src/pyledger/modules/account/tests/`
-- `src/pyledger/modules/journal/tests/`
-- `src/pyledger/modules/posting/tests/`
-- `src/pyledger/shared/errors/tests/`
-- `src/pyledger/shared/tests/`
-- `src/pyledger/infrastructure/mongo/posting/tests/`
+- `src/trutina/modules/account/tests/`
+- `src/trutina/modules/journal/tests/`
+- `src/trutina/modules/posting/tests/`
+- `src/trutina/shared/errors/tests/`
+- `src/trutina/shared/tests/`
+- `src/trutina/infrastructure/mongo/posting/tests/`
 - root `tests/fixtures/`
 - root `tests/factories/`
 - root `tests/fakes/`
@@ -738,7 +738,7 @@ Current test organization:
 The root `tests/` package provides shared fixtures, factories, and fake repository implementations rather than test
 cases.
 
-`src/pyledger/conftest.py` registers the shared fixture modules.
+`src/trutina/conftest.py` registers the shared fixture modules.
 `tests/fakes/journal_repo.py` provides an in-memory `JournalRepo` that issues journal numbers sequentially for service
 tests.
 `tests/fakes/posting_repo.py` provides an in-memory `PostingRepo` for posting-service tests.
@@ -750,20 +750,20 @@ stub for unit tests that construct `PostingDocument` instances without Beanie in
 tests construct `JournalDocument` without Beanie initialization.
 `tests/fixtures/mongo.py` registers `AccountDocument`, `JournalDocument`, and `PostingDocument` with Beanie and
 truncates the collections used by MongoDB integration tests.
-`src/pyledger/infrastructure/mongo/tests/`, `src/pyledger/infrastructure/mongo/account/tests/`,
-`src/pyledger/infrastructure/mongo/journal/tests/`, and `src/pyledger/infrastructure/mongo/posting/tests/` cover the
+`src/trutina/infrastructure/mongo/tests/`, `src/trutina/infrastructure/mongo/account/tests/`,
+`src/trutina/infrastructure/mongo/journal/tests/`, and `src/trutina/infrastructure/mongo/posting/tests/` cover the
 MongoDB connection helpers and the account, journal, and posting repository adapters.
 
 CLI workflow tests exist end-to-end for `account`, `journal`, and `posting`, split into fake-backed unit tests
 and MongoDB-backed integration tests per feature, plus dedicated composition-root tests for `CliContext`,
-`CliState`, `bootstrap.build_context()`, and `app.py` under `src/pyledger/cli/tests/`. There are still no
+`CliState`, `bootstrap.build_context()`, and `app.py` under `src/trutina/cli/tests/`. There are still no
 reporting tests, since no reporting pipeline exists yet.
 
 ## Application Flow
 
 The current executable flow is:
 
-1. The `pyledger` console script imports `pyledger.main:main`.
+1. The `trutina` console script imports `trutina.main:main`.
 2. `main.py::main()` builds the production `CliContext` and calls `run()`, which opens the CLI's single
 `BlockingPortal`, constructs `CliState`, and dispatches the Typer application via `app(obj=state)`.
 3. Typer dispatches into the matched feature command group (`account`, `journal`, or `posting`).
