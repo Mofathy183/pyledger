@@ -1,4 +1,4 @@
-# pyledger-api — Context
+# trutina-api — Context
 
 Audience: maintainers, reviewers, and future contributors deciding whether
 a change belongs in this package and whether it preserves the guarantees
@@ -7,15 +7,15 @@ looks the way it does, not how to call it — see `README.md` for usage.
 
 ## Why This Package Exists Separately
 
-`pyledger-core`'s services are deliberately transport-agnostic — fully
+`trutina-core`'s services are deliberately transport-agnostic — fully
 async, tested against fakes and real MongoDB, with zero knowledge of
 FastAPI, Typer, or any presentation concern. Two presentation layers need
-to sit on top of that domain: a terminal (`pyledger-cli`) and an HTTP API
+to sit on top of that domain: a terminal (`trutina-cli`) and an HTTP API
 (this package). Keeping them as independent workspace packages, rather
 than folding the API into the CLI or vice versa, means neither can
 accidentally depend on the other's presentation code, and the domain layer
-never needs to know either exists. This mirrors `pyledger-cli`'s own
-`CONTEXT.md` reasoning for why it is split from `pyledger-core` — the same
+never needs to know either exists. This mirrors `trutina-cli`'s own
+`CONTEXT.md` reasoning for why it is split from `trutina-core` — the same
 argument applies symmetrically here.
 
 ## Why The Fixed Router → Mapper → Handler → Presenter Workflow
@@ -66,7 +66,7 @@ first request is ever served. This is the opposite of `CliContext`'s
 lazy, per-invocation, per-accessor construction.
 
 **Why:** A CLI invocation is short-lived and its cost model rewards
-laziness — `pyledger account --help` should never pay for a MongoDB
+laziness — `trutina account --help` should never pay for a MongoDB
 connection it doesn't need. A long-running API process has the opposite
 cost model: it will serve many requests, so the connection and service
 graph will be needed regardless, and paying that cost once at startup
@@ -134,18 +134,18 @@ branch point. `ValidationErrorResponse` extends `ErrorResponse` with a
 the base — a plain not-found or conflict has nothing field-level to
 report, and should not carry a field that is always `None`.
 
-## Why The Error Catalog Lives In `api/shared/errors/`, Not `pyledger-shared`
+## Why The Error Catalog Lives In `api/shared/errors/`, Not `trutina-shared`
 
 **Decision:** `api/shared/errors/catalog.py` (`ERROR_CATALOG: dict[ErrorCode, ErrorCatalogEntry]`)
 maps every domain `ErrorCode` to an HTTP status code, a message template,
 and an optional hint template — entirely separate from
-`pyledger-shared`'s `ErrorCode`/`AppError` model.
+`trutina-shared`'s `ErrorCode`/`AppError` model.
 
-**Why:** This is the exact same boundary rule `pyledger-shared`'s own
+**Why:** This is the exact same boundary rule `trutina-shared`'s own
 `CONTEXT.md` states for the CLI's `cli/shared/errors/errors.py`: the
 shared error layer identifies _what_ went wrong (`ErrorCode`); it never
 carries presentation text or transport-specific metadata (an HTTP status
-code is exactly that). If HTTP status codes lived in `pyledger-shared`,
+code is exactly that). If HTTP status codes lived in `trutina-shared`,
 every future presentation layer would be forced to either inherit HTTP
 semantics that don't apply to it, or the shared layer would need parallel
 catalogs per transport — defeating the purpose of a shared error identity.
@@ -190,9 +190,9 @@ but the walk itself, not order, is what guarantees correct dispatch.
 
 ## Why `FieldViolation.value` Recovery Exists In `handlers.py`
 
-**Context:** `pyledger-shared`'s `get_field_violations()` currently
+**Context:** `trutina-shared`'s `get_field_violations()` currently
 downgrades every domain-raised `ErrorCode` to `ErrorCode.UNKNOWN_ERROR` on
-`FieldViolation.code` (documented in `pyledger-shared`'s own `CONTEXT.md`
+`FieldViolation.code` (documented in `trutina-shared`'s own `CONTEXT.md`
 as a real, unresolved gap, not intended behavior). Left unhandled, every
 field-level validation message returned by this API would read "An
 unexpected error occurred" instead of the real domain message.
@@ -210,11 +210,11 @@ to generic text.
 
 ## Allowed and Forbidden Dependencies
 
-**Allowed** (per `apps/api/pyproject.toml`): `pyledger-core`,
-`pyledger-infrastructure`, `pyledger-config`, `fastapi[standard]`,
+**Allowed** (per `apps/api/pyproject.toml`): `trutina-core`,
+`trutina-infrastructure`, `trutina-config`, `fastapi[standard]`,
 `uvicorn[standard]`.
 
-**Forbidden:** `pyledger-cli`, or any other `apps/*` package — the API
+**Forbidden:** `trutina-cli`, or any other `apps/*` package — the API
 must never depend on a sibling application, mirroring the CLI's identical
 rule in reverse. Nothing here should import `beanie`/`pymongo` directly
 outside of `composition/bootstrap.py`, which is the one module in this
@@ -224,8 +224,8 @@ service attributes.
 
 **Direction:** enforced by the workspace's root `pyproject.toml`
 import-linter `layers` contract:
-`pyledger.cli | pyledger.api → pyledger.infrastructure → pyledger.core →
-pyledger.shared | pyledger.config`. This package sits at the top beside
+`trutina.cli | trutina.api → trutina.infrastructure → trutina.core →
+trutina.shared | trutina.config`. This package sits at the top beside
 the CLI; nothing downstream may import from it.
 
 ## Layering Within This Package
@@ -236,9 +236,9 @@ api.composition.app.create_app()
   -> api.shared.errors.register_exception_handlers()
   -> api.features.*.router
        -> Request Schema (schemas.py)
-       -> mapper.py            -> Input DTO (pyledger-core)
+       -> mapper.py            -> Input DTO (trutina-core)
        -> Depends(get_*_service) -> composition.dependencies
-       -> handler.py            -> pyledger-core service
+       -> handler.py            -> trutina-core service
        -> presenter.py           -> Response Schema (schemas.py)
 ```
 
@@ -253,7 +253,7 @@ No import-linter contract currently enforces this sub-layering
 mechanically (only the workspace-level `apps → infrastructure → core →
 shared/config` contract is checked in CI) — it is observed convention in
 the current source, flagged here rather than described as enforced,
-mirroring the same caveat in `pyledger-cli`'s own `CONTEXT.md`.
+mirroring the same caveat in `trutina-cli`'s own `CONTEXT.md`.
 
 ## Control Flow
 
@@ -305,16 +305,16 @@ Process starts
   `JournalService`, and add a matching provider in `dependencies.py`.
 - **New error presentation** — add or edit an `ErrorCatalogEntry` in
   `catalog.py`, keyed by `ErrorCode`. Never add HTTP-specific metadata to
-  `pyledger-shared`.
+  `trutina-shared`.
 - **New response envelope shape** — extend `BaseResponse`/`SuccessResponse`/
   `ErrorResponse`, never introduce a parallel, uncoordinated response base
   for a single feature.
 
 ## Assumptions This Package Relies On
 
-- **`pyledger-core` services are the only source of business validation.**
+- **`trutina-core` services are the only source of business validation.**
   This package assumes every `AppError`/`ValidationAppError` it might catch
-  originates from a real `pyledger-core` service or DTO/domain
+  originates from a real `trutina-core` service or DTO/domain
   construction — it performs no independent business-rule checking.
 - **Exactly one `Container` per process**, constructed once during
   startup and never rebuilt mid-process. No route or dependency provider
@@ -332,7 +332,7 @@ Process starts
   entry.** A new code added upstream without a matching entry degrades to
   a generic `500` via `DEFAULT_ERROR_ENTRY` rather than crashing the
   handler — this is presentation degradation, not a test failure, and must
-  be checked manually when `pyledger-shared`'s `ErrorCode` enum changes.
+  be checked manually when `trutina-shared`'s `ErrorCode` enum changes.
 
 ## Common Mistakes to Avoid
 
@@ -357,8 +357,8 @@ Process starts
 - **Forgetting to update both `bootstrap.py::DOCUMENT_MODELS` and
   `tests/fixtures/mongo.py::DOCUMENT_MODELS`** when adding a new bounded
   context's `Document` class.
-- **Assuming `pyledger-shared`'s `ErrorCode` message belongs in this
-  package's catalog by inheritance.** `pyledger-shared` intentionally
+- **Assuming `trutina-shared`'s `ErrorCode` message belongs in this
+  package's catalog by inheritance.** `trutina-shared` intentionally
   carries no presentation text — every `ErrorCode` needs its own
   `ERROR_CATALOG` entry here; there is no fallback beyond the generic
   `DEFAULT_ERROR_ENTRY`.

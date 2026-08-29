@@ -8,8 +8,8 @@ without any other test currently catching it.
 """
 
 import pytest
-from pyledger.cli.bootstrap import build_context
-from pyledger.config import get_settings
+from trutina.cli.bootstrap import build_context
+from trutina.config import get_settings
 
 
 @pytest.mark.unit

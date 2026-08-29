@@ -18,10 +18,10 @@ cd "$(git rev-parse --show-toplevel)"
 # Cleanup (containers + network) always runs via the EXIT trap, whether
 # the smoke test passes, fails, or is interrupted (Ctrl-C).
 
-NETWORK="pyledger-smoke-net"
-MONGO_NAME="pyledger-smoke-mongo"
-API_NAME="pyledger-smoke-api"
-IMAGE_TAG="pyledger-api:smoke"
+NETWORK="trutina-smoke-net"
+MONGO_NAME="trutina-smoke-mongo"
+API_NAME="trutina-smoke-api"
+IMAGE_TAG="trutina-api:smoke"
 RETRIES=15
 RETRY_INTERVAL=2
 
@@ -60,8 +60,8 @@ echo "==> Starting API"
 docker run -d --rm \
     --name "$API_NAME" \
     --network "$NETWORK" \
-    -e PYLEDGER_MONGO__URI="mongodb://${MONGO_NAME}:27017" \
-    -e PYLEDGER_MONGO__DB="pyledger_smoke" \
+    -e TRUTINA_MONGO__URI="mongodb://${MONGO_NAME}:27017" \
+    -e TRUTINA_MONGO__DB="trutina_smoke" \
     -p 8000:8000 \
     "$IMAGE_TAG" >/dev/null
 

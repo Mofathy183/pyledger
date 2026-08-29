@@ -1,5 +1,5 @@
 [project]
-name = "pyledger-workspace"
+name = "trutina-workspace"
 version = "0.1.0"
 description = "A simple command-line bookkeeping system built in Python that simulates how a real accounting system works."
 readme = "README.md"
@@ -28,7 +28,7 @@ dev = [
 ]
 
 [tool.coverage.run]
-source = ["pyledger"]
+source = ["trutina"]
 branch = true
 concurrency = ["thread"]
 
@@ -37,30 +37,30 @@ show_missing = true
 skip_empty = true
 
 [tool.importlinter]
-root_packages = ["pyledger"]
+root_packages = ["trutina"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Layered architecture: apps -> infrastructure -> core -> shared/config"
 type = "layers"
 layers = [
-    "pyledger.cli | pyledger.api",
-    "pyledger.infrastructure",
-    "pyledger.core",
-    "pyledger.shared | pyledger.config",
+    "trutina.cli | trutina.api",
+    "trutina.infrastructure",
+    "trutina.core",
+    "trutina.shared | trutina.config",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Core must have zero Mongo/Beanie awareness"
 type = "forbidden"
-source_modules = ["pyledger.core"]
+source_modules = ["trutina.core"]
 forbidden_modules = ["beanie", "pymongo"]
 
 [[tool.importlinter.contracts]]
 name = "Core account -> journal -> posting layering"
 type = "layers"
 layers = [
-    "pyledger.core.posting",
-    "pyledger.core.journal",
-    "pyledger.core.account",
+    "trutina.core.posting",
+    "trutina.core.journal",
+    "trutina.core.account",
 ]

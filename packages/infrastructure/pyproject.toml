@@ -1,19 +1,19 @@
 [project]
-name = "pyledger-infrastructure"
+name = "trutina-infrastructure"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
     "beanie>=2.1.0",
     "pymongo>=4.17.0",
-    "pyledger-shared",
-    "pyledger-core",
-    "pyledger-config",
+    "trutina-shared",
+    "trutina-core",
+    "trutina-config",
 ]
 
 [tool.uv.sources]
-pyledger-shared = { workspace = true }
-pyledger-core = { workspace = true }
-pyledger-config = { workspace = true }
+trutina-shared = { workspace = true }
+trutina-core = { workspace = true }
+trutina-config = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=68"]

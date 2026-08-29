@@ -1,5 +1,5 @@
 import pytest
-from pyledger.cli.app import app
+from trutina.cli.app import app
 from typer.testing import CliRunner
 
 runner = CliRunner()
@@ -17,7 +17,7 @@ class TestAppHelp:
             raise AssertionError("build_context() must not be called for --help")
 
         monkeypatch.setattr(
-            "pyledger.cli.app.build_context",
+            "trutina.cli.app.build_context",
             _fail_if_called,
         )
 
@@ -33,7 +33,7 @@ class TestJournalSubcommandHelp:
             raise AssertionError("build_context() must not be called for --help")
 
         monkeypatch.setattr(
-            "pyledger.cli.bootstrap.build_context",
+            "trutina.cli.bootstrap.build_context",
             _fail_if_called,
         )
 

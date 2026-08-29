@@ -55,8 +55,8 @@ jobs:
     timeout-minutes: 15
     needs: static_analysis
     env:
-      PYLEDGER_TEST_MONGO__URI: mongodb://localhost:27017
-      PYLEDGER_TEST_MONGO__DB: pyledger_test
+      TRUTINA_TEST_MONGO__URI: mongodb://localhost:27017
+      TRUTINA_TEST_MONGO__DB: trutina_test
     steps:
       - uses: actions/checkout@v4
 
@@ -72,7 +72,7 @@ jobs:
 
       - run: >
           tools/ci/pytest-optional.sh "unit and shared"
-          --cov=pyledger --cov-report=term-missing
+          --cov=trutina --cov-report=term-missing
 
   # ── Quality Gates 3–5: Mongo-backed layers ───────────────────────
   # Each of these calls the shared _test-layer.yml reusable workflow
@@ -124,7 +124,7 @@ jobs:
 
       - run: uv sync --all-packages --frozen
 
-      # Builds every workspace member, pyledger-cli and pyledger-api
+      # Builds every workspace member, trutina-cli and trutina-api
       # included. Scoped `uv build --package ...` steps were removed —
       # they were fully redundant with --all-packages. Re-add one only
       # if a later step needs to consume that specific package's wheel

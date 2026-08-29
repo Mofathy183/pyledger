@@ -1,11 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pyledger.core.account import AccountService
-from pyledger.core.account.schemas import AccountCategory, ChartOfAccounts
-from pyledger.core.journal import JournalService
-from pyledger.core.posting import PostingService
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.core.account import AccountService
+from trutina.core.account.schemas import AccountCategory, ChartOfAccounts
+from trutina.core.journal import JournalService
+from trutina.core.posting import PostingService
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
 
 from tests.factories.account import make_fake_account_repo
 from tests.factories.journal import make_fake_journal_repo

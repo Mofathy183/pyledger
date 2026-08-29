@@ -1,7 +1,7 @@
-from pyledger.core.account import AccountRepo
-from pyledger.core.account.schemas import Account, ChartOfAccounts
-from pyledger.shared.errors import AppError, ErrorCode
-from pyledger.shared.rule import account_lookup_key
+from trutina.core.account import AccountRepo
+from trutina.core.account.schemas import Account, ChartOfAccounts
+from trutina.shared.errors import AppError, ErrorCode
+from trutina.shared.rule import account_lookup_key
 
 
 class FakeAccountRepo(AccountRepo):

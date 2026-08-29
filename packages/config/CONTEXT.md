@@ -1,15 +1,15 @@
-# pyledger-config — Context
+# trutina-config — Context
 
-This document explains why `pyledger-config` is shaped the way it is.
+This document explains why `trutina-config` is shaped the way it is.
 For usage, see `README.md`. This file rarely discusses usage and the
 README rarely discusses architecture — if something appears in both,
 it's for a different reason each time.
 
 ## Why this architecture was chosen
 
-PyLedger has multiple applications (`pyledger-cli`, `pyledger-api`, and
+Trutina has multiple applications (`trutina-cli`, `trutina-api`, and
 future apps per the monorepo plan) and a storage adapter
-(`pyledger-infrastructure`) that all need the same categories of
+(`trutina-infrastructure`) that all need the same categories of
 configuration — a Mongo connection, API bind settings — sourced the
 same way. The alternative (`os.environ` reads scattered across each
 app) would mean re-deriving env-var naming, dotenv loading, and
@@ -33,7 +33,7 @@ with that.
   with no way to tell which fields belong to which subsystem at a
   glance. Nesting (`settings.mongo.uri`, `settings.api.port`) keeps
   each group's fields visibly grouped and independently reusable —
-  `pyledger-infrastructure` only ever needs `MongoSettings`, not the
+  `trutina-infrastructure` only ever needs `MongoSettings`, not the
   whole `Settings` object.
 - **Passing raw environment variables into each consumer.** Rejected:
   this is precisely the "N independently drifting copies of the same
@@ -86,17 +86,17 @@ with that.
 
 ## Architectural invariants that must never be broken
 
-- **Zero dependencies on any other `pyledger-*` package.** This package
+- **Zero dependencies on any other `trutina-*` package.** This package
   sits at the root of the workspace dependency graph (confirmed by its
   `pyproject.toml`: only `pydantic` and `pydantic-settings`). If this
-  package ever needs to import from `pyledger.core` or
-  `pyledger.infrastructure`, that is a sign the code doesn't belong
+  package ever needs to import from `trutina.core` or
+  `trutina.infrastructure`, that is a sign the code doesn't belong
   here.
 - **No I/O beyond dotenv-file reads performed by `pydantic-settings`
   itself.** This package must never open a network connection, read a
   database, or otherwise perform work beyond parsing configuration.
 - **Production and test configuration must remain namespace-isolated.**
-  `PYLEDGER_` vs. `PYLEDGER_TEST_`, `.env` vs. `.env.test`. A change
+  `TRUTINA_` vs. `TRUTINA_TEST_`, `.env` vs. `.env.test`. A change
   that lets test configuration silently fall back to reading production
   variables (or vice versa) is a correctness regression, not a
   refactor.
@@ -109,8 +109,8 @@ with that.
 
 ## Forbidden dependencies
 
-- Any other `pyledger-*` workspace package (`pyledger-core`,
-  `pyledger-infrastructure`, `pyledger-cli`, `pyledger-api`). This
+- Any other `trutina-*` workspace package (`trutina-core`,
+  `trutina-infrastructure`, `trutina-cli`, `trutina-api`). This
   package is a dependency root; nothing here may depend on anything
   downstream of it.
 - Any driver or client library for a specific backend (`pymongo`,
@@ -120,7 +120,7 @@ with that.
 
 ## Layering rules
 
-`pyledger-config` has no internal layers of its own beyond three
+`trutina-config` has no internal layers of its own beyond three
 sibling files (`mongo.py`, `api.py`, `base.py`) plus `__init__.py`.
 The only ordering rule: `base.py` may import from `mongo.py`/`api.py`
 (to nest them into `Settings`), never the reverse — a nested settings
@@ -131,10 +131,10 @@ module must never import the root `Settings`/`TestSettings` classes.
 1. An application composition root calls `get_settings()` (or
    constructs `Settings()`/`TestSettings()` directly, in tests).
 2. `pydantic-settings` reads the relevant dotenv file (if present) and
-   overlays matching `PYLEDGER_`/`PYLEDGER_TEST_`-prefixed environment
+   overlays matching `TRUTINA_`/`TRUTINA_TEST_`-prefixed environment
    variables.
 3. Nested fields (`mongo`, `api`) are populated from
-   double-underscore-delimited variables (`PYLEDGER_MONGO__URI`) or
+   double-underscore-delimited variables (`TRUTINA_MONGO__URI`) or
    fall back to each nested model's own `Field(default=...)` values if
    unset.
 4. The resulting `Settings`/`TestSettings` instance is handed to
@@ -189,5 +189,5 @@ persists settings, or mutates its own output after construction.
   `BaseSettings` will silently ignore the parent's prefix rules.
 - **Assuming this package validates connectivity.** `MongoSettings`
   describes a URI/DB name; it does not verify a MongoDB instance is
-  reachable at that URI — that check belongs to `pyledger-infrastructure`'s
+  reachable at that URI — that check belongs to `trutina-infrastructure`'s
   `connect()`.

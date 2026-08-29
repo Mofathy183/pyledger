@@ -1,21 +1,21 @@
-# pyledger-infrastructure
+# trutina-infrastructure
 
-The concrete MongoDB/Beanie storage adapters for PyLedger. This package is the
+The concrete MongoDB/Beanie storage adapters for Trutina. This package is the
 only place in the workspace where `beanie` and `pymongo` are imported.
 
 ## What is this package?
 
-`pyledger-infrastructure` implements the repository contracts defined in
-`pyledger-core` (`AccountRepo`, `JournalRepo`, `PostingRepo`) against a real
+`trutina-infrastructure` implements the repository contracts defined in
+`trutina-core` (`AccountRepo`, `JournalRepo`, `PostingRepo`) against a real
 MongoDB database, and provides the connection lifecycle and error-translation
 utilities every one of those adapters relies on.
 
 ## Why does it exist?
 
-`pyledger-core` defines its repository contracts as storage-agnostic ABCs —
+`trutina-core` defines its repository contracts as storage-agnostic ABCs —
 they know nothing about MongoDB, Beanie, or PyMongo. Something in the
 workspace has to actually talk to a database. That's this package. Keeping it
-separate means the accounting domain (`pyledger-core`) stays swappable to a
+separate means the accounting domain (`trutina-core`) stays swappable to a
 different storage backend later without changing a single service or domain
 model.
 
@@ -32,30 +32,30 @@ model.
   bounded context: `account`, `journal`, `posting`.
 
 This package does **not** contain accounting rules, business validation, or
-uniqueness pre-checks — those belong to `pyledger-core`'s services and domain
+uniqueness pre-checks — those belong to `trutina-core`'s services and domain
 schemas. It also does not import `typer`, `rich`, or `fastapi`.
 
 ## Public API
 
 ```txt
-pyledger.infrastructure.mongo            -> MongoConnection, connect, disconnect
-pyledger.infrastructure.mongo.shared     -> TimestampedDocument, MongoExecutor
-pyledger.infrastructure.mongo.account    -> AccountDocument, MongoAccountRepo
-pyledger.infrastructure.mongo.journal    -> JournalDocument, JournalLineSubDocument, MongoJournalRepo
-pyledger.infrastructure.mongo.posting    -> PostingDocument, MongoPostingRepo
+trutina.infrastructure.mongo            -> MongoConnection, connect, disconnect
+trutina.infrastructure.mongo.shared     -> TimestampedDocument, MongoExecutor
+trutina.infrastructure.mongo.account    -> AccountDocument, MongoAccountRepo
+trutina.infrastructure.mongo.journal    -> JournalDocument, JournalLineSubDocument, MongoJournalRepo
+trutina.infrastructure.mongo.posting    -> PostingDocument, MongoPostingRepo
 ```
 
 `error_translation.py` (`translate_mongo_errors`, `violated_index`) is used
 internally by every repository and by `MongoExecutor`; it is not re-exported
 from a package `__init__.py` today, so import it from
-`pyledger.infrastructure.mongo.error_translation` directly if you need it.
+`trutina.infrastructure.mongo.error_translation` directly if you need it.
 
 ## Installation
 
 From the workspace root:
 
 ```bash
-uv sync --package pyledger-infrastructure
+uv sync --package trutina-infrastructure
 ```
 
 or `uv sync` to install the whole workspace.
@@ -65,11 +65,11 @@ or `uv sync` to install the whole workspace.
 ### Opening a connection
 
 ```python
-from pyledger.config import get_settings
-from pyledger.infrastructure.mongo import connect, disconnect
+from trutina.config import get_settings
+from trutina.infrastructure.mongo import connect, disconnect
 
 settings = get_settings()
-connection = await connect(settings.mongo)   # verifies connectivity with a ping
+connection = await connect(settings.mongo)  # verifies connectivity with a ping
 ...
 await disconnect(connection)
 ```
@@ -81,11 +81,11 @@ database handle:
 
 ```python
 from beanie import init_beanie
-from pyledger.infrastructure.mongo import connect
-from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
-from pyledger.infrastructure.mongo.journal import JournalDocument
-from pyledger.infrastructure.mongo.posting import PostingDocument
-from pyledger.infrastructure.mongo.shared import MongoExecutor
+from trutina.infrastructure.mongo import connect
+from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
+from trutina.infrastructure.mongo.journal import JournalDocument
+from trutina.infrastructure.mongo.posting import PostingDocument
+from trutina.infrastructure.mongo.shared import MongoExecutor
 
 connection = await connect(settings.mongo)
 await init_beanie(
@@ -104,7 +104,7 @@ repository's docstring states this as a precondition. Forgetting it raises
 ### Using a repository
 
 Repositories are consumed through the `AccountRepo`/`JournalRepo`/
-`PostingRepo` contracts from `pyledger-core`, so calling code never needs to
+`PostingRepo` contracts from `trutina-core`, so calling code never needs to
 import the concrete `Mongo*Repo` classes directly except at composition time:
 
 ```python
@@ -115,12 +115,12 @@ account = await account_repo.get_by_code("1001")
 
 - **Consumers:** `apps/cli` and `apps/api` each construct these repositories
   in their own composition root (`CliContext`, the API's `bootstrap.py`), then
-  hand them to `pyledger-core` services.
-- **Never a consumer of:** `pyledger-cli` or `pyledger-api` — this package
+  hand them to `trutina-core` services.
+- **Never a consumer of:** `trutina-cli` or `trutina-api` — this package
   never imports an app, and an import-linter contract in the root
   `pyproject.toml` fails the build if it ever does.
-- **Depends on:** `pyledger-shared` (errors, rules), `pyledger-core`
-  (repository contracts, domain schemas), `pyledger-config` (`MongoSettings`),
+- **Depends on:** `trutina-shared` (errors, rules), `trutina-core`
+  (repository contracts, domain schemas), `trutina-config` (`MongoSettings`),
   `beanie`, `pymongo`.
 
 ## Extending — adding a new bounded-context adapter
@@ -131,7 +131,7 @@ Follow the shape already established by `account`/`journal`/`posting`:
    `pydantic.BaseModel` for embedded subdocuments) with a `Settings` class
    declaring the collection name and indexes.
 2. Add `mongo/<feature>/repository.py` — a `Mongo<Feature>Repo` implementing
-   the corresponding `pyledger-core` repo contract, built around a single
+   the corresponding `trutina-core` repo contract, built around a single
    `_to_document()`/`_to_domain()` mapping boundary and a `MongoExecutor`.
 3. Add `mongo/<feature>/__init__.py` re-exporting the document(s) and repo.
 4. Register the new `Document` class wherever `init_beanie()` is called in

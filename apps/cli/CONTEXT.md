@@ -1,4 +1,4 @@
-# pyledger-cli — Context
+# trutina-cli — Context
 
 Audience: maintainers, reviewers, and future contributors deciding whether
 a change belongs in this package and whether it preserves the guarantees
@@ -7,12 +7,12 @@ looks the way it does, not how to call it — see `README.md` for usage.
 
 ## Why This Package Exists Separately
 
-PyLedger's accounting domain (`pyledger-core`) is deliberately storage- and
+Trutina's accounting domain (`trutina-core`) is deliberately storage- and
 transport-agnostic: fully async, tested against fakes and real MongoDB, and
 with zero knowledge of Typer, Rich, or terminal concerns. Something has to
-be the first real user-facing surface onto that domain. `pyledger-cli` is
+be the first real user-facing surface onto that domain. `trutina-cli` is
 that surface, kept as its own workspace package rather than folded into
-`pyledger-core` for the same reason `pyledger-api` is separate: two
+`trutina-core` for the same reason `trutina-api` is separate: two
 presentation layers over one domain package must not be able to
 accidentally depend on each other's presentation concerns, and neither
 should be able to leak presentation code into the domain.
@@ -32,7 +32,7 @@ repository calls) goes through exactly one `BlockingPortal`, exposed as
 
 **Why:** Click's dispatch machinery (`app(obj=state)`) is itself
 synchronous — there is no supported way to make a Typer command body
-`async def` and have Click await it directly. `pyledger-core`'s services
+`async def` and have Click await it directly. `trutina-core`'s services
 are async because they perform real I/O (MongoDB via Beanie/PyMongo) and
 the domain layer is designed to be non-blocking and storage-agnostic.
 `anyio`'s `BlockingPortal` is the bridge: one background thread hosts one
@@ -57,7 +57,7 @@ created lazily, the first time a command actually asks for it via a
 invocation.
 
 **Why:** Startup cost must stay flat regardless of which command runs —
-`pyledger account --help` must never touch MongoDB, because nothing in the
+`trutina account --help` must never touch MongoDB, because nothing in the
 `--help` path calls one of `CliContext`'s accessors. This also makes
 testability free: a `CliContext` built with injected `Fake*Repo` instances
 can never open a real connection, because the lazy-creation branch in each
@@ -89,14 +89,14 @@ state on `aclose()` would make `Fake*Repo` inspection unreliable depending
 on exactly when a test happens to call `aclose()`, which is precisely the
 kind of order-dependent test fragility this design avoids.
 
-## Why CLI Error Copy Lives Outside `pyledger-shared`
+## Why CLI Error Copy Lives Outside `trutina-shared`
 
 **Decision:** `cli/shared/errors/errors.py` (`ERRORS: dict[ErrorCode,
 ErrorDetail]`) and `cli/shared/errors/hint.py` (`HINTS`, `FIELD_LABELS`)
-are CLI-owned catalogs, entirely separate from `pyledger-shared`'s
+are CLI-owned catalogs, entirely separate from `trutina-shared`'s
 `ErrorCode`/`AppError` model.
 
-**Why:** `pyledger-shared`'s architectural invariant (see its own
+**Why:** `trutina-shared`'s architectural invariant (see its own
 `CONTEXT.md`) is that the shared error layer carries no presentation text.
 `AppError`/`ValidationAppError` identify _what_ went wrong via `ErrorCode`;
 they never carry a user-facing sentence. If message/hint text lived in
@@ -147,7 +147,7 @@ that has to be remembered.
 `parser.py` validates and cleans raw scalars (a journal number, an account
 identifier) rather than building a DTO — because `PostingService`'s own
 methods take plain arguments, mirroring the absence of a `PostingViewModel`
-input DTO in `pyledger-core` itself (see that package's `CONTEXT.md` for
+input DTO in `trutina-core` itself (see that package's `CONTEXT.md` for
 why: postings are derived internally, never submitted by a caller).
 
 **Why replicate that decision at the CLI layer instead of inventing a
@@ -163,7 +163,7 @@ adding safety.
 - **Commands never call a repository or service directly.** Only
   `CliContext` constructs them; only handlers call them.
 - **Commands never construct domain models.** `Account(...)`,
-  `JournalEntry(...)`, etc. are built exclusively by `pyledger-core`
+  `JournalEntry(...)`, etc. are built exclusively by `trutina-core`
   services.
 - **Commands never render Rich components directly**, including one-line
   status text — every user-facing string is composed in a feature's
@@ -173,7 +173,7 @@ adding safety.
   from a test.
 - **Formatters never call a service or repository, and never import a
   domain schema** — only the DTOs/ViewModels a service already returned.
-- **Services remain UI-independent.** Nothing under `pyledger-core`'s
+- **Services remain UI-independent.** Nothing under `trutina-core`'s
   `modules/*/service.py` imports `rich`, `typer`, or anything under `cli/`
   — enforced by the workspace's layered import-linter contract.
 - **Exactly one `BlockingPortal`/event loop per process.** No command,
@@ -183,18 +183,18 @@ adding safety.
 
 ## Allowed and Forbidden Dependencies
 
-**Allowed** (per `apps/cli/pyproject.toml`): `pyledger-core`,
-`pyledger-infrastructure`, `pyledger-config`, `typer`, `rich`, `anyio`.
+**Allowed** (per `apps/cli/pyproject.toml`): `trutina-core`,
+`trutina-infrastructure`, `trutina-config`, `typer`, `rich`, `anyio`.
 
-**Forbidden:** `pyledger-api`, or any other `apps/*` package — the CLI must
+**Forbidden:** `trutina-api`, or any other `apps/*` package — the CLI must
 never depend on a sibling application. Nothing here should import
 `beanie`/`pymongo` directly either; those are reached only indirectly, via
-`CliContext`'s use of `pyledger-infrastructure`'s concrete repositories.
+`CliContext`'s use of `trutina-infrastructure`'s concrete repositories.
 
 **Direction:** enforced by the workspace's root `pyproject.toml`
 import-linter `layers` contract:
-`pyledger.cli | pyledger.api → pyledger.infrastructure → pyledger.core →
-pyledger.shared | pyledger.config`. This package sits at the top; nothing
+`trutina.cli | trutina.api → trutina.infrastructure → trutina.core →
+trutina.shared | trutina.config`. This package sits at the top; nothing
 downstream may import from it.
 
 ## Layering Within This Package
@@ -202,10 +202,10 @@ downstream may import from it.
 ```text
 cli.app
   -> cli.features.*.command
-    -> cli.features.*.{parser, prompt}     -> DTOs (pyledger-core)
+    -> cli.features.*.{parser, prompt}     -> DTOs (trutina-core)
     -> cli.state.CliState.call(...)
       -> cli.features.*.handler
-        -> cli.context.CliContext -> pyledger-core services
+        -> cli.context.CliContext -> trutina-core services
     -> cli.features.*.formatter -> cli.shared.ui
     -> cli.shared.error_boundary -> cli.shared.formatters.error + cli.shared.errors + cli.shared.ui
 ```
@@ -214,7 +214,7 @@ Within `cli/shared/`, `error_boundary.py` sits above `formatters/error.py`,
 `errors/`, and `ui/` — it depends on all three, but none of them depend
 back on it or on each other in that direction. `ui/` is the lowest
 sub-layer (generic Rich widgets, no error-model awareness);
-`errors/`/`formatters/` build on `pyledger-shared`'s `ErrorCode`/`AppError`
+`errors/`/`formatters/` build on `trutina-shared`'s `ErrorCode`/`AppError`
 plus `ui/`'s widgets; `error_boundary.py` is the only place all of that,
 plus `typer.Exit`, actually combines.
 
@@ -234,9 +234,9 @@ User types a command
         still funneling through parser.py
   -> state.call(handler_fn, state.context, dto)   [crosses into async world]
   -> Handler resolves the relevant service from CliContext
-  -> Service (pyledger-core) orchestrates domain construction, validation,
+  -> Service (trutina-core) orchestrates domain construction, validation,
      repository calls
-  -> Repository (pyledger-core contract -> pyledger-infrastructure adapter)
+  -> Repository (trutina-core contract -> trutina-infrastructure adapter)
      persists/reads data
   -> Service returns a ViewModel, or raises AppError / ValidationAppError
       - success -> formatter.py builds a renderable, command calls
@@ -283,7 +283,7 @@ touch MongoDB.
 ## Extension Points
 
 - **A new feature command group** (e.g. a future `reporting` group, once a
-  reporting pipeline exists in `pyledger-core`): mirrors
+  reporting pipeline exists in `trutina-core`): mirrors
   `cli/features/{account,journal,posting}/` exactly — see README's
   "Extending" section for the mechanical steps.
 - **A new `CliContext` accessor**: add a `get_<feature>_repo()`/
@@ -292,7 +292,7 @@ touch MongoDB.
   `JournalService` is wired to `AccountService`.
 - **New CLI-facing error wording**: add entries to
   `cli/shared/errors/errors.py`/`hint.py` keyed by `ErrorCode` — never add
-  presentation text to `pyledger-shared`.
+  presentation text to `trutina-shared`.
 - **New shared Rich widgets**: add to `cli/shared/ui/widgets.py` following
   `panel()`/`rule()`/`table()`'s shape (accept style-name strings, never
   hardcode colors); every formatter should build on these three rather
@@ -300,9 +300,9 @@ touch MongoDB.
 
 ## Assumptions This Package Relies On
 
-- **`pyledger-core` services are the only source of business validation.**
+- **`trutina-core` services are the only source of business validation.**
   This package assumes every `AppError`/`ValidationAppError` it might catch
-  originates from a real `pyledger-core` service or DTO construction — it
+  originates from a real `trutina-core` service or DTO construction — it
   performs no independent business-rule checking of its own.
 - **Exactly one process-wide event loop.** Every accessor, service call,
   and repository call assumes it is running on the single portal-owned loop
@@ -312,7 +312,7 @@ touch MongoDB.
   a matching `ERRORS`/`HINTS` entry here will fall back to the generic
   `UNKNOWN_ERROR` catalog entry rather than failing loudly — this is
   presentation degradation, not a test failure, so it must be checked
-  manually when `pyledger-shared`'s `ErrorCode` enum changes.
+  manually when `trutina-shared`'s `ErrorCode` enum changes.
 - **`Fake*Repo` instances behave closely enough to their Mongo counterparts
   for CLI-level assertions.** E.g. `FakeJournalRepo` issues sequential
   journal numbers starting at 1 regardless of whether the caller ultimately
@@ -337,8 +337,8 @@ touch MongoDB.
 - **Constructing a DTO directly inside `prompt.py`** instead of collecting
   raw values and delegating to `parser.py`. This is the exact drift
   `error_boundary`/parser convergence is designed to prevent (see above).
-- **Assuming `pyledger-shared`'s `ErrorCode` message belongs in this
-  package's catalogs.** `pyledger-shared` intentionally carries no
+- **Assuming `trutina-shared`'s `ErrorCode` message belongs in this
+  package's catalogs.** `trutina-shared` intentionally carries no
   presentation text — every `ErrorCode` needs its own `ERRORS`/`HINTS`
   entry here; there is no fallback derivation from the shared model beyond
   the generic `UNKNOWN_ERROR` catalog entry.

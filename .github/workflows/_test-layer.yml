@@ -26,8 +26,8 @@ on:
         type: string
 
 env:
-  PYLEDGER_TEST_MONGO__URI: mongodb://localhost:27017
-  PYLEDGER_TEST_MONGO__DB: pyledger_test
+  TRUTINA_TEST_MONGO__URI: mongodb://localhost:27017
+  TRUTINA_TEST_MONGO__DB: trutina_test
 
 jobs:
   test:
@@ -57,7 +57,7 @@ jobs:
       - name: Unit tests
         run: >
           tools/ci/pytest-optional.sh "unit and ${{ inputs.marker }}"
-          --cov=pyledger --cov-report=term-missing
+          --cov=trutina --cov-report=term-missing
 
       - name: Integration tests
         run: tools/ci/pytest-optional.sh "integration and ${{ inputs.marker }}"

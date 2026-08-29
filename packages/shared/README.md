@@ -1,12 +1,12 @@
-# pyledger-shared
+# trutina-shared
 
 Reusable validation helpers, utility functions, and the shared domain error
-model used across every PyLedger package and application.
+model used across every Trutina package and application.
 
 ## What This Package Is
 
-`pyledger-shared` is the lowest layer of the PyLedger workspace. It has no
-dependency on any other PyLedger package — not `core`, not `cli`, not `api`,
+`trutina-shared` is the lowest layer of the Trutina workspace. It has no
+dependency on any other Trutina package — not `core`, not `cli`, not `api`,
 not `infrastructure` — and depends only on `pydantic`. Every other package in
 the workspace is free to depend on it.
 
@@ -28,7 +28,7 @@ features, or it defines the cross-cutting error contract, it belongs here.
 Part of the `uv` workspace; not installed standalone.
 
 ```bash
-uv sync --package pyledger-shared
+uv sync --package trutina-shared
 ```
 
 Other workspace packages depend on it via the workspace member mechanism, not
@@ -36,10 +36,10 @@ a version-pinned dependency.
 
 ## Public API
 
-### `pyledger.shared.rule`
+### `trutina.shared.rule`
 
 ```python
-from pyledger.shared.rule import (
+from trutina.shared.rule import (
     clean_account_name,
     account_lookup_key,
     is_valid_line_amounts,
@@ -56,7 +56,11 @@ from pyledger.shared.rule import (
 
 ```python
 from decimal import Decimal
-from pyledger.shared.rule import clean_account_name, account_lookup_key, is_valid_line_amounts
+from trutina.shared.rule import (
+    clean_account_name,
+    account_lookup_key,
+    is_valid_line_amounts,
+)
 
 name = clean_account_name("  Accounts Receivable  ")
 # "Accounts Receivable"
@@ -64,15 +68,15 @@ name = clean_account_name("  Accounts Receivable  ")
 key = account_lookup_key(name)
 # "accounts receivable" — used to detect "Cash" vs "CASH" collisions
 
-is_valid_line_amounts(Decimal("100"), Decimal("0"))   # True
-is_valid_line_amounts(Decimal("100"), Decimal("100")) # False — both sides set
-is_valid_line_amounts(Decimal("0"), Decimal("0"))     # False — neither side set
+is_valid_line_amounts(Decimal("100"), Decimal("0"))  # True
+is_valid_line_amounts(Decimal("100"), Decimal("100"))  # False — both sides set
+is_valid_line_amounts(Decimal("0"), Decimal("0"))  # False — neither side set
 ```
 
-### `pyledger.shared.errors`
+### `trutina.shared.errors`
 
 ```python
-from pyledger.shared.errors import (
+from trutina.shared.errors import (
     ErrorCode,
     AppError,
     ValidationAppError,
@@ -97,8 +101,9 @@ from pyledger.shared.errors import (
 
 ```python
 from pydantic import field_validator, BaseModel
-from pyledger.shared.errors import pydantic_error, ErrorCode
-from pyledger.shared.rule import clean_account_name
+from trutina.shared.errors import pydantic_error, ErrorCode
+from trutina.shared.rule import clean_account_name
+
 
 class Account(BaseModel):
     name: str
@@ -116,7 +121,7 @@ class Account(BaseModel):
 
 ```python
 from pydantic import ValidationError
-from pyledger.shared.errors import ValidationAppError
+from trutina.shared.errors import ValidationAppError
 
 try:
     Account(name="")
@@ -127,10 +132,15 @@ except ValidationError as exc:
 **Constructing service-level errors directly:**
 
 ```python
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.shared.errors import AppError, ErrorCode
 
 AppError.not_found(ErrorCode.UNKNOWN_ACCOUNT, resource="account", identifier="9999")
-AppError.conflict(ErrorCode.DUPLICATE_ACCOUNT_CODE, resource="account", field_name="code", value="1000")
+AppError.conflict(
+    ErrorCode.DUPLICATE_ACCOUNT_CODE,
+    resource="account",
+    field_name="code",
+    value="1000",
+)
 AppError.storage_unavailable(cause=some_connection_error)
 AppError.storage_timeout(cause=some_timeout_error)
 AppError.unknown(cause=some_unexpected_error)
@@ -144,10 +154,10 @@ AppError.unknown(cause=some_unexpected_error)
 > that needs to react to the specific domain code must currently read
 > `violation.value`, not `violation.code`.
 
-### `pyledger.shared.util`
+### `trutina.shared.util`
 
 ```python
-from pyledger.shared.util import default_posting_date
+from trutina.shared.util import default_posting_date
 ```
 
 `default_posting_date() -> datetime` returns today's date with the time
@@ -165,7 +175,7 @@ current default-date behavior in journal or posting creation.
 - CLI and API adapters catch `AppError`/`ValidationAppError` and translate
   `ErrorCode` into presentation-layer messages, hints, and status codes —
   none of that presentation text lives in this package.
-- `pyledger.shared` itself imports nothing from `core`, `cli`, `api`, or
+- `trutina.shared` itself imports nothing from `core`, `cli`, `api`, or
   `infrastructure`. That direction is one-way.
 
 ## Extending This Package
@@ -190,7 +200,7 @@ invariants that must not be broken.
 ## Testing
 
 Tests live under `packages/shared/tests/` (rule tests) and
-`packages/shared/src/pyledger/shared/errors/tests/` (error-model and
+`packages/shared/src/trutina/shared/errors/tests/` (error-model and
 translator tests).
 
 ```bash

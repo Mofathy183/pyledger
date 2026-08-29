@@ -9,7 +9,7 @@
 # This is a zero-setup onboarding path (no local Python/uv/Mongo install
 # required) and a way to test against the same image shape that ships to
 # prod. It is not a required part of the day-to-day dev loop — running
-# `uv run --package pyledger-api uvicorn pyledger.api.main:app --reload`
+# `uv run --package trutina-api uvicorn trutina.api.main:app --reload`
 # directly on the host will always be faster for a single contributor
 # iterating locally.
 

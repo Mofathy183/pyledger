@@ -6,7 +6,7 @@ makes it discoverable from the repo root) and is responsible for two
 cross-cutting concerns that no individual package should have to repeat:
 
 1. Registering the shared fixture plugins used across packages/apps.
-2. Enforcing PyLedger's two-axis marker discipline (see
+2. Enforcing Trutina's two-axis marker discipline (see
     `pytest_collection_modifyitems` below) so `pytest -m "unit and cli"`,
     `pytest -m "integration and infra"`, etc. remain trustworthy filters
     instead of decorative, hand-maintained metadata that silently drifts
@@ -107,7 +107,7 @@ def _derive_layer(path_parts: tuple[str, ...]) -> str | None:
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Enforce and auto-apply PyLedger's two-axis test marker discipline.
+    """Enforce and auto-apply Trutina's two-axis test marker discipline.
 
     Every collected test must resolve to exactly one speed marker
     (hand-written) and exactly one layer marker (derived from its file

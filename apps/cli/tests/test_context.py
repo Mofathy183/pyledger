@@ -11,9 +11,9 @@ control failure injection precisely.
 from unittest.mock import MagicMock
 
 import pytest
-from pyledger.cli.context import CliContext
-from pyledger.shared.errors import AppError, ErrorCode
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from trutina.cli.context import CliContext
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import make_fake_account_repo
 
@@ -34,8 +34,8 @@ class TestCliContextConnectionCaching:
         async def fake_init_beanie(**kwargs):
             return None
 
-        monkeypatch.setattr("pyledger.cli.context.connect", fake_connect)
-        monkeypatch.setattr("pyledger.cli.context.init_beanie", fake_init_beanie)
+        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.context.init_beanie", fake_init_beanie)
 
         context = CliContext(settings=test_settings)
 
@@ -94,9 +94,9 @@ class TestCliContextRepositoryOwnership:
         async def fake_disconnect(connection):
             return None
 
-        monkeypatch.setattr("pyledger.cli.context.connect", fake_connect)
-        monkeypatch.setattr("pyledger.cli.context.init_beanie", fake_init_beanie)
-        monkeypatch.setattr("pyledger.cli.context.disconnect", fake_disconnect)
+        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.context.init_beanie", fake_init_beanie)
+        monkeypatch.setattr("trutina.cli.context.disconnect", fake_disconnect)
 
         context = CliContext(settings=test_settings)
 
@@ -118,7 +118,7 @@ class TestCliContextConnectionErrorTranslation:
         async def fake_connect(mongo_settings):
             raise cause
 
-        monkeypatch.setattr("pyledger.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
         context = CliContext(settings=test_settings)
 
         with pytest.raises(AppError) as exc_info:
@@ -133,7 +133,7 @@ class TestCliContextConnectionErrorTranslation:
         async def fake_connect(mongo_settings):
             raise cause
 
-        monkeypatch.setattr("pyledger.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
         context = CliContext(settings=test_settings)
 
         with pytest.raises(AppError) as exc_info:

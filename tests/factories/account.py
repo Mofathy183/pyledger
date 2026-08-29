@@ -1,5 +1,5 @@
-from pyledger.core.account import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas import Account, AccountCategory, ChartOfAccounts
+from trutina.core.account import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas import Account, AccountCategory, ChartOfAccounts
 
 from tests.fakes import FakeAccountRepo
 

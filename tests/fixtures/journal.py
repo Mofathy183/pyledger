@@ -4,16 +4,16 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from pyledger.core.account.schemas import AccountCategory, ChartOfAccounts
-from pyledger.core.journal import (
+from trutina.core.account.schemas import AccountCategory, ChartOfAccounts
+from trutina.core.journal import (
     CreateJournalInput,
     JournalLineInput,
     JournalRepo,
     JournalService,
 )
-from pyledger.core.journal.schemas import JournalEntry, JournalLine
-from pyledger.infrastructure.mongo.journal import MongoJournalRepo
-from pyledger.infrastructure.mongo.shared import MongoExecutor
+from trutina.core.journal.schemas import JournalEntry, JournalLine
+from trutina.infrastructure.mongo.journal import MongoJournalRepo
+from trutina.infrastructure.mongo.shared import MongoExecutor
 
 from tests.factories import (
     make_credit_line,
@@ -109,7 +109,7 @@ def stub_journal_document_settings(monkeypatch):
 
     Mirrors the pattern of ``stub_account_document_settings``.
     """
-    from pyledger.infrastructure.mongo.journal import JournalDocument
+    from trutina.infrastructure.mongo.journal import JournalDocument
 
     monkeypatch.setattr(
         JournalDocument,

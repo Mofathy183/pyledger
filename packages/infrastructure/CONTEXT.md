@@ -1,11 +1,11 @@
-# pyledger-infrastructure — Architectural Context
+# trutina-infrastructure — Architectural Context
 
-This document explains why `pyledger-infrastructure` is shaped the way it is.
+This document explains why `trutina-infrastructure` is shaped the way it is.
 For how to use it, see `README.md`. Nothing here should be duplicated there.
 
 ## Why this architecture
 
-**Dependency inversion, not just separation.** `pyledger-core` defines
+**Dependency inversion, not just separation.** `trutina-core` defines
 `AccountRepo`, `JournalRepo`, and `PostingRepo` as abstract contracts with
 zero MongoDB or Beanie awareness. This package depends _on_ core to implement
 those contracts — core never depends on this package. The payoff is that the
@@ -74,12 +74,12 @@ rather than silently propagating into the accounting workflow.
 
 - **Core has zero Mongo/Beanie awareness.** Enforced mechanically: the root
   `pyproject.toml`'s import-linter configuration includes a `forbidden`
-  contract making `beanie`/`pymongo` imports inside `pyledger.core` a build
+  contract making `beanie`/`pymongo` imports inside `trutina.core` a build
   failure. This package exists specifically so core never needs either.
 - **Layered dependency direction.** The root import-linter `layers` contract
-  fixes the order `pyledger.cli | pyledger.api` → `pyledger.infrastructure` →
-  `pyledger.core` → `pyledger.shared | pyledger.config`. This package must
-  never import from `pyledger.cli` or `pyledger.api`.
+  fixes the order `trutina.cli | trutina.api` → `trutina.infrastructure` →
+  `trutina.core` → `trutina.shared | trutina.config`. This package must
+  never import from `trutina.cli` or `trutina.api`.
 - **No business rules in a repository.** Uniqueness pre-checks, the
   one-posting-per-journal invariant, chart-of-accounts resolution — none of
   it belongs here. A repository's only job is mapping and persistence.
@@ -107,10 +107,10 @@ rather than silently propagating into the accounting workflow.
 
 ## Allowed and forbidden dependencies
 
-**Allowed** (per `packages/infrastructure/pyproject.toml`): `pyledger-shared`,
-`pyledger-core`, `pyledger-config`, `beanie`, `pymongo`.
+**Allowed** (per `packages/infrastructure/pyproject.toml`): `trutina-shared`,
+`trutina-core`, `trutina-config`, `beanie`, `pymongo`.
 
-**Forbidden:** `pyledger-cli`, `pyledger-api`, or any other `apps/*` package;
+**Forbidden:** `trutina-cli`, `trutina-api`, or any other `apps/*` package;
 any presentation library (`typer`, `rich`, `fastapi`, `strawberry-graphql`).
 None of these appear as dependencies today, and none should be added — a
 storage adapter has no legitimate reason to know about a transport or UI
@@ -118,19 +118,19 @@ layer.
 
 ## Layering within this package
 
-There is no import-linter contract scoped _inside_ `pyledger.infrastructure`
+There is no import-linter contract scoped _inside_ `trutina.infrastructure`
 today — the root workspace only enforces the account→journal→posting order
-within `pyledger.core` itself. In practice, `mongo/journal/` and
+within `trutina.core` itself. In practice, `mongo/journal/` and
 `mongo/posting/` each import only their own domain package from core (e.g.
-`mongo/posting/repository.py` imports `pyledger.core.posting`, not
-`pyledger.core.journal`), mirroring core's dependency order, but this is
+`mongo/posting/repository.py` imports `trutina.core.posting`, not
+`trutina.core.journal`), mirroring core's dependency order, but this is
 convention observed in the current source rather than something CI currently
 fails a build over. Flagging this rather than describing it as enforced.
 
 ## Control and data flow
 
 ```txt
-Service (pyledger-core)
+Service (trutina-core)
     -> Repo contract call (AccountRepo / JournalRepo / PostingRepo)
         -> Mongo*Repo method
             -> MongoExecutor.run(coroutine)
@@ -150,7 +150,7 @@ _outside_ `MongoExecutor.run()` and delegate to a per-repository
 
 - **A second storage backend.** Any package implementing `AccountRepo`,
   `JournalRepo`, and `PostingRepo` against a different datastore (e.g. a
-  future `pyledger-storage-postgres`) is a legitimate sibling to this
+  future `trutina-storage-postgres`) is a legitimate sibling to this
   package — it would prove the contracts are genuinely storage-agnostic
   rather than MongoDB-shaped in disguise. No such package exists yet.
 - **A new bounded-context adapter.** Mirrors the `account`/`journal`/

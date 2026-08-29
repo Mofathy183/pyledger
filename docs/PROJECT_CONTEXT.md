@@ -1,39 +1,39 @@
-# PyLedger Project Context
+# Trutina Project Context
 
 ## Overview
 
-PyLedger is a Python command-line bookkeeping application for double-entry accounting. The current repository has
+Trutina is a Python command-line bookkeeping application for double-entry accounting. The current repository has
 working account, journal, and posting services; validated journal and posting models; account, journal, and
 posting DTOs; account, journal, and posting repository contracts with concrete MongoDB implementations; shared
 error translation; and a fully implemented, feature-oriented CLI (`account`, `journal`, `posting` command groups)
 with its own composition root, async execution bridge, and error-rendering pipeline. Reporting commands are not
-implemented yet; see `src/pyledger/cli/README.md` for full CLI architecture.
+implemented yet; see `src/trutina/cli/README.md` for full CLI architecture.
 
 ## Repository Shape
 
-- `src/pyledger/main.py` boots the Typer application. The file contains only the active entry point and invokes `app()`.
-- `src/pyledger/cli/` contains the Typer app (`app.py`), the composition root (`bootstrap.py`), the per-invocation
+- `src/trutina/main.py` boots the Typer application. The file contains only the active entry point and invokes `app()`.
+- `src/trutina/cli/` contains the Typer app (`app.py`), the composition root (`bootstrap.py`), the per-invocation
   dependency container (`context.py`), the sync-to-async bridge (`state.py`), and the feature-oriented command
   packages under `cli/features/{account,journal,posting}`/ (each with `command.py`, `parser.py`, `prompt.py`,
   `handler.py`, `formatter.py`, and `tests/`), plus shared CLI concerns under `cli/shared/` (error boundary,
   interactive prompt primitives, Rich UI, error/hint catalogs, and error formatting).
-- `src/pyledger/modules/account/` contains the active account domain, DTOs, async repository contract, service layer,
+- `src/trutina/modules/account/` contains the active account domain, DTOs, async repository contract, service layer,
   and tests.
-- `src/pyledger/modules/journal/` contains journal schemas, DTOs, the async repository contract, a workflow service,
+- `src/trutina/modules/journal/` contains journal schemas, DTOs, the async repository contract, a workflow service,
   and schema/service tests.
-- `src/pyledger/modules/posting/` contains the immutable posting schema, the `PostingViewModel` DTO, the async
+- `src/trutina/modules/posting/` contains the immutable posting schema, the `PostingViewModel` DTO, the async
   repository contract, the implemented posting service, schema/DTO/service tests, and the empty `rule.py` scaffold.
-- `src/pyledger/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error-translation
+- `src/trutina/infrastructure/mongo/` contains the MongoDB connection helpers, shared executor and error-translation
   utilities, the MongoDB account, journal, and posting documents and repositories, and infrastructure tests.
-- `src/pyledger/infrastructure/mongo/posting/` contains the MongoDB posting document, repository implementation, and
+- `src/trutina/infrastructure/mongo/posting/` contains the MongoDB posting document, repository implementation, and
   repository tests.
-- `src/pyledger/shared/` contains reusable validation helpers, utility code, and the shared error model.
-- `src/pyledger/conftest.py` registers the shared pytest fixture plugins.
+- `src/trutina/shared/` contains reusable validation helpers, utility code, and the shared error model.
+- `src/trutina/conftest.py` registers the shared pytest fixture plugins.
 - `tests/` contains shared fixtures, factories, and fakes, not application test cases.
-- Module-local tests live under `src/pyledger/modules/**/tests/`.
-- Shared error tests live under `src/pyledger/shared/errors/tests/`.
-- Shared rule tests live under `src/pyledger/shared/tests/`.
-- MongoDB infrastructure tests live under `src/pyledger/infrastructure/mongo/**/tests/`.
+- Module-local tests live under `src/trutina/modules/**/tests/`.
+- Shared error tests live under `src/trutina/shared/errors/tests/`.
+- Shared rule tests live under `src/trutina/shared/tests/`.
+- MongoDB infrastructure tests live under `src/trutina/infrastructure/mongo/**/tests/`.
 
 ## Current State
 
@@ -43,8 +43,8 @@ implemented yet; see `src/pyledger/cli/README.md` for full CLI architecture.
 - `JournalLine` enforces account normalization and debit/credit exclusivity.
 - `JournalEntry` enforces minimum line count, positive journal number, supported posting dates, and balanced totals.
 - `JournalRepo` defines async save, lookup, list, and journal-number allocation methods.
-- `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
-- `pyledger.infrastructure.mongo.posting` exposes `PostingDocument` and `MongoPostingRepo`.
+- `trutina.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`.
+- `trutina.infrastructure.mongo.posting` exposes `PostingDocument` and `MongoPostingRepo`.
 - `JournalService` validates account references, allocates journal numbers, persists entries, and returns view models.
 - `LedgerPosting` is an immutable derived record with the same single-side amount rule.
 - `AccountService` is complete end to end for create, update, lookup, list, resolve, and delete workflows.
@@ -62,16 +62,16 @@ implemented yet; see `src/pyledger/cli/README.md` for full CLI architecture.
 - `cli/shared/formatters/error.py` and `cli/shared/errors/{errors,hint}.py` are fully wired into every CLI command
 via `cli/shared/error_boundary.py`.
 - There is no trial balance or reporting pipeline.
-- `pyledger.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `PYLEDGER_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `PYLEDGER_TEST_` and `.env.test`.
-- `pyledger.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle
-  management. `pyledger.infrastructure.mongo.shared` exposes `MongoExecutor` and `TimestampedDocument`,
-  `pyledger.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`,
-  `pyledger.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`,
-  and `pyledger.infrastructure.mongo.posting` exposes `PostingDocument` and `MongoPostingRepo`.
+- `trutina.config` provides `Settings`, `TestSettings`, `MongoSettings`, and a cached `get_settings()` accessor. Settings load from `TRUTINA_`-prefixed environment variables and an optional `.env` file. `TestSettings` uses `TRUTINA_TEST_` and `.env.test`.
+- `trutina.infrastructure.mongo` provides `connect()`, `disconnect()`, and `MongoConnection` for MongoDB lifecycle
+  management. `trutina.infrastructure.mongo.shared` exposes `MongoExecutor` and `TimestampedDocument`,
+  `trutina.infrastructure.mongo.account` exposes `AccountDocument` and `MongoAccountRepo`,
+  `trutina.infrastructure.mongo.journal` exposes `JournalDocument`, `JournalLineSubDocument`, and `MongoJournalRepo`,
+  and `trutina.infrastructure.mongo.posting` exposes `PostingDocument` and `MongoPostingRepo`.
 
 ## Accounting Model
 
-PyLedger follows standard double-entry accounting.
+Trutina follows standard double-entry accounting.
 
 ```text
 Journal Entry -> Ledger Posting
@@ -149,11 +149,11 @@ balance pipeline or downstream reporting layer.
   wired end to end (command → parser/prompt → handler → service → repository) through `cli/context.py::CliContext`.
 - Every feature's formatter renders its service's ViewModels; `cli/shared/error_boundary.py` renders every
   `AppError`/`ValidationAppError`/`pydantic.ValidationError` raised along the way.
-- Full CLI layering, dependency rules, and the async execution model are documented in `src/pyledger/cli/README.md`.
+- Full CLI layering, dependency rules, and the async execution model are documented in `src/trutina/cli/README.md`.
 
 ## Error System
 
-- `src/pyledger/shared/errors/` defines `ErrorCode`, `AppError`, `ValidationAppError`, `FieldViolation`, and the
+- `src/trutina/shared/errors/` defines `ErrorCode`, `AppError`, `ValidationAppError`, `FieldViolation`, and the
   Pydantic translation helpers.
 - `pydantic_error()` is used by schema validators to raise domain error codes through Pydantic.
 - `get_field_violations()` converts Pydantic validation output into stable `FieldViolation` records.
@@ -166,15 +166,15 @@ balance pipeline or downstream reporting layer.
 
 ## Testing
 
-- Pytest is configured to collect tests from `tests/` and `src/pyledger/`.
+- Pytest is configured to collect tests from `tests/` and `src/trutina/`.
 - Root-level `tests/` contains `fixtures/`, `factories/`, and `fakes/`.
-- `src/pyledger/conftest.py` registers the fixture modules as pytest plugins.
+- `src/trutina/conftest.py` registers the fixture modules as pytest plugins.
 - `tests/fakes/account_repo.py`, `tests/fakes/journal_repo.py`, and `tests/fakes/posting_repo.py` provide in-memory
   repository fakes for service tests.
 - The journal fake issues journal numbers sequentially and stores entries in memory.
-- Feature tests live beside the feature code under `src/pyledger/modules/**/tests/`.
-- Shared error tests live under `src/pyledger/shared/errors/tests/`.
-- Shared rule tests live under `src/pyledger/shared/tests/`.
+- Feature tests live beside the feature code under `src/trutina/modules/**/tests/`.
+- Shared error tests live under `src/trutina/shared/errors/tests/`.
+- Shared rule tests live under `src/trutina/shared/tests/`.
 - Current automated coverage is concentrated on domain models, shared validation helpers, shared error translation,
   `AccountService`, `JournalService`, `PostingService`, and MongoDB infrastructure behavior.
 - Journal schema tests cover `JournalLine` and `JournalEntry`.
@@ -186,10 +186,10 @@ balance pipeline or downstream reporting layer.
 - Posting repository tests cover `MongoPostingRepo` mapping, ordering, and persistence behavior.
 - `tests/factories/posting.py` provides posting service and domain-object factories for posting tests.
 - `tests/fixtures/posting.py` provides posting fixtures and a `MongoPostingRepo` fixture for repository tests.
-- MongoDB connection tests live under `src/pyledger/infrastructure/mongo/tests/`.
-- MongoDB account repository tests live under `src/pyledger/infrastructure/mongo/account/tests/`.
-- MongoDB journal repository tests live under `src/pyledger/infrastructure/mongo/journal/tests/`.
-- MongoDB posting repository tests live under `src/pyledger/infrastructure/mongo/posting/tests/`.
+- MongoDB connection tests live under `src/trutina/infrastructure/mongo/tests/`.
+- MongoDB account repository tests live under `src/trutina/infrastructure/mongo/account/tests/`.
+- MongoDB journal repository tests live under `src/trutina/infrastructure/mongo/journal/tests/`.
+- MongoDB posting repository tests live under `src/trutina/infrastructure/mongo/posting/tests/`.
 - `tests/fixtures/settings.py` provides the session-scoped `test_settings` fixture and the `isolate_settings_cache`
   autouse fixture that clears the `get_settings` LRU cache before and after every test.
 - `tests/fixtures/journal.py` provides journal domain fixtures, a `MongoJournalRepo` fixture, and a document-settings
@@ -200,8 +200,8 @@ balance pipeline or downstream reporting layer.
 - CLI workflow tests exist end-to-end for `account`, `journal`, and `posting`: fake-backed unit tests
 (`test_command_unit.py`) and MongoDB-backed integration tests (`test_command_integration.py`) per feature, plus
 parser/prompt/handler/formatter unit tests, plus composition-root tests (`CliContext`, `CliState`,
-`build_context()`, `app.py`) under `src/pyledger/cli/tests/`. There are still no reporting tests.
-- Settings tests live under `src/pyledger/config/tests/`.
+`build_context()`, `app.py`) under `src/trutina/cli/tests/`. There are still no reporting tests.
+- Settings tests live under `src/trutina/config/tests/`.
 - Posting service tests cover `post_journal_entry`, `get_postings_by_account`, and `get_postings_by_journal_number` workflows including duplicate-posting detection.
 
 ## Known Issues

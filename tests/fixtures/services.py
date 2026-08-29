@@ -17,10 +17,10 @@ once per test regardless of how many repo fixtures pull it in.
 """
 
 import pytest
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
 
 from tests.factories import make_create_account_input
 

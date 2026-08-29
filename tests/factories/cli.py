@@ -1,9 +1,9 @@
-from pyledger.cli.context import CliContext
-from pyledger.config import TestSettings
-from pyledger.core.account import AccountRepo
-from pyledger.core.account.schemas import ChartOfAccounts
-from pyledger.core.journal import JournalRepo
-from pyledger.core.posting import PostingRepo
+from trutina.cli.context import CliContext
+from trutina.config import TestSettings
+from trutina.core.account import AccountRepo
+from trutina.core.account.schemas import ChartOfAccounts
+from trutina.core.journal import JournalRepo
+from trutina.core.posting import PostingRepo
 
 from tests.factories.account import make_fake_account_repo
 from tests.factories.journal import make_fake_journal_repo

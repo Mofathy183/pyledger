@@ -1,13 +1,13 @@
-# PyLedger
+# Trutina
 
-PyLedger is a Python CLI bookkeeping application built around double-entry accounting. It combines validated domain
+Trutina is a Python CLI bookkeeping application built around double-entry accounting. It combines validated domain
 modeling, service-layer workflows, a MongoDB infrastructure layer, and a fully implemented Typer/Rich CLI, rather
 than reporting. The codebase is intentionally structured as an educational, architecture-first project for exploring
 how bookkeeping rules can be enforced in Python and exposed through a clean, layered command-line interface.
 
 ## Overview
 
-PyLedger exists to model the core mechanics of a bookkeeping system in a small, inspectable codebase. It captures the
+Trutina exists to model the core mechanics of a bookkeeping system in a small, inspectable codebase. It captures the
 chart of accounts, journal lines, journal entries, and ledger postings that sit at the heart of double-entry
 accounting.
 
@@ -22,7 +22,7 @@ The current implementation validates account, journal, and posting data; provide
 journal, and posting operations; includes MongoDB account, journal, and posting repositories plus the related
 connection and error-translation helpers; and exposes all of it through a complete `account`/`journal`/`posting`
 CLI built on Typer and Rich. Reporting (trial balance, historical views) is the main area still deliberately out
-of scope — see `src/pyledger/cli/README.md` for full CLI architecture and `docs/ROADMAP.md` for what's next.
+of scope — see `src/trutina/cli/README.md` for full CLI architecture and `docs/ROADMAP.md` for what's next.
 
 ## Current Features
 
@@ -47,15 +47,15 @@ of scope — see `src/pyledger/cli/README.md` for full CLI architecture and `doc
 - A complete, feature-oriented CLI (`account`, `journal`, `posting` Typer command groups) with its own composition
   root (`CliContext`, `CliState`), CLI-flag and interactive-prompt input paths, Rich-based formatters for every
   command, and a shared error boundary that renders domain and validation failures as terminal panels. See
-  `src/pyledger/cli/README.md` for the full CLI architecture.
+  `src/trutina/cli/README.md` for the full CLI architecture.
 - Domain and service tests for account, journal, posting, and shared error behavior.
 - CLI unit and integration tests for all three command groups, plus composition-root tests.
 - MongoDB infrastructure tests for the connection lifecycle and the MongoDB account, journal, and posting repositories.
 
 ### Partial or Scaffolded
 
-- `src/pyledger/modules/journal/rule.py` is an empty scaffold.
-- `src/pyledger/modules/posting/rule.py` is an empty scaffold.
+- `src/trutina/modules/journal/rule.py` is an empty scaffold.
+- `src/trutina/modules/posting/rule.py` is an empty scaffold.
 
 ### Planned
 
@@ -64,7 +64,7 @@ of scope — see `src/pyledger/cli/README.md` for full CLI architecture and `doc
 
 ## Architecture
 
-PyLedger follows Clean Architecture ideas in a lightweight form:
+Trutina follows Clean Architecture ideas in a lightweight form:
 
 - Domain models own the accounting rules.
 - DTOs define service boundaries.
@@ -72,7 +72,7 @@ PyLedger follows Clean Architecture ideas in a lightweight form:
 - Repository contracts define persistence boundaries.
 - Shared error types and validation helpers stay independent of the CLI.
 - The CLI is a thin, feature-oriented presentation layer over the service layer, with its own internal layering
-  (command → parser/prompt → handler → formatter) documented in `src/pyledger/cli/README.md`.
+  (command → parser/prompt → handler → formatter) documented in `src/trutina/cli/README.md`.
 
 The main validation boundary is in the feature modules. Pydantic models enforce structural rules, shared validation
 helpers normalize common inputs, and services perform cross-record checks such as account existence and journal-number
@@ -99,7 +99,7 @@ Storage Adapters (MongoDB)
 MongoDB storage adapters are implemented for accounts, journals, and postings. The CLI bridges its synchronous
 Typer/Click dispatch onto this async stack through a single `BlockingPortal`, owned for the life of the process by
 `main.py`. Full CLI architecture — the composition root, async execution model, error handling, and layer-by-layer
-dependency rules — is documented in `src/pyledger/cli/README.md`.
+dependency rules — is documented in `src/trutina/cli/README.md`.
 
 ## Repository Structure
 
@@ -113,7 +113,7 @@ dependency rules — is documented in `src/pyledger/cli/README.md`.
 │   └── ROADMAP.md
 ├── pyproject.toml
 ├── src/
-│   └── pyledger/
+│   └── trutina/
 │       ├── conftest.py
 │       ├── main.py
 │       ├── cli/
@@ -219,7 +219,7 @@ dependency rules — is documented in `src/pyledger/cli/README.md`.
     └── fixtures/
 ```
 
-See `src/pyledger/cli/README.md` for a full description of every file under `cli/`.
+See `src/trutina/cli/README.md` for a full description of every file under `cli/`.
 
 ## Technology Stack
 
@@ -270,7 +270,7 @@ cp .env.test.example .env.test
 
 - `.env` contains settings for local development.
 - `.env.test` contains settings used by the test suite.
-- Test settings use nested environment variables such as `PYLEDGER_TEST_MONGO__URI` and `PYLEDGER_TEST_MONGO__DB`.
+- Test settings use nested environment variables such as `TRUTINA_TEST_MONGO__URI` and `TRUTINA_TEST_MONGO__DB`.
 - The test database should be separate from the development database to avoid accidental data loss.
 
 ## Current Project Status
@@ -306,7 +306,7 @@ cp .env.test.example .env.test
 
 With the CLI now complete for account, journal, and posting workflows, the next milestones move toward trial
 balance reporting, historical views, and import/export support. See `docs/ROADMAP.md` for the full breakdown and
-`src/pyledger/cli/README.md`'s "Future Work" section for CLI-specific next steps (e.g. additional command groups
+`src/trutina/cli/README.md`'s "Future Work" section for CLI-specific next steps (e.g. additional command groups
 once reporting exists, shell completion, richer interactive workflows).
 
 ## Design Principles
@@ -317,7 +317,7 @@ once reporting exists, shell completion, richer interactive workflows).
 - Testability: services depend on repository interfaces, which makes them easy to fake in tests.
 - Separation of concerns: CLI presentation, business logic, and persistence stay in separate layers — the CLI
   itself is further layered internally (command → parser/prompt → handler → formatter), documented in
-  `src/pyledger/cli/README.md`.
+  `src/trutina/cli/README.md`.
 - Future extensibility: repository contracts and DTO boundaries leave room for storage adapters and more workflows.
 
 ## Contributing
