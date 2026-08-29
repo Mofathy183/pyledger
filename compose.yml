@@ -19,8 +19,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      PYLEDGER_MONGO__URI: mongodb://mongo:27017
-      PYLEDGER_MONGO__DB: pyledger
+      TRUTINA_MONGO__URI: mongodb://mongo:27017
+      TRUTINA_MONGO__DB: trutina
     depends_on:
       mongo:
         condition: service_healthy

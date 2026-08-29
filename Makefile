@@ -4,13 +4,13 @@ bootstrap:
 	bash tools/bootstrap.sh
 
 install-core:
-	uv sync --package pyledger-core
+	uv sync --package trutina-core
 
 install-cli:
-	uv sync --package pyledger-cli
+	uv sync --package trutina-cli
 
 install-api:
-	uv sync --package pyledger-api
+	uv sync --package trutina-api
 
 fix:
 	bash tools/fix.sh
