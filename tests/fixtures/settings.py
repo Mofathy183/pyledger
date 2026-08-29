@@ -1,5 +1,5 @@
 import pytest
-from pyledger.config import TestSettings, get_settings
+from trutina.config import TestSettings, get_settings
 
 
 @pytest.fixture(scope="session")

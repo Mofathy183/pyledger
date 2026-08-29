@@ -1,6 +1,6 @@
 """Shared API-layer test fixtures.
 
-Phase 1 of the API testing foundation (see `PyLedger API Testing
+Phase 1 of the API testing foundation (see `Trutina API Testing
 Architecture`, Section 4). This module intentionally implements only
 the fixtures needed to test the composition root
 (`api/composition/{container,app,dependencies,bootstrap}.py`):
@@ -50,12 +50,12 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from pyledger.api.composition.app import create_app
-from pyledger.api.composition.container import Container
-from pyledger.config import TestSettings
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
+from trutina.api.composition.app import create_app
+from trutina.api.composition.container import Container
+from trutina.config import TestSettings
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
 
 from tests.factories import (
     make_fake_account_repo,

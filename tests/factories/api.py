@@ -1,6 +1,6 @@
 """Shared API-layer test factories.
 
-Phase 1 of the API testing foundation (see `PyLedger API Testing
+Phase 1 of the API testing foundation (see `Trutina API Testing
 Architecture`, Section 5). Only genuinely feature-agnostic, currently
 useful helpers are implemented here:
 

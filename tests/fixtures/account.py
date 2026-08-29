@@ -3,11 +3,11 @@ from types import SimpleNamespace
 
 import pytest
 from anyio.from_thread import start_blocking_portal
-from pyledger.cli.state import CliState
-from pyledger.core.account import AccountRepo
-from pyledger.core.account.schemas import Account, AccountCategory, ChartOfAccounts
-from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
-from pyledger.infrastructure.mongo.shared import MongoExecutor
+from trutina.cli.state import CliState
+from trutina.core.account import AccountRepo
+from trutina.core.account.schemas import Account, AccountCategory, ChartOfAccounts
+from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
+from trutina.infrastructure.mongo.shared import MongoExecutor
 
 from tests.factories import (
     make_account,

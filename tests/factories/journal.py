@@ -1,14 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pyledger.core.account import AccountService
-from pyledger.core.account.schemas import ChartOfAccounts
-from pyledger.core.journal import (
+from trutina.core.account import AccountService
+from trutina.core.account.schemas import ChartOfAccounts
+from trutina.core.journal import (
     CreateJournalInput,
     JournalLineInput,
     JournalService,
 )
-from pyledger.core.journal.schemas import JournalEntry, JournalLine
+from trutina.core.journal.schemas import JournalEntry, JournalLine
 
 from tests.factories import make_fake_account_repo
 from tests.fakes import FakeJournalRepo

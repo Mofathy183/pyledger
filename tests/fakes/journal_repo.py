@@ -1,5 +1,5 @@
-from pyledger.core.journal.repo import JournalRepo
-from pyledger.core.journal.schemas import JournalEntry
+from trutina.core.journal.repo import JournalRepo
+from trutina.core.journal.schemas import JournalEntry
 
 
 class FakeJournalRepo(JournalRepo):

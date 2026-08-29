@@ -5,9 +5,9 @@ any storage backend. Test cases inspect ``saved_batches`` to verify that
 the service persisted the correct records.
 """
 
-from pyledger.core.posting.repo import PostingRepo
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
-from pyledger.shared.rule import account_lookup_key
+from trutina.core.posting.repo import PostingRepo
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.shared.rule import account_lookup_key
 
 
 class FakePostingRepo(PostingRepo):
