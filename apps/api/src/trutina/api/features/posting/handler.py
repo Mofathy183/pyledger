@@ -6,8 +6,8 @@ and the application layer, leaving request mapping, response
 presentation, and error translation to their respective components.
 """
 
-from pyledger.core.posting.dtos import PostingViewModel
-from pyledger.core.posting.service import PostingService
+from trutina.core.posting.dtos import PostingViewModel
+from trutina.core.posting.service import PostingService
 
 
 async def post_journal_entry_handler(

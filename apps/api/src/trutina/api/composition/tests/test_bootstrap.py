@@ -9,8 +9,8 @@ wiring (see test_container.py) or connect()/disconnect() themselves
 
 import pytest
 from fastapi import FastAPI
-from pyledger.api.composition.bootstrap import make_lifespan
-from pyledger.api.composition.container import Container
+from trutina.api.composition.bootstrap import make_lifespan
+from trutina.api.composition.container import Container
 
 
 @pytest.mark.integration

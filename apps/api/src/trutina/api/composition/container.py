@@ -16,9 +16,9 @@ public attributes only, never on how they were built.
 
 from dataclasses import dataclass
 
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
 
 
 @dataclass(frozen=True, slots=True)

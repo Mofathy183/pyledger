@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
-from pyledger.api.shared.response import BaseResponse, SuccessResponse
+from trutina.api.shared.response import BaseResponse, SuccessResponse
 
 
 @pytest.mark.unit

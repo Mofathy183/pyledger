@@ -1,4 +1,4 @@
-"""Declarative exception-to-response translation for the PyLedger API.
+"""Declarative exception-to-response translation for the Trutina API.
 
 register_exception_handlers(app) is the API's equivalent of
 cli/shared/error_boundary.py -- the single place uncaught domain and
@@ -23,7 +23,7 @@ ever invoked when `exc` really is a `ValidationAppError`.
 
 Domain-code recovery note
 --------------------------
-`get_field_violations()` (pyledger.shared.errors.translators) currently
+`get_field_violations()` (trutina.shared.errors.translators) currently
 downgrades every domain-raised ErrorCode to `ErrorCode.UNKNOWN_ERROR` on
 `FieldViolation.code` -- the real code survives only as a string on
 `FieldViolation.value`. Left unhandled, every field-level validation
@@ -70,7 +70,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
-from pyledger.shared.errors import (
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     FieldViolation,

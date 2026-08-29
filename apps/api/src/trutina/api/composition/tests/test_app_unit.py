@@ -13,8 +13,8 @@ build_container()'s wiring (see test_container.py).
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError as PydanticValidationError
-from pyledger.api.composition.app import create_app
-from pyledger.shared.errors import AppError, ErrorCode, ValidationAppError
+from trutina.api.composition.app import create_app
+from trutina.shared.errors import AppError, ErrorCode, ValidationAppError
 
 from tests.factories import make_account
 

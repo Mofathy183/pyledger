@@ -6,7 +6,7 @@ role on the output side. Each function turns an already-fetched
 response shape; it never calls a service.
 """
 
-from pyledger.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
+from trutina.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
 
 from .schemas import (
     AccountData,

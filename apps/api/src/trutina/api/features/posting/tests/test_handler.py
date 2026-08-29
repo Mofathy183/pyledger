@@ -1,11 +1,11 @@
 import pytest
-from pyledger.api.features.posting.handler import (
+from trutina.api.features.posting.handler import (
     get_postings_by_account_handler,
     get_postings_by_journal_number_handler,
     post_journal_entry_handler,
 )
-from pyledger.core.posting.dtos import PostingViewModel
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.posting.dtos import PostingViewModel
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_create_journal_input,

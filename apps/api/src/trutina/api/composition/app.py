@@ -1,4 +1,4 @@
-"""FastAPI application factory for the PyLedger API.
+"""FastAPI application factory for the Trutina API.
 
 app.py wires the lifespan (bootstrap.py) to a FastAPI instance and
 registers routers. It performs no business logic, constructs no
@@ -8,12 +8,12 @@ Typer app.
 """
 
 from fastapi import FastAPI
-from pyledger.api.features.account import router as account_router
-from pyledger.api.features.journal import router as journal_router
-from pyledger.api.features.posting import router as posting_router
-from pyledger.api.features.system import router as system_router
-from pyledger.api.shared.errors import register_exception_handlers
-from pyledger.config import Settings, get_settings
+from trutina.api.features.account import router as account_router
+from trutina.api.features.journal import router as journal_router
+from trutina.api.features.posting import router as posting_router
+from trutina.api.features.system import router as system_router
+from trutina.api.shared.errors import register_exception_handlers
+from trutina.config import Settings, get_settings
 
 from .bootstrap import make_lifespan
 

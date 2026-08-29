@@ -5,7 +5,7 @@ structurally similar to `modules/account/dtos.py`'s DTOs and
 `AccountViewModel`/`ChartOfAccountsViewModel` by design -- the account
 resource has one natural shape -- but are kept as separate classes so
 the public HTTP contract can evolve independently of the service
-boundary's DTOs, exactly as `PyLedger API Feature & Testing Prompt`
+boundary's DTOs, exactly as `Trutina API Feature & Testing Prompt`
 Section 2 requires ("Response Schema... Must never expose internal
 domain/DTO field names it hasn't deliberately chosen to mirror").
 
@@ -18,8 +18,8 @@ standard error envelope by `api/shared/errors/handlers.py`.
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from pyledger.api.shared.response import SuccessResponse
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.api.shared.response import SuccessResponse
+from trutina.core.account.schemas.account import AccountCategory
 
 
 class CreateAccountRequest(BaseModel):

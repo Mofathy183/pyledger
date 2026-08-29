@@ -2,7 +2,7 @@
 
 Defines the read-only, non-domain response contracts returned by the
 root and health endpoints. These carry no accounting meaning — they
-describe the API process itself, not PyLedger's bookkeeping domain —
+describe the API process itself, not Trutina's bookkeeping domain —
 so they intentionally have no relationship to any modules/*/dtos.py
 view model.
 """
@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 class ApiInfo(BaseModel):
     """Static identity of the running API process.
 
-    Named for the process, not for a PyLedger domain service — "service"
+    Named for the process, not for a Trutina domain service — "service"
     is already claimed by AccountService/JournalService/PostingService,
     and this describes something unrelated: the running API itself.
     Transport-agnostic by design so a future GraphQL entry point can

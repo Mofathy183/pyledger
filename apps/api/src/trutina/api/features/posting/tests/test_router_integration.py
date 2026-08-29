@@ -14,7 +14,7 @@ should switch to real HTTP calls per the standard pattern.
 """
 
 import pytest
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.core.account.schemas.account import AccountCategory
 
 from tests.factories import make_create_account_input, make_create_journal_input
 

@@ -12,10 +12,10 @@ wrapping them in a coroutine would add overhead with no benefit.
 """
 
 from fastapi import Request
-from pyledger.config import ApiSettings, get_settings
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
+from trutina.config import ApiSettings, get_settings
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
 
 
 def get_settings_dep() -> ApiSettings:

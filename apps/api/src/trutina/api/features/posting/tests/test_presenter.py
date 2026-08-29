@@ -2,12 +2,12 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.api.features.posting.presenter import (
+from trutina.api.features.posting.presenter import (
     to_posting_item,
     to_posting_list_response,
 )
-from pyledger.api.features.posting.schemas import PostingItem, PostingListResponse
-from pyledger.core.posting.dtos import PostingViewModel
+from trutina.api.features.posting.schemas import PostingItem, PostingListResponse
+from trutina.core.posting.dtos import PostingViewModel
 
 
 def _debit_vm() -> PostingViewModel:

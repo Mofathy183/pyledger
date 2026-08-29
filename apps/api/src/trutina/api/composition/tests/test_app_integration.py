@@ -20,6 +20,6 @@ class TestCreateAppServesRequests:
         assert response.status_code == 200
 
     async def test_container_is_attached_after_startup(self, real_api_app):
-        from pyledger.api.composition.container import Container
+        from trutina.api.composition.container import Container
 
         assert isinstance(real_api_app.state.container, Container)

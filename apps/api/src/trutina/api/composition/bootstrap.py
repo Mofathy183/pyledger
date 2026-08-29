@@ -1,4 +1,4 @@
-"""Composition root and lifespan management for the PyLedger API.
+"""Composition root and lifespan management for the Trutina API.
 
 bootstrap.py is the API's equivalent of cli/bootstrap.py + main.py::run()
 combined: it owns the one and only sequence that opens the shared
@@ -36,15 +36,15 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from beanie import init_beanie
 from fastapi import FastAPI
-from pyledger.config import Settings
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
-from pyledger.infrastructure.mongo import connect, disconnect
-from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
-from pyledger.infrastructure.mongo.journal import JournalDocument, MongoJournalRepo
-from pyledger.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
-from pyledger.infrastructure.mongo.shared import MongoExecutor
+from trutina.config import Settings
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
+from trutina.infrastructure.mongo import connect, disconnect
+from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
+from trutina.infrastructure.mongo.journal import JournalDocument, MongoJournalRepo
+from trutina.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
+from trutina.infrastructure.mongo.shared import MongoExecutor
 
 from .container import Container
 

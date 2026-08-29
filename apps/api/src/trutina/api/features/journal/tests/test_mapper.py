@@ -8,12 +8,12 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.api.features.journal.mapper import to_create_journal_input
-from pyledger.api.features.journal.schemas import (
+from trutina.api.features.journal.mapper import to_create_journal_input
+from trutina.api.features.journal.schemas import (
     CreateJournalEntryRequest,
     JournalLineRequest,
 )
-from pyledger.core.journal.dtos import CreateJournalInput
+from trutina.core.journal.dtos import CreateJournalInput
 
 
 def _make_request(

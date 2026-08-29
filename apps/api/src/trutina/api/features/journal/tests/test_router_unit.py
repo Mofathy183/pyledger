@@ -9,7 +9,7 @@ correct HTTP status/envelope via the registered exception handlers.
 """
 
 import pytest
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import (
     make_create_account_request,

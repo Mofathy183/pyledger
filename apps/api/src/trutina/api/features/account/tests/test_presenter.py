@@ -4,18 +4,18 @@ Pure construction only -- no service calls.
 """
 
 import pytest
-from pyledger.api.features.account.presenter import (
+from trutina.api.features.account.presenter import (
     to_account_response,
     to_chart_of_accounts_response,
     to_delete_account_response,
 )
-from pyledger.api.features.account.schemas import (
+from trutina.api.features.account.schemas import (
     AccountResponse,
     ChartOfAccountsResponse,
     DeleteAccountResponse,
 )
-from pyledger.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
-from pyledger.core.account.schemas.account import AccountCategory, NormalBalance
+from trutina.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
+from trutina.core.account.schemas.account import AccountCategory, NormalBalance
 
 
 def _make_view_model(

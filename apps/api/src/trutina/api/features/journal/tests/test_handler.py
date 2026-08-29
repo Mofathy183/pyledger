@@ -10,14 +10,14 @@ re-verified here.
 """
 
 import pytest
-from pyledger.api.features.journal.handler import (
+from trutina.api.features.journal.handler import (
     create_journal_entry,
     get_journal_entry,
     list_journal_entries,
 )
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.journal.dtos import JournalViewModel
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.journal.dtos import JournalViewModel
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_account,

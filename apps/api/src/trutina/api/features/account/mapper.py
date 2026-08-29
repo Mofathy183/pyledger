@@ -1,7 +1,7 @@
 """Request Schema -> Input DTO mapping for the account feature.
 
 Pure, synchronous, no I/O, no business rules -- per
-`PyLedger API Feature & Testing Prompt` Section 2/3. Each function here
+`Trutina API Feature & Testing Prompt` Section 2/3. Each function here
 does field-for-field construction only; every mapper below is a thin
 `InputDTO(**request.model_dump())`-equivalent because
 `CreateAccountRequest`/`UpdateAccountRequest` were deliberately built to
@@ -10,7 +10,7 @@ mirror `CreateAccountInput`/`UpdateAccountInput` field-for-field (see
 it fires when the handler calls into `AccountService`.
 """
 
-from pyledger.core.account.dtos import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.dtos import CreateAccountInput, UpdateAccountInput
 
 from .schemas import CreateAccountRequest, UpdateAccountRequest
 

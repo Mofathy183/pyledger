@@ -1,5 +1,5 @@
 import pytest
-from pyledger.api.features.posting.mapper import to_account, to_journal_number
+from trutina.api.features.posting.mapper import to_account, to_journal_number
 
 
 @pytest.mark.unit

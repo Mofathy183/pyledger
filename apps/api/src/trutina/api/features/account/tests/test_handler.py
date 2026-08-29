@@ -10,16 +10,16 @@ here.
 """
 
 import pytest
-from pyledger.api.features.account.handler import (
+from trutina.api.features.account.handler import (
     create_account,
     delete_account,
     get_account,
     list_accounts,
     update_account,
 )
-from pyledger.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
-from pyledger.core.account.service import AccountService
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
+from trutina.core.account.service import AccountService
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_account,

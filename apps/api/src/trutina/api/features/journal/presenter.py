@@ -6,7 +6,7 @@ feature's ``presenter.py``. Each function turns an already-fetched
 response shape; it never calls a service.
 """
 
-from pyledger.core.journal.dtos import JournalLineViewModel, JournalViewModel
+from trutina.core.journal.dtos import JournalLineViewModel, JournalViewModel
 
 from .schemas import (
     JournalEntriesResponse,

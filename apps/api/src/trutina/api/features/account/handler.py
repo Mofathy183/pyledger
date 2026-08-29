@@ -1,7 +1,7 @@
 """Input DTO -> AccountService call -> ViewModel for the account feature.
 
 Each handler is exactly one service call, per
-`PyLedger API Feature & Testing Prompt` Section 2/3: no FastAPI import,
+`Trutina API Feature & Testing Prompt` Section 2/3: no FastAPI import,
 no Mapper/Presenter construction, no exception handling. Any
 ``AppError``/``ValidationAppError``/``pydantic.ValidationError`` raised
 by ``AccountService`` propagates uncaught -- ``api/shared/errors/handlers.py``
@@ -13,13 +13,13 @@ a router or directly from a unit test against a ``Fake*Repo``-backed
 ``AccountService`` -- mirroring the CLI's own ``handler.py`` contract.
 """
 
-from pyledger.core.account.dtos import (
+from trutina.core.account.dtos import (
     AccountViewModel,
     ChartOfAccountsViewModel,
     CreateAccountInput,
     UpdateAccountInput,
 )
-from pyledger.core.account.service import AccountService
+from trutina.core.account.service import AccountService
 
 
 async def create_account(

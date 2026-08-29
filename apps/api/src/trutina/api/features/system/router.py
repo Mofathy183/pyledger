@@ -15,8 +15,8 @@ a prefix as a template for a real feature router.
 """
 
 from fastapi import APIRouter, Depends
-from pyledger.api.composition.dependencies import get_settings_dep
-from pyledger.config import ApiSettings
+from trutina.api.composition.dependencies import get_settings_dep
+from trutina.config import ApiSettings
 
 from .schemas import ApiInfo, HealthResponse, RootResponse
 

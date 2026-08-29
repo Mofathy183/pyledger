@@ -5,16 +5,16 @@ fires later, inside the Handler's call into AccountService).
 """
 
 import pytest
-from pyledger.api.features.account.mapper import (
+from trutina.api.features.account.mapper import (
     to_create_account_input,
     to_update_account_input,
 )
-from pyledger.api.features.account.schemas import (
+from trutina.api.features.account.schemas import (
     CreateAccountRequest,
     UpdateAccountRequest,
 )
-from pyledger.core.account.dtos import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.core.account.dtos import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
 
 
 @pytest.mark.unit

@@ -4,7 +4,7 @@ Structurally similar to `modules/journal/dtos.py`'s DTOs and
 `JournalLineViewModel`/`JournalViewModel` by design -- the journal-entry
 resource has one natural shape -- but kept as separate classes so the
 public HTTP contract can evolve independently of the service boundary's
-DTOs, per `PyLedger API Feature & Testing Prompt` Section 2.
+DTOs, per `Trutina API Feature & Testing Prompt` Section 2.
 
 Request schemas perform FastAPI/Pydantic structural validation only.
 Accounting rules -- account existence, debit/credit exclusivity, entry
@@ -18,7 +18,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
-from pyledger.api.shared.response import SuccessResponse
+from trutina.api.shared.response import SuccessResponse
 
 
 class JournalLineRequest(BaseModel):

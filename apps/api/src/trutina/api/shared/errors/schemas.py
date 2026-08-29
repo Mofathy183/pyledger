@@ -1,4 +1,4 @@
-"""Response envelope schemas for the PyLedger API.
+"""Response envelope schemas for the Trutina API.
 
 BaseResponse defines the two fields every JSON body carries regardless
 of outcome -- `success` and `timestamp` -- so the success envelopes each
@@ -17,14 +17,14 @@ instead of carrying one that's always None.
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from pyledger.api.shared.response import BaseResponse
+from trutina.api.shared.response import BaseResponse
 
 
 class FieldErrorDetail(BaseModel):
     """One field-level validation failure within a ValidationErrorResponse.
 
     Mirrors the shape of FieldViolation
-    (pyledger.shared.errors.errors.FieldViolation) but is a distinct
+    (trutina.shared.errors.errors.FieldViolation) but is a distinct
     type: FieldViolation is a domain contract shared across services and
     the CLI, while this is the API's own JSON-serializable presentation
     of it. Keeping them separate means a future change to

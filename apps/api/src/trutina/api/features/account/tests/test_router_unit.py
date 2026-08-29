@@ -9,9 +9,9 @@ correct HTTP status/envelope via the registered exception handlers.
 """
 
 import pytest
-from pyledger.api.composition.dependencies import get_account_service
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.shared.errors import ErrorCode
+from trutina.api.composition.dependencies import get_account_service
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import (
     make_account,
@@ -50,7 +50,7 @@ class TestCreateAccountRoute:
     ):
         existing = make_account(code="1001")
         repo = make_fake_account_repo(make_chart_of_accounts(accounts=[existing]))
-        from pyledger.core.account.service import AccountService
+        from trutina.core.account.service import AccountService
 
         override_service(api_app, get_account_service, AccountService(repo))
 

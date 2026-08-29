@@ -8,8 +8,8 @@ contract.
 """
 
 from fastapi import APIRouter, Depends, Path, status
-from pyledger.api.composition.dependencies import get_posting_service
-from pyledger.core.posting.service import PostingService
+from trutina.api.composition.dependencies import get_posting_service
+from trutina.core.posting.service import PostingService
 
 from .handler import (
     get_postings_by_account_handler,

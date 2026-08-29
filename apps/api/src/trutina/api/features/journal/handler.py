@@ -1,7 +1,7 @@
 """Input DTO -> JournalService call -> ViewModel for the journal feature.
 
 Each handler is exactly one service call, per
-`PyLedger API Feature & Testing Prompt` Section 2/3: no FastAPI import,
+`Trutina API Feature & Testing Prompt` Section 2/3: no FastAPI import,
 no Mapper/Presenter construction, no exception handling. Any
 ``AppError``/``ValidationAppError`` raised by ``JournalService``
 propagates uncaught -- ``api/shared/errors/handlers.py`` is the single
@@ -13,8 +13,8 @@ a router or directly from a unit test against a fake-repo-backed
 and the account feature's API handler.
 """
 
-from pyledger.core.journal.dtos import CreateJournalInput, JournalViewModel
-from pyledger.core.journal.service import JournalService
+from trutina.core.journal.dtos import CreateJournalInput, JournalViewModel
+from trutina.core.journal.service import JournalService
 
 
 async def create_journal_entry(

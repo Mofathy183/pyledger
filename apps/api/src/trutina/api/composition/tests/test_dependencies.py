@@ -3,7 +3,7 @@
 Each provider is a one-line pass-through (`request.app.state.container.<attr>`)
 per dependencies.py's own docstring. These tests confirm exactly that —
 nothing about FastAPI's Depends() injection mechanism itself, which is
-framework machinery, not PyLedger code.
+framework machinery, not Trutina code.
 """
 
 from types import SimpleNamespace
@@ -11,13 +11,13 @@ from typing import cast
 
 import pytest
 from fastapi import Request
-from pyledger.api.composition.dependencies import (
+from trutina.api.composition.dependencies import (
     get_account_service,
     get_journal_service,
     get_posting_service,
     get_settings_dep,
 )
-from pyledger.config import get_settings
+from trutina.config import get_settings
 
 
 def _make_request(container: object) -> Request:

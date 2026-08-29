@@ -6,7 +6,7 @@ between the application layer and the public API contract without
 introducing business rules or transport-specific logic.
 """
 
-from pyledger.core.posting.dtos import PostingViewModel
+from trutina.core.posting.dtos import PostingViewModel
 
 from .schemas import PostingItem, PostingListResponse
 

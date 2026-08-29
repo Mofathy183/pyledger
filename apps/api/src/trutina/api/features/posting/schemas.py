@@ -14,7 +14,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
-from pyledger.api.shared.response import SuccessResponse
+from trutina.api.shared.response import SuccessResponse
 
 
 class PostingItem(BaseModel):

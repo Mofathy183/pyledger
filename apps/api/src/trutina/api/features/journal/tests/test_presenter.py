@@ -7,15 +7,15 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.api.features.journal.presenter import (
+from trutina.api.features.journal.presenter import (
     to_journal_entries_response,
     to_journal_entry_response,
 )
-from pyledger.api.features.journal.schemas import (
+from trutina.api.features.journal.schemas import (
     JournalEntriesResponse,
     JournalEntryResponse,
 )
-from pyledger.core.journal.dtos import JournalLineViewModel, JournalViewModel
+from trutina.core.journal.dtos import JournalLineViewModel, JournalViewModel
 
 
 def _make_view_model(

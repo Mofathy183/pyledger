@@ -14,14 +14,14 @@ route contains business logic, constructs a domain model, or catches
 ``api/composition/app.py::create_app()``.
 
 Prefixed under ``/accounts``, matching the resource-per-router
-convention `PyLedger API Feature & Testing Prompt` Section 8 implies
+convention `Trutina API Feature & Testing Prompt` Section 8 implies
 (the ``system`` router is the documented, unprefixed exception -- not a
 template to copy here).
 """
 
 from fastapi import APIRouter, Depends, status
-from pyledger.api.composition.dependencies import get_account_service
-from pyledger.core.account.service import AccountService
+from trutina.api.composition.dependencies import get_account_service
+from trutina.core.account.service import AccountService
 
 from . import handler
 from .mapper import to_create_account_input, to_update_account_input

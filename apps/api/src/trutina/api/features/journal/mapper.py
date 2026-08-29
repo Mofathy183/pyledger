@@ -1,7 +1,7 @@
 """Request Schema -> Input DTO mapping for the journal feature.
 
 Pure, synchronous, no I/O, no business rules -- per
-`PyLedger API Feature & Testing Prompt` Section 2/3.
+`Trutina API Feature & Testing Prompt` Section 2/3.
 `CreateJournalEntryRequest`/`JournalLineRequest` were deliberately built
 to mirror `CreateJournalInput`/`JournalLineInput` field-for-field (see
 `schemas.py`), so this is thin construction. Accounting validation
@@ -9,7 +9,7 @@ to mirror `CreateJournalInput`/`JournalLineInput` field-for-field (see
 inside `JournalService.create_journal_entry()`.
 """
 
-from pyledger.core.journal.dtos import CreateJournalInput, JournalLineInput
+from trutina.core.journal.dtos import CreateJournalInput, JournalLineInput
 
 from .schemas import CreateJournalEntryRequest, JournalLineRequest
 

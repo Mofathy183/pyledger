@@ -18,8 +18,8 @@ convention the ``account`` router already establishes.
 """
 
 from fastapi import APIRouter, Depends, status
-from pyledger.api.composition.dependencies import get_journal_service
-from pyledger.core.journal.service import JournalService
+from trutina.api.composition.dependencies import get_journal_service
+from trutina.core.journal.service import JournalService
 
 from . import handler
 from .mapper import to_create_journal_input

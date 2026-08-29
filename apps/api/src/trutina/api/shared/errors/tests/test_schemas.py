@@ -1,5 +1,5 @@
 import pytest
-from pyledger.api.shared.errors.schemas import (
+from trutina.api.shared.errors.schemas import (
     ErrorResponse,
     FieldErrorDetail,
     ValidationErrorResponse,

@@ -1,15 +1,15 @@
-# pyledger-api
+# trutina-api
 
-The HTTP presentation layer for PyLedger: a FastAPI application exposing the
-same double-entry accounting domain (`pyledger-core`) that `pyledger-cli`
+The HTTP presentation layer for Trutina: a FastAPI application exposing the
+same double-entry accounting domain (`trutina-core`) that `trutina-cli`
 exposes over the terminal. No accounting rules live here — this package
 translates HTTP requests into service calls and service results into JSON
 responses.
 
 ## What Is This Package
 
-`pyledger-api` (import path `pyledger.api`) is one of two presentation
-layers over `pyledger-core`, the other being `pyledger-cli`. It owns:
+`trutina-api` (import path `trutina.api`) is one of two presentation
+layers over `trutina-core`, the other being `trutina-cli`. It owns:
 
 - The FastAPI application factory and composition root (`api/composition/`).
 - One feature package per resource — `account`, `journal`, `posting`, and
@@ -19,14 +19,14 @@ layers over `pyledger-core`, the other being `pyledger-cli`. It owns:
   catalog (`api/shared/`).
 
 It does not define accounting rules, does not talk to MongoDB directly, and
-does not import anything from `pyledger-cli`.
+does not import anything from `trutina-cli`.
 
 ## Why Does It Exist
 
-`pyledger-core`'s services (`AccountService`, `JournalService`,
+`trutina-core`'s services (`AccountService`, `JournalService`,
 `PostingService`) are transport-agnostic — they know nothing about HTTP,
 JSON, or status codes. Something has to be the HTTP entry point onto that
-domain. `pyledger-api` is that entry point, kept as an independent
+domain. `trutina-api` is that entry point, kept as an independent
 workspace package (rather than folded into the CLI) so a second
 presentation layer can exist without either layer depending on the other's
 presentation concerns.
@@ -35,7 +35,7 @@ presentation concerns.
 
 - Parse and validate incoming HTTP requests into the service layer's Input
   DTOs.
-- Call exactly one `pyledger-core` service method per request.
+- Call exactly one `trutina-core` service method per request.
 - Translate ViewModels into stable, versioned JSON response contracts.
 - Translate every `AppError`/`ValidationAppError`/`pydantic.ValidationError`
   the domain can raise into a consistent JSON error envelope with the
@@ -46,7 +46,7 @@ presentation concerns.
 ## Package Layout
 
 ```text
-apps/api/src/pyledger/api/
+apps/api/src/trutina/api/
 ├── main.py                       # console-script entry point (uvicorn.run)
 ├── composition/
 │   ├── app.py                     # create_app() factory
@@ -84,7 +84,7 @@ HTTP Request
   -> Request Schema          (Pydantic structural validation)
   -> Mapper                  (Request Schema -> Input DTO)
   -> Handler                 (Input DTO -> one service call)
-  -> Service                 (pyledger-core — business rules, persistence)
+  -> Service                 (trutina-core — business rules, persistence)
   -> ViewModel
   -> Presenter                (ViewModel -> Response Schema)
   -> Response Schema
@@ -107,25 +107,25 @@ exception exists and why it should not be copied as a template.
 Within the workspace:
 
 ```bash
-uv sync --package pyledger-api
+uv sync --package trutina-api
 ```
 
-`pyledger-api` depends on `pyledger-core`, `pyledger-infrastructure`,
-`pyledger-config`, `fastapi[standard]`, and `uvicorn[standard]`.
+`trutina-api` depends on `trutina-core`, `trutina-infrastructure`,
+`trutina-config`, `fastapi[standard]`, and `uvicorn[standard]`.
 
 ## Usage
 
 ### Running the API locally
 
 ```bash
-uv run --package pyledger-api uvicorn pyledger.api.composition.app:app --reload
+uv run --package trutina-api uvicorn trutina.api.composition.app:app --reload
 ```
 
 or via the installed console script, which reads `Settings` and calls
 `uvicorn.run(...)` itself:
 
 ```bash
-uv run pyledger-api
+uv run trutina-api
 ```
 
 Interactive docs are served at `/docs`; the raw OpenAPI schema at
@@ -201,7 +201,7 @@ array of per-field violations:
 }
 ```
 
-Every domain `ErrorCode` PyLedger can currently raise has a status/message/
+Every domain `ErrorCode` Trutina can currently raise has a status/message/
 hint entry in `api/shared/errors/catalog.py`; anything without an entry
 falls back to a generic `500` rather than raising inside the handler
 itself.
@@ -212,18 +212,18 @@ itself.
 apps/cli, apps/api          <- you are here
         │
         ▼
-pyledger-infrastructure     (Mongo* repos)
+trutina-infrastructure     (Mongo* repos)
         │
         ▼
-pyledger-core                (AccountService, JournalService, PostingService)
+trutina-core                (AccountService, JournalService, PostingService)
         │
         ▼
-pyledger-shared, pyledger-config
+trutina-shared, trutina-config
 ```
 
-`pyledger-api` never imports `pyledger-cli`, and vice versa — enforced by
+`trutina-api` never imports `trutina-cli`, and vice versa — enforced by
 the workspace's `layers` import-linter contract. Both apps depend on the
-same `pyledger-core` service graph and the same `pyledger-infrastructure`
+same `trutina-core` service graph and the same `trutina-infrastructure`
 Mongo adapters, wired independently in their own composition roots
 (`CliContext` for the CLI, `Container`/`bootstrap.py` here).
 
@@ -234,7 +234,7 @@ Adding a new feature (e.g. a future `reporting` resource):
 1. **Create the feature folder** — `api/features/<name>/`, exporting
    `router` from an `__init__.py`.
 2. **Define request/response schemas** (`schemas.py`) — mirror the
-   corresponding `pyledger-core` DTO/ViewModel field-for-field where the
+   corresponding `trutina-core` DTO/ViewModel field-for-field where the
    shapes naturally match, but keep them as distinct classes so the public
    HTTP contract can evolve independently.
 3. **Write the mapper** (`mapper.py`) — pure, synchronous, no I/O: Request

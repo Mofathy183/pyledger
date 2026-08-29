@@ -19,15 +19,15 @@ import pytest
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError as PydanticValidationError
-from pyledger.api.shared.errors.catalog import DEFAULT_ERROR_ENTRY
-from pyledger.api.shared.errors.handlers import (
+from trutina.api.shared.errors.catalog import DEFAULT_ERROR_ENTRY
+from trutina.api.shared.errors.handlers import (
     _handle_app_error,
     _handle_pydantic_validation_error,
     _handle_request_validation_error,
     _handle_unexpected_error,
     _handle_validation_app_error,
 )
-from pyledger.shared.errors import AppError, ErrorCode, ValidationAppError
+from trutina.shared.errors import AppError, ErrorCode, ValidationAppError
 
 from tests.factories import make_account, make_debit_line, make_journal_entry
 

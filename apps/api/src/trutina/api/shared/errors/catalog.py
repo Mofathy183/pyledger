@@ -3,7 +3,7 @@
 Mirrors cli/shared/errors/{errors,hint}.py's combined role for the CLI:
 presentation wording, HTTP status selection, and resolution guidance
 are an API-layer concern and are kept separate from
-pyledger.shared.errors so the shared domain error model never carries
+trutina.shared.errors so the shared domain error model never carries
 HTTP-specific metadata. AppError and ValidationAppError stay a pure,
 transport-agnostic contract; this module is the one place that decides
 what a given ErrorCode looks like over HTTP.
@@ -18,7 +18,7 @@ entry degrades to a generic 500 instead of crashing the handler itself.
 from dataclasses import dataclass
 
 from fastapi import status
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 
 @dataclass(frozen=True, slots=True)

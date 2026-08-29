@@ -1,4 +1,4 @@
-"""Shared response envelope primitives for the PyLedger API.
+"""Shared response envelope primitives for the Trutina API.
 
 BaseResponse defines the two fields every JSON body carries regardless
 of outcome. SuccessResponse and the error envelopes in

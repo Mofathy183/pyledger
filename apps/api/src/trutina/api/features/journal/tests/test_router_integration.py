@@ -3,12 +3,12 @@
 One happy path + one conflict/error path per route is enough here --
 the unit tier (test_router_unit.py) already walks every validation
 branch. Seeds through the real /accounts and /journal-entries endpoints
-rather than a repo fixture, per `PyLedger API Feature & Testing Prompt`
+rather than a repo fixture, per `Trutina API Feature & Testing Prompt`
 Section 5's seeding pattern.
 """
 
 import pytest
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import (
     make_create_account_request,

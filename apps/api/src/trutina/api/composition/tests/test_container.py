@@ -7,11 +7,11 @@ behavior — that's already covered under modules/*/tests/.
 """
 
 import pytest
-from pyledger.api.composition.bootstrap import build_container
-from pyledger.api.composition.container import Container
-from pyledger.core.account.service import AccountService
-from pyledger.core.journal.service import JournalService
-from pyledger.core.posting.service import PostingService
+from trutina.api.composition.bootstrap import build_container
+from trutina.api.composition.container import Container
+from trutina.core.account.service import AccountService
+from trutina.core.journal.service import JournalService
+from trutina.core.posting.service import PostingService
 
 
 @pytest.mark.unit
