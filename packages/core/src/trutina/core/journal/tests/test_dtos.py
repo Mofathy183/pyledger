@@ -3,13 +3,13 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-from pyledger.core.journal import (
+from trutina.core.journal import (
     CreateJournalInput,
     JournalLineInput,
     JournalLineViewModel,
     JournalViewModel,
 )
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 
 @pytest.mark.unit

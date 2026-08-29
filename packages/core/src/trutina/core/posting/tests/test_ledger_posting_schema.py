@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-from pyledger.core.posting.schemas.ledger_posting import LedgerPosting
-from pyledger.shared.errors import ErrorCode
+from trutina.core.posting.schemas.ledger_posting import LedgerPosting
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import make_debit_posting
 

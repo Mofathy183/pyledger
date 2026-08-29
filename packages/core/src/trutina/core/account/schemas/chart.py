@@ -1,8 +1,8 @@
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
-from pyledger.shared.errors import ErrorCode, pydantic_error
-from pyledger.shared.rule import account_lookup_key
+from trutina.shared.errors import ErrorCode, pydantic_error
+from trutina.shared.rule import account_lookup_key
 
 from .account import Account
 

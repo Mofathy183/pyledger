@@ -1,4 +1,4 @@
-# pyledger-core — Context
+# trutina-core — Context
 
 Audience: maintainers, reviewers, and future contributors deciding whether a change
 belongs in this package and whether it preserves the guarantees the rest of the
@@ -11,7 +11,7 @@ The accounting domain (validation rules, service workflows, repository contracts
 used to live inside a single application package alongside the CLI. As the project
 grew into `apps/cli` and `apps/api` — two presentation layers needing identical
 business logic — that coupling would have forced either duplicated domain code or a
-CLI-shaped dependency inside the API. Extracting `pyledger-core` as its own workspace
+CLI-shaped dependency inside the API. Extracting `trutina-core` as its own workspace
 package removes that choice: both apps depend on the same domain package, and neither
 can accidentally depend on the other's presentation concerns.
 
@@ -27,16 +27,16 @@ Enforced mechanically by `import-linter` at the workspace root
 ```text
 apps.cli | apps.api
         ▼
-pyledger.infrastructure
+trutina.infrastructure
         ▼
-pyledger.core            ← this package
+trutina.core            ← this package
         ▼
-pyledger.shared | pyledger.config
+trutina.shared | trutina.config
 ```
 
 Two contracts apply directly to this package:
 
-1. **`pyledger.core` may not import `beanie` or `pymongo`**, at all, anywhere. This
+1. **`trutina.core` may not import `beanie` or `pymongo`**, at all, anywhere. This
    is checked as a `forbidden` contract, not a `layers` contract — it's stronger than
    "core is above infrastructure," it's "core has zero awareness that Mongo exists."
    A repository contract (`AccountRepo`, `JournalRepo`, `PostingRepo`) is defined
@@ -64,7 +64,7 @@ statements alone.
 
 `AccountRepo`, `JournalRepo`, and `PostingRepo` are abstract (`abc.ABC`) classes
 defined here. Concrete adapters (`MongoAccountRepo`, etc.) live in
-`pyledger-infrastructure`, a separate, lower-level-of-abstraction-but-higher-in-the-
+`trutina-infrastructure`, a separate, lower-level-of-abstraction-but-higher-in-the-
 dependency-graph package. This is the Dependency Inversion Principle applied
 literally: the domain defines the contract; storage conforms to it, not the other
 way around.
@@ -152,7 +152,7 @@ constructed.
 
 ### `AppError` / `ValidationAppError` are the only exceptions crossing the service boundary
 
-Every `raise` inside a service is one of these two types (from `pyledger-shared`),
+Every `raise` inside a service is one of these two types (from `trutina-shared`),
 or a `pydantic.ValidationError` caught and translated into one before it escapes.
 This is what lets every consumer — CLI's `error_boundary()`, a future API exception
 handler — write exactly one catch clause per error type and be confident nothing
@@ -207,7 +207,7 @@ prevent.
   failures to `AppError`, treat `save_many` as atomic) are promises, not enforced
   by core.** Core cannot verify a `PostingRepo` implementation actually treats
   `save_many` atomically — that has to be proven by that adapter's own tests in
-  `pyledger-infrastructure`. Treat every repository contract docstring in `repo.py`
+  `trutina-infrastructure`. Treat every repository contract docstring in `repo.py`
   as a spec an adapter must satisfy, and check that any new adapter's tests actually
   assert the documented behavior, not just typical-path success.
 

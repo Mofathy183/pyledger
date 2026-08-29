@@ -15,7 +15,7 @@ counts as a duplicate.
 """
 
 import pytest
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import make_create_account_input, make_update_account_input
 

@@ -2,8 +2,8 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-from pyledger.core.journal.schemas.line import JournalLine
-from pyledger.shared.errors import ErrorCode
+from trutina.core.journal.schemas.line import JournalLine
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import make_credit_line, make_debit_line
 

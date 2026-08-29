@@ -20,8 +20,8 @@ JournalEntry instances. It trusts that any entry returned by
 JournalService is fully validated.
 """
 
-from pyledger.core.journal.service import JournalService
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.journal.service import JournalService
+from trutina.shared.errors import AppError, ErrorCode
 
 from .dtos import PostingViewModel
 from .repo import PostingRepo

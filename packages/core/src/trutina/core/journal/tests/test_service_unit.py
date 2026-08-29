@@ -2,14 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.journal.dtos import (
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.journal.dtos import (
     JournalLineInput,
     JournalLineViewModel,
     JournalViewModel,
 )
-from pyledger.core.journal.schemas.journal import JournalEntry
-from pyledger.shared.errors import AppError, ErrorCode, ValidationAppError
+from trutina.core.journal.schemas.journal import JournalEntry
+from trutina.shared.errors import AppError, ErrorCode, ValidationAppError
 
 from tests.factories import (
     make_account,

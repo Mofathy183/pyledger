@@ -17,7 +17,7 @@ single-service test could detect.
 """
 
 import pytest
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import make_create_journal_input
 

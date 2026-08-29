@@ -1,15 +1,15 @@
-# pyledger-core
+# trutina-core
 
-The double-entry accounting domain for PyLedger: validated domain models, service
+The double-entry accounting domain for Trutina: validated domain models, service
 workflows, and repository contracts for accounts, journal entries, and ledger postings.
 No database driver, no HTTP framework, no CLI framework — this package is pure business
 logic plus the interfaces storage adapters must satisfy.
 
 ## What This Package Is
 
-`pyledger-core` owns the answer to "what is a valid accounting transaction and what
+`trutina-core` owns the answer to "what is a valid accounting transaction and what
 happens when you post one." It is consumed by `apps/cli` and `apps/api`, and its
-repository contracts are implemented by `pyledger-infrastructure`. Core itself never
+repository contracts are implemented by `trutina-infrastructure`. Core itself never
 imports any of those three.
 
 If you're deciding where a change belongs: if it's a rule about debits, credits,
@@ -35,17 +35,17 @@ intact.
 Within the workspace:
 
 ```bash
-uv sync --package pyledger-core
+uv sync --package trutina-core
 ```
 
-`pyledger-core` depends only on `pyledger-shared` (validation helpers, the error
-model). It has no dependency on `pyledger-infrastructure`, `pyledger-config`,
-`pyledger-cli`, or `pyledger-api`.
+`trutina-core` depends only on `trutina-shared` (validation helpers, the error
+model). It has no dependency on `trutina-infrastructure`, `trutina-config`,
+`trutina-cli`, or `trutina-api`.
 
 ## Package Layout
 
 ```text
-packages/core/src/pyledger/core/
+packages/core/src/trutina/core/
 ├── account/
 │   ├── dtos.py          # CreateAccountInput, UpdateAccountInput, AccountViewModel, ChartOfAccountsViewModel
 │   ├── repo.py           # AccountRepo — abstract persistence contract
@@ -78,25 +78,32 @@ root).
 Import from each feature's package root, not from internal submodules:
 
 ```python
-from pyledger.core.account import (
-    AccountService, AccountRepo,
-    CreateAccountInput, UpdateAccountInput,
-    AccountViewModel, ChartOfAccountsViewModel,
+from trutina.core.account import (
+    AccountService,
+    AccountRepo,
+    CreateAccountInput,
+    UpdateAccountInput,
+    AccountViewModel,
+    ChartOfAccountsViewModel,
 )
-from pyledger.core.journal import (
-    JournalService, JournalRepo,
-    CreateJournalInput, JournalLineInput,
-    JournalViewModel, JournalLineViewModel,
+from trutina.core.journal import (
+    JournalService,
+    JournalRepo,
+    CreateJournalInput,
+    JournalLineInput,
+    JournalViewModel,
+    JournalLineViewModel,
 )
-from pyledger.core.posting import (
-    PostingService, PostingRepo,
+from trutina.core.posting import (
+    PostingService,
+    PostingRepo,
     PostingViewModel,
 )
 ```
 
 Domain schemas (`Account`, `JournalEntry`, `JournalLine`, `LedgerPosting`,
 `ChartOfAccounts`) are importable from their explicit submodule paths
-(`pyledger.core.account.schemas.account`, etc.) when you need the domain type itself
+(`trutina.core.account.schemas.account`, etc.) when you need the domain type itself
 — for example, inside a repository adapter. Callers outside `core` should generally
 work with DTOs and ViewModels instead.
 
@@ -105,8 +112,8 @@ work with DTOs and ViewModels instead.
 ### Creating an account
 
 ```python
-from pyledger.core.account import AccountService, CreateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.core.account import AccountService, CreateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
 
 service = AccountService(repo)  # repo: any AccountRepo implementation
 
@@ -121,7 +128,7 @@ account = await service.create_account(
 ```python
 from datetime import datetime
 from decimal import Decimal
-from pyledger.core.journal import JournalService, CreateJournalInput, JournalLineInput
+from trutina.core.journal import JournalService, CreateJournalInput, JournalLineInput
 
 journal_service = JournalService(journal_repo, account_service)
 
@@ -144,7 +151,7 @@ anything is persisted — see [Error Handling](#error-handling).
 ### Posting a journal entry to the ledger
 
 ```python
-from pyledger.core.posting import PostingService
+from trutina.core.posting import PostingService
 
 posting_service = PostingService(posting_repo, journal_service)
 
@@ -158,16 +165,16 @@ postings = await posting_service.post_journal_entry(entry.journal_number)
 apps/cli, apps/api
         │  (constructs concrete repos, injects into services)
         ▼
-pyledger-infrastructure   (Mongo* repos implementing AccountRepo/JournalRepo/PostingRepo)
+trutina-infrastructure   (Mongo* repos implementing AccountRepo/JournalRepo/PostingRepo)
         │
         ▼
-pyledger-core             ← you are here
+trutina-core             ← you are here
         │
         ▼
-pyledger-shared           (validation helpers, error model)
+trutina-shared           (validation helpers, error model)
 ```
 
-Core never imports `pyledger-infrastructure`, `pyledger-cli`, or `pyledger-api`. It is
+Core never imports `trutina-infrastructure`, `trutina-cli`, or `trutina-api`. It is
 handed a concrete repository at service-construction time by whichever app or
 infrastructure layer wires the graph together — core has no opinion on what that
 repository is backed by.
@@ -193,12 +200,12 @@ Adding a new feature module (e.g. a future `reporting` module):
    or `posting` per the same rules those three already follow, but the import-linter
    contract must be updated if you introduce a new directional dependency.
 3. Keep the module free of `beanie`/`pymongo` imports — the workspace-level
-   import-linter contract enforces this for all of `pyledger.core`.
+   import-linter contract enforces this for all of `trutina.core`.
 
 ## Error Handling
 
 Every error that can cross a service boundary is either `AppError` or its subclass
-`ValidationAppError`, both from `pyledger-shared`. Domain construction failures
+`ValidationAppError`, both from `trutina-shared`. Domain construction failures
 (a Pydantic `ValidationError` raised by a schema) are caught by the service and
 re-raised as `ValidationAppError`; business-rule failures (duplicate code, unknown
 account, already-posted journal entry) are raised directly as `AppError` with a
@@ -214,7 +221,7 @@ failure surfaces through the same two exception classes.
 
 Core's own tests live beside the code (`account/tests/`, `journal/tests/`,
 `posting/tests/`), split `test_*_unit.py` (fake-repo, `@pytest.mark.unit`) and
-`test_*_integration.py` (real MongoDB via `pyledger-infrastructure`,
+`test_*_integration.py` (real MongoDB via `trutina-infrastructure`,
 `@pytest.mark.integration`). Shared fixtures/factories/fakes live at the workspace
 root under `tests/`.
 
@@ -234,7 +241,7 @@ uv run pytest -m "integration and core"
 When writing new service tests, substitute the repository with the matching
 `Fake*Repo` from `tests/fakes/` rather than mocking — domain schemas should be
 constructed directly with no mocking at all. See
-`PyLedger Unit Testing Prompt — Condensed Reference.md` at the repo root for the full
+`Trutina Unit Testing Prompt — Condensed Reference.md` at the repo root for the full
 project testing standard.
 
 ## What Consumers Should Know
@@ -251,4 +258,4 @@ project testing standard.
   `AppError` with `ErrorCode.JOURNAL_ALREADY_POSTED` if retry logic is possible on
   their side.
 - **Account name matching is case-insensitive** via `account_lookup_key()` in
-  `pyledger-shared`; display casing is preserved as originally entered.
+  `trutina-shared`; display casing is preserved as originally entered.

@@ -1,7 +1,7 @@
 import pytest
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.account.service import AccountService
-from pyledger.shared.errors import (
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.account.service import AccountService
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     ValidationAppError,

@@ -1,13 +1,13 @@
 import pytest
 from pydantic import ValidationError
-from pyledger.core.account.dtos import (
+from trutina.core.account.dtos import (
     AccountViewModel,
     ChartOfAccountsViewModel,
     CreateAccountInput,
     UpdateAccountInput,
 )
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.shared.errors import ErrorCode
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.shared.errors import ErrorCode
 
 
 @pytest.mark.unit

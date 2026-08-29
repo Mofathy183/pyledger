@@ -19,7 +19,7 @@ Account, ChartOfAccounts, or repository implementations.
 """
 
 from pydantic import ValidationError
-from pyledger.shared.errors import (
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     ValidationAppError,

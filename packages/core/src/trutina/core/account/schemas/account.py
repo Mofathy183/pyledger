@@ -10,8 +10,8 @@ from enum import Enum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, computed_field, field_validator
-from pyledger.shared.errors import ErrorCode, pydantic_error
-from pyledger.shared.rule import clean_account_name
+from trutina.shared.errors import ErrorCode, pydantic_error
+from trutina.shared.rule import clean_account_name
 
 
 class AccountCategory(Enum):

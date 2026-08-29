@@ -15,8 +15,8 @@ from decimal import Decimal
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from pyledger.shared.errors import ErrorCode, pydantic_error
-from pyledger.shared.rule import clean_account_name, is_valid_line_amounts
+from trutina.shared.errors import ErrorCode, pydantic_error
+from trutina.shared.rule import clean_account_name, is_valid_line_amounts
 
 
 class LedgerPosting(BaseModel):

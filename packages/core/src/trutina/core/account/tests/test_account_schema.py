@@ -1,9 +1,9 @@
 import pytest
 from pydantic import ValidationError
-from pyledger.core.account.schemas.account import (
+from trutina.core.account.schemas.account import (
     AccountCategory,
 )
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import make_account
 

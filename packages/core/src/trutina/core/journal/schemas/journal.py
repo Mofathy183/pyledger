@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
-from pyledger.shared.errors import ErrorCode, pydantic_error
+from trutina.shared.errors import ErrorCode, pydantic_error
 
 from .line import JournalLine
 

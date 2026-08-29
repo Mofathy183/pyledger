@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.core.posting.dtos import PostingViewModel
+from trutina.core.posting.dtos import PostingViewModel
 
 
 @pytest.mark.unit

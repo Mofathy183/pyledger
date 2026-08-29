@@ -19,8 +19,8 @@ JournalLine, JournalEntry, JournalRepo, or AccountService.
 """
 
 from pydantic import ValidationError
-from pyledger.core.account.service import AccountService
-from pyledger.shared.errors import (
+from trutina.core.account.service import AccountService
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     ValidationAppError,

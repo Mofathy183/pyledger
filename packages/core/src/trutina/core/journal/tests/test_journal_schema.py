@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import (
     make_credit_line,
