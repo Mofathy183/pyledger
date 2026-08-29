@@ -3,8 +3,8 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 # Builds the production (runtime-stage) API image. Build context is the
-# repo root, not apps/api/ -- required because pyledger-api resolves
-# pyledger-core, pyledger-infrastructure, and pyledger-config as
+# repo root, not apps/api/ -- required because trutina-api resolves
+# trutina-core, trutina-infrastructure, and trutina-config as
 # `workspace = true` path dependencies (see apps/api/pyproject.toml
 # [tool.uv.sources]), which uv can only resolve against the full
 # workspace, not a single package's subdirectory.
@@ -16,7 +16,7 @@ cd "$(git rev-parse --show-toplevel)"
 # its own script (rather than inlined into docker-smoke.sh) so a future
 # registry-push job can reuse the same build step without duplicating it.
 
-TAG="${1:-pyledger-api:local}"
+TAG="${1:-trutina-api:local}"
 
 docker build \
     -f apps/api/Dockerfile \

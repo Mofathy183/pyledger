@@ -10,7 +10,7 @@
 # jobs the way hand-copied inline guards do.
 #
 # Usage:
-#   tools/ci/pytest-optional.sh "unit and shared" --cov=pyledger --cov-report=term-missing
+#   tools/ci/pytest-optional.sh "unit and shared" --cov=trutina --cov-report=term-missing
 #   tools/ci/pytest-optional.sh "integration and core"
 set -euo pipefail
 
