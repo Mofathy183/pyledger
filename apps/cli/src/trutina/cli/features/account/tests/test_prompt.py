@@ -1,7 +1,7 @@
 import pytest
-from pyledger.cli.features.account import prompt
-from pyledger.core.account.dtos import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.cli.features.account import prompt
+from trutina.core.account.dtos import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
 
 
 @pytest.mark.unit

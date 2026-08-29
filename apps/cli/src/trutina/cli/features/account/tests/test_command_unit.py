@@ -2,10 +2,10 @@ from collections.abc import Iterator
 
 import pytest
 from anyio.from_thread import start_blocking_portal
-from pyledger.cli.app import app
-from pyledger.cli.shared.ui import console
-from pyledger.cli.state import CliState
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.cli.app import app
+from trutina.cli.shared.ui import console
+from trutina.cli.state import CliState
+from trutina.shared.errors import AppError, ErrorCode
 from typer.testing import CliRunner
 
 from tests.factories import make_chart_of_accounts

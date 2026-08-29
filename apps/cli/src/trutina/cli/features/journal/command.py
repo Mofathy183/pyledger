@@ -17,8 +17,8 @@ logic the service layer doesn't support.
 from typing import Annotated
 
 import typer
-from pyledger.cli.shared.error_boundary import error_boundary
-from pyledger.cli.state import CliState
+from trutina.cli.shared.error_boundary import error_boundary
+from trutina.cli.state import CliState
 
 from .formatter import print_journal_entry, print_journal_list
 from .handler import (

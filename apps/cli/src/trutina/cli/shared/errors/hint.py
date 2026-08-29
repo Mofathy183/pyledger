@@ -1,4 +1,4 @@
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 """
 User-facing resolution hints for validation errors.

@@ -1,6 +1,6 @@
-# PyLedger CLI
+# Trutina CLI
 
-This document describes the design and internals of the **PyLedger command-line interface** — the `src/pyledger/cli/` package. It is a developer guide for contributors who need to understand how the CLI is put together or who want to add a new CLI feature. It is not the root project README, and it does not describe the accounting domain itself (see `ARCHITECTURE.md`, `PROJECT_CONTEXT.md`, and `AGENTS.md` at the repository root for that).
+This document describes the design and internals of the **Trutina command-line interface** — the `src/trutina/cli/` package. It is a developer guide for contributors who need to understand how the CLI is put together or who want to add a new CLI feature. It is not the root project README, and it does not describe the accounting domain itself (see `ARCHITECTURE.md`, `PROJECT_CONTEXT.md`, and `AGENTS.md` at the repository root for that).
 
 Everything described here reflects the CLI as it exists in the repository today. Where something is planned but not yet built, it is called out explicitly in [Future Work](#18-future-work) rather than described as current behavior.
 
@@ -8,7 +8,7 @@ Everything described here reflects the CLI as it exists in the repository today.
 
 ## Table of Contents
 
-- [PyLedger CLI](#pyledger-cli)
+- [Trutina CLI](#trutina-cli)
   - [Table of Contents](#table-of-contents)
   - [1. Introduction](#1-introduction)
   - [2. Design Principles](#2-design-principles)
@@ -33,7 +33,7 @@ Everything described here reflects the CLI as it exists in the repository today.
 
 ## 1. Introduction
 
-PyLedger is a double-entry bookkeeping application. Its accounting rules — balanced journal entries, chart-of-accounts validation, ledger posting derivation — live entirely in `src/pyledger/modules/` and are described in the project's root documentation. The CLI (`src/pyledger/cli/`) is the _only_ user-facing entry point into that domain today.
+Trutina is a double-entry bookkeeping application. Its accounting rules — balanced journal entries, chart-of-accounts validation, ledger posting derivation — live entirely in `src/trutina/modules/` and are described in the project's root documentation. The CLI (`src/trutina/cli/`) is the _only_ user-facing entry point into that domain today.
 
 The CLI's job is narrow and deliberate: turn command-line flags or interactive prompts into validated input, hand that input to the service layer, and render whatever comes back — a view model or a structured error — as readable terminal output. It is a **presentation adapter**, not a second place where accounting rules live.
 
@@ -90,7 +90,7 @@ Error handling happens in exactly one place per command invocation: the `error_b
 ## 4. Folder Structure
 
 ```text
-src/pyledger/cli/
+src/trutina/cli/
 ├── app.py                     # Root Typer app; registers feature sub-apps
 ├── bootstrap.py                # build_context() — the composition root
 ├── context.py                  # CliContext — lazy dependency container
@@ -133,7 +133,7 @@ src/pyledger/cli/
 
 Root-level files:
 
-- **`main.py`** (`src/pyledger/main.py`) — the console-script entry point. Opens the CLI's one and only `BlockingPortal`, constructs `CliState`, and dispatches the Typer app.
+- **`main.py`** (`src/trutina/main.py`) — the console-script entry point. Opens the CLI's one and only `BlockingPortal`, constructs `CliState`, and dispatches the Typer app.
 
 ---
 
@@ -150,7 +150,7 @@ Constructing a `CliContext` performs **no I/O**. It doesn't open a MongoDB conne
 
 This matters for two reasons:
 
-- **Startup cost stays flat regardless of which command runs.** `pyledger account --help` never touches MongoDB, because nothing in the `--help` path ever calls one of `CliContext`'s `get_*` accessors.
+- **Startup cost stays flat regardless of which command runs.** `trutina account --help` never touches MongoDB, because nothing in the `--help` path ever calls one of `CliContext`'s `get_*` accessors.
 - **Testability.** A `CliContext` built with injected fake repositories (`account_repo=`, `journal_repo=`, `posting_repo=`) can never open a real connection, because the lazy-creation branch in each accessor only runs when the corresponding repository is `None`.
 
 Ownership is equally explicit: in production, `main.py` is the sole owner of a `CliContext`'s lifetime for the life of one process invocation. Repositories injected by a caller (typically a test) are **caller-owned** — the context never tears them down. Repositories the context builds itself are **context-owned** — they're discarded on `aclose()` so a later access rebuilds them against a fresh connection.
@@ -234,14 +234,14 @@ class CliState:
                                                                     finally: portal.call(context.aclose)
 ```
 
-1. **`main()`** (`src/pyledger/main.py`) calls `build_context()` with no explicit `Settings`, so the constructed `CliContext` falls back to the cached, environment-sourced `get_settings()`.
+1. **`main()`** (`src/trutina/main.py`) calls `build_context()` with no explicit `Settings`, so the constructed `CliContext` falls back to the cached, environment-sourced `get_settings()`.
 2. **`main()`** calls **`run(context)`**, which:
    - opens the CLI's single event loop via `start_blocking_portal(backend="asyncio")`,
    - constructs `CliState(context=context, portal=portal)`,
    - dispatches Typer synchronously via `app(obj=state)` on the calling (main) thread,
    - guarantees `portal.call(context.aclose)` runs in a `finally` block — whether `app(obj=state)` returns normally, raises an application exception, or exits via Click's `SystemExit`-based `--help`/usage-error handling.
 3. **`app.py`**'s `main_callback()` is a defensive fallback: if `ctx.obj` is ever `None` (i.e., something invoked the Typer app without going through `main.py`'s managed flow — chiefly `CliRunner` in tests that don't pass `obj=`), it calls `build_context()` itself. This path performs no I/O either, but a context built this way is _not_ wrapped in `main.py`'s `finally`, so it must only ever be used with a context that can never open a real connection.
-4. **Click/Typer resolves eager options (`--help`) before invoking `main_callback()`**, so `pyledger --help` never triggers any context construction at all.
+4. **Click/Typer resolves eager options (`--help`) before invoking `main_callback()`**, so `trutina --help` never triggers any context construction at all.
 
 There is exactly one `BlockingPortal`, and therefore exactly one event loop, for the life of the process. No command, service, or repository is permitted to open a second one.
 
@@ -409,7 +409,7 @@ Commands are tested without touching MongoDB by depending only on `fake_cli_stat
 
 ## 16. Adding a New Feature
 
-1. **Create the feature folder** — `src/pyledger/cli/features/<name>/`, with an `__init__.py` that exports `app` from `command.py`.
+1. **Create the feature folder** — `src/trutina/cli/features/<name>/`, with an `__init__.py` that exports `app` from `command.py`.
 2. **Create the parser** (`parser.py`) — functions that turn raw CLI-flag strings into the feature's application DTO(s), normalizing incidental whitespace and resolving any enums. Raise `typer.BadParameter` for CLI-level input errors; let DTO/domain validation errors propagate as `pydantic.ValidationError`.
 3. **Create the prompt** (`prompt.py`) — interactive counterparts that collect the same values via `cli.shared.interaction` (`ask`, `confirm`, `select`) and delegate to the same parser functions, so both input paths converge on one DTO-construction path.
 4. **Create the handler** (`handler.py`) — plain `async def` functions that resolve the relevant service from a `CliContext` (add a `get_<feature>_service()` accessor to `CliContext` if the service doesn't already have one) and call exactly one service method.

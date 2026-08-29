@@ -7,14 +7,14 @@ terminal presentation -- it must remain callable identically regardless
 of where the DTO came from.
 """
 
-from pyledger.cli.context import CliContext
-from pyledger.core.account import (
+from trutina.cli.context import CliContext
+from trutina.core.account import (
     AccountViewModel,
     ChartOfAccountsViewModel,
     CreateAccountInput,
     UpdateAccountInput,
 )
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.shared.errors import AppError, ErrorCode
 
 
 async def create_account_handler(

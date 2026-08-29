@@ -1,23 +1,23 @@
 [project]
-name = "pyledger-cli"
+name = "trutina-cli"
 version = "0.1.0"
 requires-python = ">=3.14"
 dependencies = [
     "typer>=0.25.1",
     "rich>=15.0.0",
     "anyio>=4.14.1",
-    "pyledger-core",
-    "pyledger-infrastructure",
-    "pyledger-config",
+    "trutina-core",
+    "trutina-infrastructure",
+    "trutina-config",
 ]
 
 [tool.uv.sources]
-pyledger-core = { workspace = true }
-pyledger-infrastructure = { workspace = true }
-pyledger-config = { workspace = true }
+trutina-core = { workspace = true }
+trutina-infrastructure = { workspace = true }
+trutina-config = { workspace = true }
 
 [project.scripts]
-pyledger-cli = "pyledger.cli.main:main"
+trutina-cli = "trutina.cli.main:main"
 
 [build-system]
 requires = ["setuptools>=68"]

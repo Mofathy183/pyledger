@@ -1,5 +1,5 @@
 """
-Validation error formatting for the PyLedger CLI.
+Validation error formatting for the Trutina CLI.
 
 Translates Pydantic ValidationError instances and service-layer
 AppError instances into display-ready structures and builds Rich
@@ -16,11 +16,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
-from pyledger.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
-from pyledger.cli.shared.ui import panel
-from pyledger.shared.errors import AppError, ValidationAppError
-from pyledger.shared.errors.codes import ErrorCode
 from rich.panel import Panel
+from trutina.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
+from trutina.cli.shared.ui import panel
+from trutina.shared.errors import AppError, ValidationAppError
+from trutina.shared.errors.codes import ErrorCode
 
 
 @dataclass(frozen=True)

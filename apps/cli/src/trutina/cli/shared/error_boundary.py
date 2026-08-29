@@ -1,5 +1,5 @@
 """
-Command-layer error boundary for the PyLedger CLI.
+Command-layer error boundary for the Trutina CLI.
 
 Wraps a single service-layer call site (invoked via AppState.call())
 and translates AppError / ValidationAppError into rendered Rich panels
@@ -18,14 +18,14 @@ from contextlib import contextmanager
 
 import typer
 from pydantic import ValidationError
-from pyledger.cli.shared.formatters.error import (
+from trutina.cli.shared.formatters.error import (
     build_error_panels,
     format_app_error,
     format_validation_app_error,
     format_validation_errors,
 )
-from pyledger.cli.shared.ui import console
-from pyledger.shared.errors import AppError, ValidationAppError
+from trutina.cli.shared.ui import console
+from trutina.shared.errors import AppError, ValidationAppError
 
 
 @contextmanager

@@ -1,5 +1,5 @@
 """
-Visual style definitions for the PyLedger CLI.
+Visual style definitions for the Trutina CLI.
 
 Defines the ConsoleThemes enum and the theme map used to configure
 the Rich console. Kept separate from console setup so styles can be
@@ -12,7 +12,7 @@ from .detection import BG_COLOR
 
 
 class ConsoleThemes(Enum):
-    """Visual styles used throughout the PyLedger CLI.
+    """Visual styles used throughout the Trutina CLI.
 
     These themes provide a consistent visual language across the
     application.

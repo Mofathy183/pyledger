@@ -25,7 +25,7 @@ type Justify = Literal[
 
 
 def panel(content, title: str, style: str = "success") -> Panel:
-    """Build a standard PyLedger panel.
+    """Build a standard Trutina panel.
 
     Args:
         content: Renderable content — a Rich Group, Table, or Text.

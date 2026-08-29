@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pyledger.shared.errors import ErrorCode
+from trutina.shared.errors import ErrorCode
 
 
 @dataclass(frozen=True, slots=True)

@@ -23,10 +23,10 @@ Explicitly NOT this module's responsibility:
 
 from collections.abc import Callable
 
-from pyledger.cli.shared.ui import console, panel, rule
 from rich.console import Group
 from rich.prompt import Confirm, Prompt
 from rich.text import Text
+from trutina.cli.shared.ui import console, panel, rule
 
 
 def ask(message: str, *, default: str | None = None, style: str = "info") -> str:

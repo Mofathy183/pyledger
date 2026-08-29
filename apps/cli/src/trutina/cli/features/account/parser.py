@@ -40,8 +40,8 @@ dependency direction is CLI -> parser -> DTO, never the reverse.
 """
 
 import typer
-from pyledger.core.account import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.core.account import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
 
 
 def _clean(value: str) -> str:

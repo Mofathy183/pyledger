@@ -1,5 +1,5 @@
 """
-Account CLI formatting for PyLedger.
+Account CLI formatting for Trutina.
 
 Consumes AccountViewModel and ChartOfAccountsViewModel from the account
 feature's dtos module and renders them as Rich renderable. This module
@@ -19,11 +19,11 @@ in one place and interpolated values (account names, codes) are never
 embedded in raw markup strings.
 """
 
-from pyledger.cli.shared.ui import console, panel, rule, table
-from pyledger.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
+from trutina.cli.shared.ui import console, panel, rule, table
+from trutina.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
 
 # ---------------------------------------------------------------------------
 # Private helpers

@@ -1,6 +1,6 @@
 import pytest
-from pyledger.cli.features.journal import prompt
-from pyledger.core.journal.dtos import CreateJournalInput, JournalLineInput
+from trutina.cli.features.journal import prompt
+from trutina.core.journal.dtos import CreateJournalInput, JournalLineInput
 
 
 @pytest.mark.unit

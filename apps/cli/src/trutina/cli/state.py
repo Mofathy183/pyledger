@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from anyio.from_thread import BlockingPortal
-from pyledger.cli.context import CliContext
+from trutina.cli.context import CliContext
 
 T = TypeVar("T")
 

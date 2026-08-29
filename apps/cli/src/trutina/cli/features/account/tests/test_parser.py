@@ -1,13 +1,13 @@
 import pytest
 import typer
 from pydantic import ValidationError
-from pyledger.cli.features.account.parser import (
+from trutina.cli.features.account.parser import (
     parse_create_account,
     parse_update_account,
 )
-from pyledger.core.account import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.shared.errors import ErrorCode
+from trutina.core.account import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.shared.errors import ErrorCode
 
 
 def assert_has_error_code(exc: ValidationError, code: ErrorCode) -> None:

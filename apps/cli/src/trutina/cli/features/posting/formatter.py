@@ -1,5 +1,5 @@
 """
-Posting CLI formatting for PyLedger.
+Posting CLI formatting for Trutina.
 
 Consumes PostingViewModel from the posting feature's dtos module and
 renders it as Rich renderables. This module never imports LedgerPosting
@@ -21,10 +21,10 @@ cli/features/journal/formatter.py exactly.
 
 from decimal import Decimal
 
-from pyledger.cli.shared.ui import console, panel, table
-from pyledger.core.posting.dtos import PostingViewModel
 from rich.panel import Panel
 from rich.text import Text
+from trutina.cli.shared.ui import console, panel, table
+from trutina.core.posting.dtos import PostingViewModel
 
 # ---------------------------------------------------------------------------
 # Private helpers

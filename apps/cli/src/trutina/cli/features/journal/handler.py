@@ -7,8 +7,8 @@ JournalService lazily from the supplied CliContext the same way
 Account's handlers resolve AccountService.
 """
 
-from pyledger.cli.context import CliContext
-from pyledger.core.journal import CreateJournalInput, JournalViewModel
+from trutina.cli.context import CliContext
+from trutina.core.journal import CreateJournalInput, JournalViewModel
 
 
 async def create_journal_entry_handler(

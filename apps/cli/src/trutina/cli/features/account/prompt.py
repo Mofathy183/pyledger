@@ -39,9 +39,9 @@ must never construct application DTOs directly (for example,
 ``CreateAccountInput(...)``) or perform domain validation itself.
 """
 
-from pyledger.cli.shared.interaction import ask, confirm, select
-from pyledger.core.account.dtos import CreateAccountInput, UpdateAccountInput
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.cli.shared.interaction import ask, confirm, select
+from trutina.core.account.dtos import CreateAccountInput, UpdateAccountInput
+from trutina.core.account.schemas.account import AccountCategory
 
 from .parser import (
     parse_create_account,

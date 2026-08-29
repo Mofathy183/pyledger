@@ -1,15 +1,15 @@
 from decimal import Decimal
 
 import pytest
-from pyledger.cli.context import CliContext
-from pyledger.cli.features.journal.handler import (
+from trutina.cli.context import CliContext
+from trutina.cli.features.journal.handler import (
     create_journal_entry_handler,
     get_journal_entry_handler,
     list_journal_entries_handler,
 )
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.journal.dtos import JournalLineInput, JournalViewModel
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.journal.dtos import JournalLineInput, JournalViewModel
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_account,

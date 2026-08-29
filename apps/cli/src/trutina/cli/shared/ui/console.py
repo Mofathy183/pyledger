@@ -1,5 +1,5 @@
 """
-Centralized Rich console configuration for PyLedger.
+Centralized Rich console configuration for Trutina.
 
 This module defines the visual presentation layer used throughout the
 CLI application. It provides a shared console instance, reusable themes,

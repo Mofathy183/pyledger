@@ -6,7 +6,7 @@
 Constructing a ``CliContext`` performs no I/O of its own -- no MongoDB
 connection, no Beanie initialization -- regardless of what gets imported
 to define the types involved. Importing this module transitively imports
-``pyledger.cli.context``, which in turn imports the concrete MongoDB
+``trutina.cli.context``, which in turn imports the concrete MongoDB
 repository and document classes it may later construct; those imports
 happen at module load time and are not I/O. The actual network
 connection is only opened the first time a command calls one of
@@ -21,8 +21,8 @@ argument, so the returned ``CliContext`` falls back to the cached
 module never decides between ``Settings`` and ``TestSettings`` itself.
 """
 
-from pyledger.cli.context import CliContext
-from pyledger.config import Settings
+from trutina.cli.context import CliContext
+from trutina.config import Settings
 
 
 def build_context(settings: Settings | None = None) -> CliContext:

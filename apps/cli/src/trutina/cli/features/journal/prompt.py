@@ -14,10 +14,10 @@ validation, or rendering result panels for command output — those live
 in formatter.py.
 """
 
-from pyledger.cli.shared.interaction import ask, confirm
-from pyledger.cli.shared.ui import console
-from pyledger.core.journal.dtos import CreateJournalInput, JournalLineInput
 from rich.text import Text
+from trutina.cli.shared.interaction import ask, confirm
+from trutina.cli.shared.ui import console
+from trutina.core.journal.dtos import CreateJournalInput, JournalLineInput
 
 from .parser import parse_create_journal, parse_journal_line
 

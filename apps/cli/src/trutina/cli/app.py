@@ -1,5 +1,5 @@
 """
-Root command-line application for PyLedger.
+Root command-line application for Trutina.
 
 This module defines the main CLI entry point and registers the
 available command groups. Each command group represents a bounded
@@ -19,14 +19,14 @@ an explicit fallback and test seam, documented on the callback itself.
 """
 
 import typer
-from pyledger.cli.bootstrap import build_context
+from trutina.cli.bootstrap import build_context
 
 from .features.account import app as account_app
 from .features.journal import app as journal_app
 from .features.posting import app as posting_app
 
 app = typer.Typer(
-    name="PyLedger",
+    name="Trutina",
     help="CLI for managing ledger operations, accounts, and journal entries.",
     context_settings={"help_option_names": ["-h", "--help"]},
     suggest_commands=True,
@@ -59,7 +59,7 @@ def main_callback(ctx: typer.Context) -> None:
     that might lazily touch MongoDB.
 
     Click/Typer resolves eager options such as ``--help`` before
-    invoking this callback, so ``pyledger --help`` never reaches this
+    invoking this callback, so ``trutina --help`` never reaches this
     function and therefore never builds a context at all.
 
     Args:

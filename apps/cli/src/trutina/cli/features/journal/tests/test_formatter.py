@@ -2,12 +2,12 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.cli.features.journal import formatter as journal_fmt
-from pyledger.core.journal.dtos import JournalLineViewModel, JournalViewModel
 from rich.console import Group, RenderableType
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from trutina.cli.features.journal import formatter as journal_fmt
+from trutina.core.journal.dtos import JournalLineViewModel, JournalViewModel
 
 
 def _line_vm(

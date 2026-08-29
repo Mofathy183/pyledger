@@ -1,13 +1,13 @@
 import pytest
-from pyledger.cli.shared.ui import (
-    panel,
-    rule,
-    table,
-)
 from rich import box
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
+from trutina.cli.shared.ui import (
+    panel,
+    rule,
+    table,
+)
 
 
 @pytest.mark.unit

@@ -1,6 +1,6 @@
 import pytest
-from pyledger.cli.features.posting import prompt as prompt_module
-from pyledger.cli.features.posting.prompt import (
+from trutina.cli.features.posting import prompt as prompt_module
+from trutina.cli.features.posting.prompt import (
     prompt_account_identifier,
     prompt_journal_number,
 )
@@ -39,7 +39,7 @@ class TestPromptJournalNumber:
         assert result == 5
 
     def test_warning_message_mentions_invalid_value(self, monkeypatch):
-        from pyledger.cli.shared.ui import console
+        from trutina.cli.shared.ui import console
 
         responses = iter(["xyz", "9"])
         monkeypatch.setattr(prompt_module, "ask", lambda *a, **k: next(responses))

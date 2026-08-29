@@ -1,10 +1,10 @@
 import pytest
 from anyio.from_thread import start_blocking_portal
-from pyledger.cli.features.posting.command import app
-from pyledger.cli.shared.ui import console
-from pyledger.cli.state import CliState
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.shared.errors import ErrorCode
+from trutina.cli.features.posting.command import app
+from trutina.cli.shared.ui import console
+from trutina.cli.state import CliState
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.shared.errors import ErrorCode
 
 from tests.factories import (
     make_account,

@@ -1,7 +1,7 @@
 import pytest
-from pyledger.cli.app import app
-from pyledger.cli.shared.ui import console
-from pyledger.cli.state import CliState
+from trutina.cli.app import app
+from trutina.cli.shared.ui import console
+from trutina.cli.state import CliState
 from typer.testing import CliRunner
 
 
@@ -13,7 +13,7 @@ def _invoke(
     Mirrors test_command.py's _invoke() helper exactly: asserts rely on
     result.exit_code (CliRunner, capture-independent) and on
     console.capture() for Rich-rendered content, since
-    pyledger.cli.shared.ui.console is a module-level singleton with no
+    trutina.cli.shared.ui.console is a module-level singleton with no
     confirmed guarantee it writes through whatever stream CliRunner has
     redirected.
     """

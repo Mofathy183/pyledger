@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pyledger.cli.shared.interaction import prompt
+from trutina.cli.shared.interaction import prompt
 
 
 @pytest.mark.unit

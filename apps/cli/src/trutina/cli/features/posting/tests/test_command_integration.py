@@ -17,9 +17,9 @@ files available for this task.
 """
 
 import pytest
-from pyledger.cli.features.posting.command import app
-from pyledger.cli.shared.ui import console
-from pyledger.core.account.schemas.account import AccountCategory
+from trutina.cli.features.posting.command import app
+from trutina.cli.shared.ui import console
+from trutina.core.account.schemas.account import AccountCategory
 
 from tests.factories import make_create_account_input, make_create_journal_input
 

@@ -4,15 +4,15 @@ from decimal import Decimal
 import pytest
 import typer
 from pydantic import ValidationError
-from pyledger.cli.features.journal.parser import (
+from trutina.cli.features.journal.parser import (
     parse_create_journal,
     parse_journal_line,
     parse_line_spec,
     parse_posting_date,
 )
-from pyledger.core.journal.dtos import CreateJournalInput, JournalLineInput
-from pyledger.shared.errors import ErrorCode
-from pyledger.shared.util import default_posting_date
+from trutina.core.journal.dtos import CreateJournalInput, JournalLineInput
+from trutina.shared.errors import ErrorCode
+from trutina.shared.util import default_posting_date
 
 
 def assert_has_error_code(exc: ValidationError, code: ErrorCode) -> None:

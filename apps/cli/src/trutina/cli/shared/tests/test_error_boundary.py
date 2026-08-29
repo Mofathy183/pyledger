@@ -3,9 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 import typer
 from pydantic import BaseModel, Field, ValidationError
-from pyledger.cli.shared import error_boundary as error_boundary_module
-from pyledger.cli.shared.error_boundary import error_boundary
-from pyledger.shared.errors import (
+from trutina.cli.shared import error_boundary as error_boundary_module
+from trutina.cli.shared.error_boundary import error_boundary
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     FieldViolation,

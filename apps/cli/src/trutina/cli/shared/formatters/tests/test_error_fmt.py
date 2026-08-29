@@ -1,20 +1,20 @@
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from pyledger.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
-from pyledger.cli.shared.formatters import (
+from rich.panel import Panel
+from trutina.cli.shared.errors import ERRORS, FIELD_LABELS, HINTS
+from trutina.cli.shared.formatters import (
     FormattedError,
     build_error_panels,
     format_app_error,
     format_validation_app_error,
     format_validation_errors,
 )
-from pyledger.shared.errors import (
+from trutina.shared.errors import (
     AppError,
     ErrorCode,
     FieldViolation,
     ValidationAppError,
 )
-from rich.panel import Panel
 
 
 @pytest.mark.unit

@@ -2,15 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from pyledger.cli.features.posting.formatter import (
-    build_postings_list,
-    print_postings_list,
-)
-from pyledger.cli.shared.ui import console
-from pyledger.core.posting.dtos import PostingViewModel
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from trutina.cli.features.posting.formatter import (
+    build_postings_list,
+    print_postings_list,
+)
+from trutina.cli.shared.ui import console
+from trutina.core.posting.dtos import PostingViewModel
 
 
 def _posting_vm(

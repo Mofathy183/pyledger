@@ -1,14 +1,14 @@
 import pytest
-from pyledger.cli.context import CliContext
-from pyledger.cli.features.account.handler import (
+from trutina.cli.context import CliContext
+from trutina.cli.features.account.handler import (
     create_account_handler,
     delete_account_handler,
     get_account_handler,
     list_accounts_handler,
     update_account_handler,
 )
-from pyledger.core.account import AccountViewModel, ChartOfAccountsViewModel
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account import AccountViewModel, ChartOfAccountsViewModel
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_chart_of_accounts,

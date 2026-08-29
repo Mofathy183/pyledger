@@ -35,8 +35,8 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 import typer
-from pyledger.core.journal.dtos import CreateJournalInput, JournalLineInput
-from pyledger.shared.util import default_posting_date
+from trutina.core.journal.dtos import CreateJournalInput, JournalLineInput
+from trutina.shared.util import default_posting_date
 
 _POSTING_DATE_FORMAT = "%Y-%m-%d"
 

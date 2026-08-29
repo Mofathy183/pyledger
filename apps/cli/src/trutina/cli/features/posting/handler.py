@@ -7,8 +7,8 @@ about Typer, Click, or terminal presentation. Every handler resolves
 PostingService lazily from the supplied CliContext.
 """
 
-from pyledger.cli.context import CliContext
-from pyledger.core.posting import PostingViewModel
+from trutina.cli.context import CliContext
+from trutina.core.posting import PostingViewModel
 
 
 async def post_journal_entry_handler(

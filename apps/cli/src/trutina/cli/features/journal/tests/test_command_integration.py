@@ -1,7 +1,7 @@
 import pytest
-from pyledger.cli.app import app
-from pyledger.cli.shared.ui import console
-from pyledger.cli.state import CliState
+from trutina.cli.app import app
+from trutina.cli.shared.ui import console
+from trutina.cli.state import CliState
 from typer.testing import CliRunner
 
 

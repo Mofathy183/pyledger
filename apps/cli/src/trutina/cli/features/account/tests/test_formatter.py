@@ -1,11 +1,11 @@
 import pytest
-from pyledger.cli.features.account import formatter as account_fmt
-from pyledger.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
-from pyledger.core.account.schemas.account import AccountCategory, NormalBalance
 from rich.console import Group, RenderableType
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from trutina.cli.features.account import formatter as account_fmt
+from trutina.core.account.dtos import AccountViewModel, ChartOfAccountsViewModel
+from trutina.core.account.schemas.account import AccountCategory, NormalBalance
 
 
 def _account_vm(

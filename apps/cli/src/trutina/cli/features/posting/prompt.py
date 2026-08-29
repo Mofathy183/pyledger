@@ -11,9 +11,9 @@ construct.
 """
 
 import typer
-from pyledger.cli.shared.interaction import ask
-from pyledger.cli.shared.ui import console
 from rich.text import Text
+from trutina.cli.shared.interaction import ask
+from trutina.cli.shared.ui import console
 
 from .parser import parse_account_identifier, parse_journal_number
 

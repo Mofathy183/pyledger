@@ -1,6 +1,6 @@
 import pytest
 import typer
-from pyledger.cli.features.posting.parser import (
+from trutina.cli.features.posting.parser import (
     parse_account_identifier,
     parse_journal_number,
 )

@@ -1,4 +1,4 @@
-"""Console-script entry point for the PyLedger CLI.
+"""Console-script entry point for the Trutina CLI.
 
 This is the only place in the application that opens the CLI's single
 event loop, via ``start_blocking_portal()``. No command, service, or
@@ -7,10 +7,10 @@ life of the process.
 """
 
 from anyio.from_thread import start_blocking_portal
-from pyledger.cli.app import app
-from pyledger.cli.bootstrap import build_context
-from pyledger.cli.context import CliContext
-from pyledger.cli.state import CliState
+from trutina.cli.app import app
+from trutina.cli.bootstrap import build_context
+from trutina.cli.context import CliContext
+from trutina.cli.state import CliState
 
 
 def run(context: CliContext, *, backend: str = "asyncio") -> None:

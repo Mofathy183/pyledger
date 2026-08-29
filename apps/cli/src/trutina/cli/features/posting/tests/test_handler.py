@@ -1,13 +1,13 @@
 import pytest
 import pytest_asyncio
-from pyledger.cli.features.posting.handler import (
+from trutina.cli.features.posting.handler import (
     get_postings_by_account_handler,
     get_postings_by_journal_number_handler,
     post_journal_entry_handler,
 )
-from pyledger.core.account.schemas.account import AccountCategory
-from pyledger.core.posting.dtos import PostingViewModel
-from pyledger.shared.errors import AppError, ErrorCode
+from trutina.core.account.schemas.account import AccountCategory
+from trutina.core.posting.dtos import PostingViewModel
+from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import (
     make_account,

@@ -1,5 +1,5 @@
 """
-Journal CLI formatting for PyLedger.
+Journal CLI formatting for Trutina.
 
 Consumes JournalViewModel and JournalLineViewModel from the journal
 feature's dtos module and renders them as Rich renderables. This module
@@ -13,11 +13,11 @@ print. Mirrors cli/features/account/formatter.py exactly.
 
 from decimal import Decimal
 
-from pyledger.cli.shared.ui import console, panel, rule, table
-from pyledger.core.journal.dtos import JournalLineViewModel, JournalViewModel
 from rich.console import Group
 from rich.panel import Panel
 from rich.text import Text
+from trutina.cli.shared.ui import console, panel, rule, table
+from trutina.core.journal.dtos import JournalLineViewModel, JournalViewModel
 
 # ---------------------------------------------------------------------------
 # Private helpers

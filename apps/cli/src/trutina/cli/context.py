@@ -2,17 +2,17 @@ from types import TracebackType
 from typing import Self
 
 from beanie import init_beanie
-from pyledger.config import Settings, get_settings
-from pyledger.core.account import AccountRepo, AccountService
-from pyledger.core.journal import JournalRepo, JournalService
-from pyledger.core.posting import PostingRepo, PostingService
-from pyledger.infrastructure.mongo import MongoConnection, connect, disconnect
-from pyledger.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
-from pyledger.infrastructure.mongo.journal import JournalDocument, MongoJournalRepo
-from pyledger.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
-from pyledger.infrastructure.mongo.shared import MongoExecutor
-from pyledger.shared.errors import AppError
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from trutina.config import Settings, get_settings
+from trutina.core.account import AccountRepo, AccountService
+from trutina.core.journal import JournalRepo, JournalService
+from trutina.core.posting import PostingRepo, PostingService
+from trutina.infrastructure.mongo import MongoConnection, connect, disconnect
+from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo
+from trutina.infrastructure.mongo.journal import JournalDocument, MongoJournalRepo
+from trutina.infrastructure.mongo.posting import MongoPostingRepo, PostingDocument
+from trutina.infrastructure.mongo.shared import MongoExecutor
+from trutina.shared.errors import AppError
 
 _DOCUMENT_MODELS = [AccountDocument, JournalDocument, PostingDocument]
 
