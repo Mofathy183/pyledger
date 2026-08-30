@@ -6,6 +6,7 @@ dependencies = [
     "typer>=0.25.1",
     "rich>=15.0.0",
     "anyio>=4.14.1",
+    "prompt-toolkit>=3.0.53",
     "trutina-core",
     "trutina-infrastructure",
     "trutina-config",
