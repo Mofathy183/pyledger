@@ -12,12 +12,21 @@ class TestKnownCommands:
 
 
 @pytest.mark.unit
+class TestHelpFlags:
+    def test_derives_help_flags_from_context_settings(self):
+        assert main_module._help_flags(app) == {"-h", "--help"}
+
+
+@pytest.mark.unit
 class TestShouldEnterShell:
     def test_bare_invocation_enters_shell(self):
         assert main_module._should_enter_shell([], app) is True
 
-    def test_help_flag_enters_shell(self):
-        assert main_module._should_enter_shell(["--help"], app) is True
+    def test_long_help_flag_does_not_enter_shell(self):
+        assert main_module._should_enter_shell(["--help"], app) is False
+
+    def test_short_help_flag_does_not_enter_shell(self):
+        assert main_module._should_enter_shell(["-h"], app) is False
 
     def test_unknown_token_enters_shell(self):
         assert main_module._should_enter_shell(["frobnicate"], app) is True
@@ -25,6 +34,13 @@ class TestShouldEnterShell:
     @pytest.mark.parametrize("command", ["account", "journal", "posting"])
     def test_known_command_dispatches_normally(self, command):
         assert main_module._should_enter_shell([command, "list"], app) is False
+
+    @pytest.mark.parametrize("command", ["account", "journal", "posting"])
+    def test_known_command_with_help_flag_still_dispatches_normally(self, command):
+        # e.g. `account --help` -- Typer/Click handles this itself once
+        # inside that command's own parsing; it must not be intercepted
+        # here as if it were the top-level help flag.
+        assert main_module._should_enter_shell([command, "--help"], app) is False
 
 
 def _fake_context():
@@ -68,6 +84,20 @@ class TestRunDispatch:
         monkeypatch.setattr(main_module, "run_shell", run_shell_mock)
         monkeypatch.setattr(main_module, "app", app_mock)
         monkeypatch.setattr("sys.argv", ["trutina-cli", "account", "list"])
+
+        main_module.run(_fake_context())
+
+        app_mock.assert_called_once()
+        run_shell_mock.assert_not_called()
+
+    def test_dispatches_to_typer_for_top_level_help_flag(self, monkeypatch):
+        run_shell_mock = MagicMock()
+        app_mock = MagicMock()
+        app_mock.registered_groups = []
+        app_mock.info.context_settings = {"help_option_names": ["-h", "--help"]}
+        monkeypatch.setattr(main_module, "run_shell", run_shell_mock)
+        monkeypatch.setattr(main_module, "app", app_mock)
+        monkeypatch.setattr("sys.argv", ["trutina-cli", "--help"])
 
         main_module.run(_fake_context())
 
