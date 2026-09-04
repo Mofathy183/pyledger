@@ -129,10 +129,9 @@ class PostingDocument(TimestampedDocument):
         journal entry produces one posting per line, so multiple posting
         documents legitimately share the same ``journal_number``.
 
-        No unique index is defined anywhere on this collection. Postings
-        have no natural unique business key — the one-posting-per-journal
-        -entry invariant is enforced by ``PostingService``, not by
-        storage.
+        No unique index is defined anywhere on this collection. The
+        one-posting-per-journal-entry check is performed by
+        ``PostingService`` before persistence; storage does not enforce it.
         """
 
         name = "postings"

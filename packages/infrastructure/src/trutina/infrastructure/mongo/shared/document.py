@@ -1,15 +1,14 @@
 """Shared MongoDB base document with automatic timestamp management.
 
 TimestampedDocument provides the common persistence fields shared by all
-MongoDB documents in the infrastructure layer. It automatically records
-when a document is first persisted and when it was most recently written,
-ensuring consistent audit metadata across every collection without
-duplicating timestamp logic in individual document models.
+MongoDB documents in the infrastructure layer. Its insert hook initializes
+timestamps for single-document inserts, while batch-write paths must set
+timestamps explicitly when their Beanie operation does not invoke hooks.
 
 Timestamp lifecycle
 -------------------
-- created_at is assigned exactly once immediately before the document's
-    first insert into MongoDB.
+- created_at is assigned by the insert hook immediately before a
+    single-document insert; batch writers set it themselves where needed.
 - updated_at is initialized to the same value on insert and is expected
     to be refreshed by repository write operations on subsequent updates.
 - Both timestamps are stored in UTC to provide a consistent time
@@ -30,10 +29,10 @@ from beanie import Document, Insert, before_event
 class TimestampedDocument(Document):
     """Base Beanie document providing common audit timestamps.
 
-    All MongoDB persistence models inherit from TimestampedDocument to
-    obtain consistent creation and modification timestamps. The timestamps
-    are infrastructure-managed metadata and are not part of the domain
-    model or business invariants.
+    All MongoDB persistence models inherit these creation and modification
+    fields. The insert hook initializes them for a Beanie ``insert()``;
+    batch persistence must initialize them explicitly. The timestamps are
+    infrastructure-managed metadata, not domain-model business invariants.
 
     Attributes:
         created_at: UTC timestamp recorded when the document is first
@@ -49,11 +48,12 @@ class TimestampedDocument(Document):
     def initialize_timestamps(self) -> None:
         """Initialize persistence timestamps before the first insert.
 
-        Beanie invokes this hook immediately before inserting a new
-        document. Both timestamps receive the same UTC value so newly
-        created documents begin with identical creation and modification
-        times. Repository update operations are responsible for advancing
-        ``updated_at`` on subsequent writes.
+        Beanie invokes this hook immediately before a single-document
+        insert. Both timestamps receive the same UTC value so newly created
+        documents begin with identical creation and modification times.
+        Batch persistence paths do not invoke this hook and initialize the
+        fields themselves. Repository update operations are responsible for
+        advancing ``updated_at`` on subsequent writes.
         """
         now = datetime.now(UTC)
         self.created_at = now

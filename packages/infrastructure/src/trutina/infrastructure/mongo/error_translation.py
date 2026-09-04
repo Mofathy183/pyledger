@@ -5,9 +5,9 @@ every repository method. Translates PyMongo exceptions into AppError at
 the repository boundary so that the service layer never handles
 driver-specific exceptions.
 
-DuplicateKeyError is intentionally excluded — callers that need to
-differentiate code vs name_key violations must catch it before entering
-this context. See MongoAccountRepo._on_duplicate() for the pattern.
+DuplicateKeyError is intentionally excluded. The context manager re-raises
+it so a repository can translate the violated index with its own domain
+context. See MongoAccountRepo._on_duplicate() for the pattern.
 
 Exception hierarchy (most-specific first):
     ServerSelectionTimeoutError
@@ -15,9 +15,8 @@ Exception hierarchy (most-specific first):
         └─ maps to AppError.storage_timeout()
     ConnectionFailure
         └─ maps to AppError.storage_unavailable()
-    PyMongoError  (catch-all; DuplicateKeyError is a subclass, so callers
-                    MUST catch DuplicateKeyError BEFORE entering this context
-                    when they write data — otherwise it collapses to unknown)
+    PyMongoError  (catch-all; DuplicateKeyError is re-raised so repository
+                    code can translate it with domain context)
         └─ maps to AppError.unknown()
 """
 
@@ -52,7 +51,7 @@ async def translate_mongo_errors() -> AsyncGenerator[None]:
         async with translate_mongo_errors():
             doc = await AccountDocument.find_one(...)
 
-    Usage — write path (DuplicateKeyError must be caught first):
+    Usage — write path (catch DuplicateKeyError outside the context):
 
         try:
             async with translate_mongo_errors():
@@ -60,11 +59,10 @@ async def translate_mongo_errors() -> AsyncGenerator[None]:
         except DuplicateKeyError as exc:
             raise self._on_duplicate(exc, account) from exc
 
-    DuplicateKeyError is a PyMongoError subclass. If a write method
-    enters this context without the outer DuplicateKeyError catch, a
-    unique-index violation silently becomes AppError.unknown(). The unit
-    test for this context manager explicitly asserts that DuplicateKeyError
-    propagates through uncaught.
+    DuplicateKeyError is a PyMongoError subclass, but this context manager
+    re-raises it before its PyMongoError catch-all. A repository that does
+    not catch it therefore exposes it unchanged rather than converting it
+    to AppError.unknown().
 
     Raises:
         AppError: STORAGE_TIMEOUT when ServerSelectionTimeoutError is caught.
