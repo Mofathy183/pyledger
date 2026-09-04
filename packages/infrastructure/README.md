@@ -1,54 +1,44 @@
 # trutina-infrastructure
 
-The concrete MongoDB/Beanie storage adapters for Trutina. This package is the
-only place in the workspace where `beanie` and `pymongo` are imported.
+Concrete MongoDB/Beanie storage adapters for Trutina's accounting domain.
 
-## What is this package?
+## What Is This
 
-`trutina-infrastructure` implements the repository contracts defined in
-`trutina-core` (`AccountRepo`, `JournalRepo`, `PostingRepo`) against a real
-MongoDB database, and provides the connection lifecycle and error-translation
-utilities every one of those adapters relies on.
+`trutina-infrastructure` (import path `trutina.infrastructure`) implements
+the repository contracts defined in `trutina-core` (`AccountRepo`,
+`JournalRepo`, `PostingRepo`) against MongoDB, and provides the connection
+lifecycle and error-translation utilities every adapter relies on. This is
+the only package in the workspace that imports `beanie` or `pymongo`.
 
-## Why does it exist?
+It contains no accounting rules, business validation, or uniqueness
+pre-checks — those belong to `trutina-core`'s services and domain schemas.
 
-`trutina-core` defines its repository contracts as storage-agnostic ABCs —
-they know nothing about MongoDB, Beanie, or PyMongo. Something in the
-workspace has to actually talk to a database. That's this package. Keeping it
-separate means the accounting domain (`trutina-core`) stays swappable to a
-different storage backend later without changing a single service or domain
-model.
+### Package Layout
 
-## Responsibilities
-
-- Open and close a verified MongoDB connection (`connect()`, `disconnect()`,
-  `MongoConnection`).
-- Translate MongoDB/PyMongo/Beanie exceptions into `AppError` before they
-  cross the repository boundary (`translate_mongo_errors()`,
-  `violated_index()`, `MongoExecutor`).
-- Provide a shared base document with automatic `created_at`/`updated_at`
-  management (`TimestampedDocument`).
-- Provide concrete Beanie documents + repository implementations for each
-  bounded context: `account`, `journal`, `posting`.
-
-This package does **not** contain accounting rules, business validation, or
-uniqueness pre-checks — those belong to `trutina-core`'s services and domain
-schemas. It also does not import `typer`, `rich`, or `fastapi`.
-
-## Public API
-
-```txt
-trutina.infrastructure.mongo            -> MongoConnection, connect, disconnect
-trutina.infrastructure.mongo.shared     -> TimestampedDocument, MongoExecutor
-trutina.infrastructure.mongo.account    -> AccountDocument, MongoAccountRepo
-trutina.infrastructure.mongo.journal    -> JournalDocument, JournalLineSubDocument, MongoJournalRepo
-trutina.infrastructure.mongo.posting    -> PostingDocument, MongoPostingRepo
+```text
+packages/infrastructure/src/trutina/infrastructure/
+├── __init__.py                    # empty
+└── mongo/
+    ├── __init__.py                # MongoConnection, connect, disconnect
+    ├── connection.py
+    ├── error_translation.py       # translate_mongo_errors(), violated_index() — not re-exported
+    ├── shared/
+    │   ├── document.py            # TimestampedDocument
+    │   ├── repository.py          # MongoExecutor
+    │   └── tests/
+    ├── account/
+    │   ├── document.py            # AccountDocument
+    │   ├── repository.py          # MongoAccountRepo
+    │   └── tests/
+    ├── journal/
+    │   ├── document.py            # JournalDocument, JournalLineSubDocument
+    │   ├── repository.py          # MongoJournalRepo
+    │   └── tests/
+    └── posting/
+        ├── document.py            # PostingDocument
+        ├── repository.py          # MongoPostingRepo
+        └── tests/
 ```
-
-`error_translation.py` (`translate_mongo_errors`, `violated_index`) is used
-internally by every repository and by `MongoExecutor`; it is not re-exported
-from a package `__init__.py` today, so import it from
-`trutina.infrastructure.mongo.error_translation` directly if you need it.
 
 ## Installation
 
@@ -59,6 +49,28 @@ uv sync --package trutina-infrastructure
 ```
 
 or `uv sync` to install the whole workspace.
+
+## Public API
+
+| Symbol                                             | Module                                 | Purpose                                                                  |
+| -------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| `MongoConnection`                                  | `trutina.infrastructure.mongo`         | Immutable bundle of a verified MongoDB client and the selected database. |
+| `connect(mongo: MongoSettings) -> MongoConnection` | `trutina.infrastructure.mongo`         | Opens a MongoDB client and verifies it with a ping before returning.     |
+| `disconnect(connection: MongoConnection) -> None`  | `trutina.infrastructure.mongo`         | Closes the client held by a `MongoConnection`.                           |
+| `TimestampedDocument`                              | `trutina.infrastructure.mongo.shared`  | Base Beanie document; sets `created_at`/`updated_at` via an insert hook. |
+| `MongoExecutor`                                    | `trutina.infrastructure.mongo.shared`  | Runs a Beanie coroutine through `translate_mongo_errors()`.              |
+| `AccountDocument`                                  | `trutina.infrastructure.mongo.account` | Beanie document for the `accounts` collection.                           |
+| `MongoAccountRepo`                                 | `trutina.infrastructure.mongo.account` | Concrete `AccountRepo` implementation.                                   |
+| `JournalDocument`                                  | `trutina.infrastructure.mongo.journal` | Beanie document for the `journal_entries` collection.                    |
+| `JournalLineSubDocument`                           | `trutina.infrastructure.mongo.journal` | Embedded subdocument for a single journal line.                          |
+| `MongoJournalRepo`                                 | `trutina.infrastructure.mongo.journal` | Concrete `JournalRepo` implementation.                                   |
+| `PostingDocument`                                  | `trutina.infrastructure.mongo.posting` | Beanie document for the `postings` collection.                           |
+| `MongoPostingRepo`                                 | `trutina.infrastructure.mongo.posting` | Concrete `PostingRepo` implementation.                                   |
+
+`error_translation.py` (`translate_mongo_errors`, `violated_index`) is used
+internally by every repository and by `MongoExecutor`. It is not
+re-exported from any package `__init__.py` — import it directly from
+`trutina.infrastructure.mongo.error_translation` if you need it.
 
 ## Usage
 
@@ -77,7 +89,9 @@ await disconnect(connection)
 ### Wiring a repository
 
 Every concrete repository takes a `MongoExecutor`, not a raw client or
-database handle:
+database handle. `init_beanie()` must run before any repository is
+constructed — every repository assumes its `Document` class is already
+registered.
 
 ```python
 from beanie import init_beanie
@@ -97,31 +111,27 @@ executor = MongoExecutor()
 account_repo = MongoAccountRepo(executor)
 ```
 
-`init_beanie()` must run before any repository is constructed — every
-repository's docstring states this as a precondition. Forgetting it raises
-`CollectionWasNotInitialized` the first time the repository touches Mongo.
-
 ### Using a repository
 
-Repositories are consumed through the `AccountRepo`/`JournalRepo`/
-`PostingRepo` contracts from `trutina-core`, so calling code never needs to
-import the concrete `Mongo*Repo` classes directly except at composition time:
+Callers consume repositories through the `AccountRepo`/`JournalRepo`/
+`PostingRepo` contracts from `trutina-core`, so calling code only needs to
+import the concrete `Mongo*Repo` classes at composition time:
 
 ```python
 account = await account_repo.get_by_code("1001")
 ```
 
-## Integration with the rest of the repo
+## Integration
 
 - **Consumers:** `apps/cli` and `apps/api` each construct these repositories
-  in their own composition root (`CliContext`, the API's `bootstrap.py`), then
-  hand them to `trutina-core` services.
-- **Never a consumer of:** `trutina-cli` or `trutina-api` — this package
-  never imports an app, and an import-linter contract in the root
-  `pyproject.toml` fails the build if it ever does.
-- **Depends on:** `trutina-shared` (errors, rules), `trutina-core`
-  (repository contracts, domain schemas), `trutina-config` (`MongoSettings`),
-  `beanie`, `pymongo`.
+  in their own composition root (`CliContext`, the API's `bootstrap.py`),
+  then hand them to `trutina-core` services.
+- **Never a consumer of:** `apps/cli` or `apps/api` — enforced by the root
+  workspace's `layers` import-linter contract
+  (`trutina.cli | trutina.api → trutina.infrastructure → trutina.core →
+trutina.shared | trutina.config`).
+- **Depends on** (per `packages/infrastructure/pyproject.toml`):
+  `trutina-shared`, `trutina-core`, `trutina-config`, `beanie`, `pymongo`.
 
 ## Extending — adding a new bounded-context adapter
 
@@ -137,13 +147,14 @@ Follow the shape already established by `account`/`journal`/`posting`:
 4. Register the new `Document` class wherever `init_beanie()` is called in
    production, and add it to `tests/fixtures/mongo.py::DOCUMENT_MODELS` so
    integration tests pick it up.
-5. Add `mongo/<feature>/tests/test_document.py`,
-   `test_repository_unit.py` (pure mapping logic, no I/O), and
-   `test_repository_integration.py` (real MongoDB, `@pytest.mark.integration`).
+5. Add `mongo/<feature>/tests/test_document.py`, `test_repository_unit.py`
+   (pure mapping logic, no I/O), and `test_repository_integration.py` (real
+   MongoDB, `@pytest.mark.integration`).
 
 ## Testing
 
-- **Unit tests** live beside each adapter under `mongo/<feature>/tests/` and
+- **Unit tests** live beside each adapter under `mongo/<feature>/tests/`
+  (plus `mongo/tests/` for `connection.py`/`error_translation.py`) and
   never touch a real database. Document construction is exercised via
   `Document.model_construct(...)` or a `stub_*_document_settings` fixture
   that patches `get_settings()` so `Document.__init__` doesn't require
@@ -155,10 +166,10 @@ Follow the shape already established by `account`/`journal`/`posting`:
   between tests rather than dropping them, so indexes survive the whole
   session.
 - Run just this package's tests with `pytest -m "unit and infra"` /
-  `pytest -m "integration and infra"` (see the root `conftest.py`, which
-  derives the `infra` marker automatically from file path).
+  `pytest -m "integration and infra"` (the `infra` marker is derived
+  automatically from file path by the root `conftest.py`).
 
-## Known limitations
+## Known Limitations
 
 - `MongoPostingRepo.save_many()` writes its batch with a single
   `insert_many()` and no `ClientSession` — there is no multi-document
@@ -166,5 +177,5 @@ Follow the shape already established by `account`/`journal`/`posting`:
   interruption can partially persist a journal's postings, and two
   concurrent posting attempts for the same journal number can both pass
   `PostingService`'s pre-check before either writes.
-- There is no second storage backend yet (e.g. Postgres) — every repository
-  contract currently has exactly one concrete implementation, this one.
+- There is no second storage backend yet — every repository contract
+  currently has exactly one concrete implementation, this one.
