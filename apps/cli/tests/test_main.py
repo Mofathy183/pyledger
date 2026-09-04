@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from trutina.cli import main as main_module
-from trutina.cli.app import app
+from trutina.cli.composition.app import app
 
 
 @pytest.mark.unit

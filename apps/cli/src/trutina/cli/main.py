@@ -9,11 +9,8 @@ life of the process.
 import sys
 
 from anyio.from_thread import start_blocking_portal
-from trutina.cli.app import app
-from trutina.cli.bootstrap import build_context
-from trutina.cli.context import CliContext
+from trutina.cli.composition import CliContext, CliState, app, build_context
 from trutina.cli.shell import run_shell
-from trutina.cli.state import CliState
 
 
 def _known_commands(typer_app) -> set[str]:
