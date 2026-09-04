@@ -1,27 +1,15 @@
 # trutina-shared
 
-Reusable validation helpers, utility functions, and the shared domain error
-model used across every Trutina package and application.
+The lowest-level package in the Trutina workspace: reusable accounting-adjacent validation helpers and the shared domain error model used by every other package.
 
-## What This Package Is
+## What Is This
 
-`trutina-shared` is the lowest layer of the Trutina workspace. It has no
-dependency on any other Trutina package — not `core`, not `cli`, not `api`,
-not `infrastructure` — and depends only on `pydantic`. Every other package in
-the workspace is free to depend on it.
+`trutina-shared` (import path `trutina.shared`) depends on nothing else in the workspace — only `pydantic`. It holds two kinds of code:
 
-It exists to hold two kinds of code that would otherwise be duplicated across
-feature modules, adapters, and interfaces:
+- Validation/normalization rules reused by more than one domain schema (e.g. account name normalization).
+- The stable error contract (`ErrorCode`, `AppError`, `ValidationAppError`, `FieldViolation`) that every service boundary raises and every adapter translates.
 
-- **Accounting-adjacent validation rules** that are reused by more than one
-  domain schema (e.g. account name normalization).
-- **The stable error contract** (`ErrorCode`, `AppError`, `ValidationAppError`,
-  `FieldViolation`) that every service boundary raises and every adapter
-  (CLI, API, future interfaces) translates into presentation output.
-
-If a helper is specific to one feature (accounts, journals, postings), it
-belongs in that feature's own module, not here. If it's reused by two or more
-features, or it defines the cross-cutting error contract, it belongs here.
+A helper specific to a single feature (accounts, journals, postings) belongs in that feature's own module, not here.
 
 ## Installation
 
@@ -31,77 +19,45 @@ Part of the `uv` workspace; not installed standalone.
 uv sync --package trutina-shared
 ```
 
-Other workspace packages depend on it via the workspace member mechanism, not
-a version-pinned dependency.
+Other workspace packages depend on it via `{ workspace = true }` sources, not a version pin.
 
 ## Public API
 
+`trutina.shared` itself re-exports nothing (`__init__.py` is empty) — import from the submodules below.
+
 ### `trutina.shared.rule`
 
-```python
-from trutina.shared.rule import (
-    clean_account_name,
-    account_lookup_key,
-    is_valid_line_amounts,
-)
-```
-
-| Function                                                         | Purpose                                                                                                                                                     |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clean_account_name(value: str) -> str \| None`                  | Trims and validates an account name against the permitted character set. Returns the trimmed name, or `None` if invalid.                                    |
-| `account_lookup_key(name: str) -> str`                           | Returns the case-insensitive lookup key for an already-validated account name. Uses `str.casefold()`, not `str.lower()` — this matters for non-ASCII names. |
-| `is_valid_line_amounts(debit: Decimal, credit: Decimal) -> bool` | Returns `True` if exactly one of `debit`/`credit` is positive (XOR), enforcing that a journal line represents exactly one side of a transaction.            |
-
-**Example:**
-
-```python
-from decimal import Decimal
-from trutina.shared.rule import (
-    clean_account_name,
-    account_lookup_key,
-    is_valid_line_amounts,
-)
-
-name = clean_account_name("  Accounts Receivable  ")
-# "Accounts Receivable"
-
-key = account_lookup_key(name)
-# "accounts receivable" — used to detect "Cash" vs "CASH" collisions
-
-is_valid_line_amounts(Decimal("100"), Decimal("0"))  # True
-is_valid_line_amounts(Decimal("100"), Decimal("100"))  # False — both sides set
-is_valid_line_amounts(Decimal("0"), Decimal("0"))  # False — neither side set
-```
+| Symbol                                                           | Purpose                                                                                                                     |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `clean_account_name(value: str) -> str \| None`                  | Trims and validates an account name against the permitted character set. Returns the trimmed name, or `None` if invalid.    |
+| `account_lookup_key(name: str) -> str`                           | Case-insensitive lookup key for an already-validated account name, via `str.casefold()` (not `str.lower()`).                |
+| `is_valid_line_amounts(debit: Decimal, credit: Decimal) -> bool` | `True` iff exactly one of `debit`/`credit` is positive (XOR) — a journal line represents exactly one side of a transaction. |
 
 ### `trutina.shared.errors`
 
-```python
-from trutina.shared.errors import (
-    ErrorCode,
-    AppError,
-    ValidationAppError,
-    FieldViolation,
-    pydantic_error,
-    get_field_violations,
-    PYDANTIC_CODES,
-)
-```
+| Symbol                                                                        | Purpose                                                                                                                                                     |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorCode`                                                                   | `StrEnum` of every stable failure identifier in the system — the only vocabulary adapters switch on.                                                        |
+| `AppError`                                                                    | The only exception type permitted to cross a service boundary. Carries `code`, a JSON-primitive-only `context` mapping, and an optional diagnostic `cause`. |
+| `ValidationAppError`                                                          | `AppError` subclass carrying `errors: list[FieldViolation]` for multi-field validation failures.                                                            |
+| `FieldViolation`                                                              | A single field-level failure: `code`, `field` (dotted path), `value` (stringified).                                                                         |
+| `pydantic_error(code: ErrorCode) -> PydanticCustomError`                      | Raise from inside a Pydantic validator to tag a domain failure with a stable `ErrorCode`.                                                                   |
+| `get_field_violations(exc: pydantic.ValidationError) -> list[FieldViolation]` | Translates a `pydantic.ValidationError` into `list[FieldViolation]`.                                                                                        |
+| `PYDANTIC_CODES`                                                              | Allow-list of Pydantic-native error `type` strings that map directly to an `ErrorCode`; anything else downgrades to `ErrorCode.UNKNOWN_ERROR`.              |
 
-| Symbol                      | Purpose                                                                                                                                                     |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ErrorCode`                 | `StrEnum` of every stable failure identifier in the system — the only vocabulary adapters are allowed to switch on.                                         |
-| `AppError`                  | The only exception type permitted to cross a service boundary. Carries `code`, a JSON-primitive-only `context` mapping, and an optional diagnostic `cause`. |
-| `ValidationAppError`        | `AppError` subclass carrying a list of `FieldViolation` records for multi-field validation failures.                                                        |
-| `FieldViolation`            | A single field-level failure: `code`, `field` (dotted path), `value` (stringified).                                                                         |
-| `pydantic_error(code)`      | Raise this from inside a Pydantic validator to tag a domain validation failure with a stable `ErrorCode`.                                                   |
-| `get_field_violations(exc)` | Translates a `pydantic.ValidationError` into `list[FieldViolation]`.                                                                                        |
-| `PYDANTIC_CODES`            | The explicit allow-list of Pydantic-native error types that map directly to an `ErrorCode`; anything else downgrades to `ErrorCode.UNKNOWN_ERROR`.          |
+### `trutina.shared.util`
 
-**Raising a domain validation error from a schema:**
+| Symbol                               | Purpose                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `default_posting_date() -> datetime` | Today's date with the time component zeroed. **Not called anywhere in the active workflow today** — present, but nothing wires it in. |
+
+## Usage
+
+Raising a domain validation error from a schema validator:
 
 ```python
-from pydantic import field_validator, BaseModel
-from trutina.shared.errors import pydantic_error, ErrorCode
+from pydantic import BaseModel, field_validator
+from trutina.shared.errors import ErrorCode, pydantic_error
 from trutina.shared.rule import clean_account_name
 
 
@@ -117,7 +73,7 @@ class Account(BaseModel):
         return cleaned
 ```
 
-**Translating a `ValidationError` at a service boundary:**
+Translating a `ValidationError` at a service boundary:
 
 ```python
 from pydantic import ValidationError
@@ -129,85 +85,52 @@ except ValidationError as exc:
     raise ValidationAppError.validation(exc)
 ```
 
-**Constructing service-level errors directly:**
+Constructing service-level errors directly:
 
 ```python
 from trutina.shared.errors import AppError, ErrorCode
 
 AppError.not_found(ErrorCode.UNKNOWN_ACCOUNT, resource="account", identifier="9999")
 AppError.conflict(
-    ErrorCode.DUPLICATE_ACCOUNT_CODE,
-    resource="account",
-    field_name="code",
-    value="1000",
+    ErrorCode.DUPLICATE_ACCOUNT_CODE, resource="account", field_name="code", value="1000"
 )
 AppError.storage_unavailable(cause=some_connection_error)
 AppError.storage_timeout(cause=some_timeout_error)
 AppError.unknown(cause=some_unexpected_error)
 ```
 
-> **Known behavior to be aware of:** `get_field_violations` only maps
-> Pydantic's own built-in error types (the `PYDANTIC_CODES` allow-list) to
-> their matching `ErrorCode`. A domain error raised via `pydantic_error(...)`
-> currently downgrades to `ErrorCode.UNKNOWN_ERROR` on `violation.code` — the
-> original domain code survives only as a string in `violation.value`. Code
-> that needs to react to the specific domain code must currently read
-> `violation.value`, not `violation.code`.
-
-### `trutina.shared.util`
+Normalizing and comparing account names:
 
 ```python
-from trutina.shared.util import default_posting_date
+from trutina.shared.rule import account_lookup_key, clean_account_name
+
+name = clean_account_name("  Accounts Receivable  ")   # "Accounts Receivable"
+key = account_lookup_key(name)                          # "accounts receivable"
 ```
 
-`default_posting_date() -> datetime` returns today's date with the time
-component zeroed out. **Not currently called anywhere in the active
-workflow** — it exists but nothing wires it in yet. Don't assume it backs any
-current default-date behavior in journal or posting creation.
+> **Known behavior:** `get_field_violations()` only maps the `PYDANTIC_CODES` allow-list (Pydantic-native error types) to their matching `ErrorCode`. A domain code raised via `pydantic_error(...)` currently downgrades to `ErrorCode.UNKNOWN_ERROR` on `FieldViolation.code` — the original code survives only as a string in `FieldViolation.value`. Code that needs to react to the specific domain code must read `.value`, not `.code`. See `CONTEXT.md`.
 
-## Integration With the Rest of the Workspace
+## Integration
 
-- Domain schemas (`modules/*/schemas/`) import `shared.rule` for
-  normalization and `shared.errors` (via `pydantic_error`) to raise
-  ErrorCode-backed validation failures.
-- Services import `shared.errors` (`AppError`, `ValidationAppError`) to raise
-  the only exception types permitted to cross a service boundary.
-- CLI and API adapters catch `AppError`/`ValidationAppError` and translate
-  `ErrorCode` into presentation-layer messages, hints, and status codes —
-  none of that presentation text lives in this package.
-- `trutina.shared` itself imports nothing from `core`, `cli`, `api`, or
-  `infrastructure`. That direction is one-way.
+Direct workspace dependents, per each package's own `pyproject.toml`: `trutina-core` and `trutina-infrastructure`. Every other consumer (`apps/cli`, `apps/api`) reaches `trutina-shared` only transitively through one of those two. `trutina-config` currently declares **no** dependency on `trutina-shared`.
 
-## Extending This Package
+- Domain schemas import `shared.rule` for normalization and `shared.errors.pydantic_error` to raise `ErrorCode`-backed validation failures.
+- Services import `shared.errors` (`AppError`, `ValidationAppError`) — the only exception types permitted to cross a service boundary.
+- CLI and API adapters catch `AppError`/`ValidationAppError` and translate `ErrorCode` into their own presentation-layer messages, hints, and status codes; none of that wording lives in this package.
+- `trutina.shared` imports nothing from `core`, `cli`, `api`, `infrastructure`, or `config`.
 
-- **New reusable validation rule** (used by 2+ domain schemas): add it to
-  `rule.py`, next to the existing functions, with the same "business rule,
-  not mechanical check" documentation style.
-- **New failure condition**: add a member to `ErrorCode` in `codes.py` in the
-  appropriately-grouped section (Generic, Account, Journal, Posting,
-  Storage, etc.). Never repurpose an existing member for an unrelated
-  failure.
-- **New `AppError` constructor pattern**: add a `classmethod` to `AppError`
-  following the shape of `not_found`/`conflict`/`storage_unavailable` —
-  keep `context` JSON-primitive-only.
-- Do **not** add CLI, Rich, Typer, FastAPI, or any presentation-specific
-  logic here. If a helper needs to know about terminal output or HTTP
-  status codes, it belongs in the adapter package, not `shared`.
+## Extending
 
-See `CONTEXT.md` for the reasoning behind these boundaries and the
-invariants that must not be broken.
+- **New reusable validation rule** (used by 2+ domain schemas): add it to `rule.py` as a pure function, documented as the business rule it protects, not the mechanical check.
+- **New failure condition**: add a member to `ErrorCode` in `codes.py`, in the appropriate grouped section (Generic, Pydantic built-in types, Shared date rules, Account, Journal, Posting, Storage). Never repurpose an existing value for a different meaning — `ErrorCode` values are a stable cross-package contract.
+- **New `AppError` constructor**: add a `classmethod` shaped like `not_found`/`conflict`/`storage_unavailable`; keep `context` JSON-primitive-only.
+- **New Pydantic-native type that should pass through translation as-is**: add it to `PYDANTIC_CODES` in `translators.py`. Do not use this as a workaround for the `UNKNOWN_ERROR` downgrade described above — that needs a real design decision, not a one-line addition.
+- Do not add CLI, Rich, Typer, FastAPI, or any other presentation-specific logic here.
 
 ## Testing
 
-Tests live under `packages/shared/tests/` (rule tests) and
-`packages/shared/src/trutina/shared/errors/tests/` (error-model and
-translator tests).
-
 ```bash
-uv run pytest -m unit packages/shared
+uv run pytest -m "unit and shared"
 ```
 
-Rule functions are tested through pure input/output assertions — no
-mocking. Error translation is tested against real `pydantic.ValidationError`
-instances raised from small inline models, asserting the specific
-`ErrorCode` on each `FieldViolation`, not just the exception type.
+Tests live under `packages/shared/tests/` (`rule.py` — pure input/output assertions, no mocking) and `packages/shared/src/trutina/shared/errors/tests/` (`errors.py`/`translators.py` — real `pydantic.ValidationError` instances raised from inline models, asserting the specific `ErrorCode` on each `FieldViolation`, not just the exception type). The `shared` layer marker is derived automatically from file path by the root `conftest.py`; only the `unit`/`integration` speed marker needs to be written on the test itself.
