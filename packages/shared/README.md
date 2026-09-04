@@ -92,7 +92,10 @@ from trutina.shared.errors import AppError, ErrorCode
 
 AppError.not_found(ErrorCode.UNKNOWN_ACCOUNT, resource="account", identifier="9999")
 AppError.conflict(
-    ErrorCode.DUPLICATE_ACCOUNT_CODE, resource="account", field_name="code", value="1000"
+    ErrorCode.DUPLICATE_ACCOUNT_CODE,
+    resource="account",
+    field_name="code",
+    value="1000",
 )
 AppError.storage_unavailable(cause=some_connection_error)
 AppError.storage_timeout(cause=some_timeout_error)
@@ -104,8 +107,8 @@ Normalizing and comparing account names:
 ```python
 from trutina.shared.rule import account_lookup_key, clean_account_name
 
-name = clean_account_name("  Accounts Receivable  ")   # "Accounts Receivable"
-key = account_lookup_key(name)                          # "accounts receivable"
+name = clean_account_name("  Accounts Receivable  ")  # "Accounts Receivable"
+key = account_lookup_key(name)  # "accounts receivable"
 ```
 
 > **Known behavior:** `get_field_violations()` only maps the `PYDANTIC_CODES` allow-list (Pydantic-native error types) to their matching `ErrorCode`. A domain code raised via `pydantic_error(...)` currently downgrades to `ErrorCode.UNKNOWN_ERROR` on `FieldViolation.code` — the original code survives only as a string in `FieldViolation.value`. Code that needs to react to the specific domain code must read `.value`, not `.code`. See `CONTEXT.md`.
