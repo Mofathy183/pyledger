@@ -111,9 +111,9 @@ class AccountRepo(ABC):
         """Return True if any account has this name.
 
         Used by the service layer as an application-level uniqueness
-        pre-check before create or name-changing update. The check must
-        be case-insensitive — The comparison must follow the chart's canonical account-name lookup
-        rules. not the display-cased stored value.
+        pre-check before create or name-changing update. Comparison must
+        follow the chart's canonical case-insensitive account-name lookup
+        rules rather than the display-cased stored value.
 
         Args:
             name: The account name to test, matched case-insensitively.

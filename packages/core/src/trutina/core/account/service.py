@@ -13,7 +13,7 @@ Responsibilities:
 - Translate domain validation failures into ValidationAppError.
 - Return stable ViewModels to callers.
 
-CLI commands and future API routes depend only on this service and the
+CLI commands and API routes depend only on this service and the
 DTO contracts defined in dtos.py. They never interact directly with
 Account, ChartOfAccounts, or repository implementations.
 """
@@ -64,10 +64,10 @@ class AccountService:
         writing anything. If both checks pass, builds the domain Account
         (which validates its own structural invariants) and persists it.
 
-        TOCTOU note: the existence checks and to write are not atomic.
+        TOCTOU note: the existence checks and write are not atomic.
         Under concurrent load, two requests can both pass the existence
-        checks before either writes. The storage-layer unique indexes
-        (Phase 6) are the authoritative guard for that window — the repo
+        checks before either writes. Storage-layer unique indexes are the
+        authoritative guard for that window — the repository
         adapter translates DuplicateKeyError to AppError.conflict(), which
         propagates unchanged from here.
 
@@ -264,14 +264,9 @@ class AccountService:
     async def delete_account(self, code: str) -> None:
         """Remove an account by its code.
 
-        Current scope:
-
-        - Verifies the account exists.
-        - Removes the account from persistence.
-
-        Future versions are expected to prevent deletion of accounts that
-        have associated ledger postings, but that safeguard is not currently
-        implemented because posting-history integration is not yet available.
+        Verifies the account exists, then removes it from persistence. This
+        workflow does not inspect or prevent deletion based on associated
+        ledger postings.
 
         Args:
             code: The account code to delete.
@@ -287,16 +282,6 @@ class AccountService:
                 resource="account",
                 identifier=code,
             )
-
-        # # PostingRepo does not exist yet.
-        # # Protection is commented out.
-        # if await self._posting_repo.exists_for_account(code):
-        #     raise AppError.conflict(
-        #         code=ErrorCode.ACCOUNT_HAS_POSTINGS,
-        #         resource="account",
-        #         field_name="code",
-        #         value=code,
-        #
 
         await self._repo.delete_by_code(code)
 

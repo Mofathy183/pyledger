@@ -13,7 +13,7 @@ Responsibilities:
 - Translate domain validation failures into ValidationAppError.
 - Return stable ViewModels to callers.
 
-CLI commands and future API routes depend only on this service and the
+CLI commands and API routes depend only on this service and the
 DTO contracts defined in dtos.py. They never interact directly with
 JournalLine, JournalEntry, JournalRepo, or AccountService.
 """

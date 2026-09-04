@@ -63,8 +63,8 @@ class PostingService:
 
         Retrieves the journal entry by number, verifies it has not
         already been posted, builds one LedgerPosting per line, persists
-        the full batch in a single repository call so postings from one
-        entry succeed or fail together, and returns PostingViewModels.
+        the batch in a single repository call, and returns PostingViewModels.
+        The repository's transaction guarantees, if any, are adapter-specific.
 
         Args:
             journal_number: The journal number of the entry to post.

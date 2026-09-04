@@ -51,8 +51,8 @@ class CreateJournalInput(BaseModel):
     Carries the data required to create a new journal entry.
 
     The journal number is intentionally omitted from this contract.
-    Current roadmap documents confirm that journal-number assignment
-    belongs to the service workflow and has not yet been implemented.
+    JournalService obtains the next number from JournalRepo as part of
+    the creation workflow.
 
     Accounting validation is performed when the service constructs
     the JournalEntry domain model.
@@ -76,7 +76,7 @@ class CreateJournalInput(BaseModel):
 
 
 class JournalLineViewModel(BaseModel):
-    """Read-only representation of a journal entry.
+    """Read-only representation of one journal-entry line.
 
     Returned by the service layer and consumed by presentation code.
 

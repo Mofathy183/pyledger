@@ -45,12 +45,12 @@ class PostingRepo(ABC):
 
     @abstractmethod
     async def save_many(self, postings: list[LedgerPosting]) -> None:
-        """Persist a batch of ledger postings atomically.
+        """Persist a batch of ledger postings.
 
-        All postings in the batch are derived from a single journal
-        entry and must be saved together. Implementations must treat
-        the entire batch as one logical unit — either all postings
-        succeed or none are written.
+        All postings in the batch are derived from a single journal entry.
+        This contract does not require transaction support or promise
+        all-or-nothing persistence; adapter guarantees are implementation
+        specific.
 
         Args:
             postings: A list of fully validated LedgerPosting records

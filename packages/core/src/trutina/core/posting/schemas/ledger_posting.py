@@ -35,7 +35,7 @@ class LedgerPosting(BaseModel):
       not both and not neither.
     - Amounts must not be negative.
     - The account reference must be a valid, normalized account name.
-    - The journal number must reference a valid journal entry.
+    - The journal number must be positive.
     - The posting date must not be in the future.
     """
 
