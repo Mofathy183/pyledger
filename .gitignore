@@ -35,6 +35,7 @@ htmlcov/
 coverage.xml
 *.cover
 *.py.cover
+.import_linter_cache
 .hypothesis/
 .pytest_cache/
 
