@@ -2,9 +2,8 @@ from collections.abc import Iterator
 
 import pytest
 from anyio.from_thread import start_blocking_portal
-from trutina.cli.app import app
+from trutina.cli.composition import CliState, app
 from trutina.cli.shared.ui import console
-from trutina.cli.state import CliState
 from trutina.core.account.schemas.account import AccountCategory
 from typer.testing import CliRunner
 

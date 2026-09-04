@@ -7,7 +7,7 @@ JournalService lazily from the supplied CliContext the same way
 Account's handlers resolve AccountService.
 """
 
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.core.journal import CreateJournalInput, JournalViewModel
 
 

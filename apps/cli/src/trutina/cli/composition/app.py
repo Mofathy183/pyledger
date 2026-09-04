@@ -19,11 +19,11 @@ an explicit fallback and test seam, documented on the callback itself.
 """
 
 import typer
-from trutina.cli.bootstrap import build_context
+from trutina.cli.features.account import app as account_app
+from trutina.cli.features.journal import app as journal_app
+from trutina.cli.features.posting import app as posting_app
 
-from .features.account import app as account_app
-from .features.journal import app as journal_app
-from .features.posting import app as posting_app
+from .bootstrap import build_context
 
 app = typer.Typer(
     name="Trutina",

@@ -1,18 +1,8 @@
-"""Unit tests for CliContext's lifecycle, caching, ownership, and
-connection-error-translation guarantees.
-
-Does not test collaboration with a real MongoDB instance or Beanie's own
-registry behavior -- that belongs to the integration tier. Every test
-here either uses injected Fake*Repo instances (no connection possible)
-or stubs connect()/init_beanie()/disconnect() to observe call counts and
-control failure injection precisely.
-"""
-
 from unittest.mock import MagicMock
 
 import pytest
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.shared.errors import AppError, ErrorCode
 
 from tests.factories import make_fake_account_repo
@@ -34,8 +24,10 @@ class TestCliContextConnectionCaching:
         async def fake_init_beanie(**kwargs):
             return None
 
-        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
-        monkeypatch.setattr("trutina.cli.context.init_beanie", fake_init_beanie)
+        monkeypatch.setattr("trutina.cli.composition.context.connect", fake_connect)
+        monkeypatch.setattr(
+            "trutina.cli.composition.context.init_beanie", fake_init_beanie
+        )
 
         context = CliContext(settings=test_settings)
 
@@ -94,9 +86,13 @@ class TestCliContextRepositoryOwnership:
         async def fake_disconnect(connection):
             return None
 
-        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
-        monkeypatch.setattr("trutina.cli.context.init_beanie", fake_init_beanie)
-        monkeypatch.setattr("trutina.cli.context.disconnect", fake_disconnect)
+        monkeypatch.setattr("trutina.cli.composition.context.connect", fake_connect)
+        monkeypatch.setattr(
+            "trutina.cli.composition.context.init_beanie", fake_init_beanie
+        )
+        monkeypatch.setattr(
+            "trutina.cli.composition.context.disconnect", fake_disconnect
+        )
 
         context = CliContext(settings=test_settings)
 
@@ -118,7 +114,7 @@ class TestCliContextConnectionErrorTranslation:
         async def fake_connect(mongo_settings):
             raise cause
 
-        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.composition.context.connect", fake_connect)
         context = CliContext(settings=test_settings)
 
         with pytest.raises(AppError) as exc_info:
@@ -133,7 +129,7 @@ class TestCliContextConnectionErrorTranslation:
         async def fake_connect(mongo_settings):
             raise cause
 
-        monkeypatch.setattr("trutina.cli.context.connect", fake_connect)
+        monkeypatch.setattr("trutina.cli.composition.context.connect", fake_connect)
         context = CliContext(settings=test_settings)
 
         with pytest.raises(AppError) as exc_info:

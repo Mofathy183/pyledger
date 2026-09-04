@@ -6,8 +6,7 @@ import pytest
 import pytest_asyncio
 from anyio.from_thread import start_blocking_portal
 from beanie import init_beanie
-from trutina.cli.context import CliContext
-from trutina.cli.state import CliState
+from trutina.cli.composition import CliContext, CliState
 from trutina.config import TestSettings
 from typer.testing import CliRunner
 

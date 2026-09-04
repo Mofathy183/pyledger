@@ -1,7 +1,6 @@
 import pytest
-from trutina.cli.app import app
+from trutina.cli.composition import CliState, app
 from trutina.cli.shared.ui import console
-from trutina.cli.state import CliState
 from typer.testing import CliRunner
 
 

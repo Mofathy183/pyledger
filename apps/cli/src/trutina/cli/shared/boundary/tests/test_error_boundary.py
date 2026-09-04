@@ -1,16 +1,20 @@
+import importlib
 from unittest.mock import MagicMock
 
 import pytest
 import typer
 from pydantic import BaseModel, Field, ValidationError
-from trutina.cli.shared import error_boundary as error_boundary_module
-from trutina.cli.shared.error_boundary import error_boundary
 from trutina.shared.errors import (
     AppError,
     ErrorCode,
     FieldViolation,
     ValidationAppError,
 )
+
+error_boundary_module = importlib.import_module(
+    "trutina.cli.shared.boundary.error_boundary"
+)
+from trutina.cli.shared.boundary.error_boundary import error_boundary  # noqa: E402
 
 
 class _DummyModel(BaseModel):

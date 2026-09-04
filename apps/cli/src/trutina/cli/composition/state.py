@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from anyio.from_thread import BlockingPortal
-from trutina.cli.context import CliContext
+
+from .context import CliContext
 
 T = TypeVar("T")
 

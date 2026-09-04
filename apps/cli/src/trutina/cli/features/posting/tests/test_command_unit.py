@@ -1,8 +1,8 @@
 import pytest
 from anyio.from_thread import start_blocking_portal
+from trutina.cli.composition.state import CliState
 from trutina.cli.features.posting.command import app
 from trutina.cli.shared.ui import console
-from trutina.cli.state import CliState
 from trutina.core.account.schemas.account import AccountCategory
 from trutina.shared.errors import ErrorCode
 

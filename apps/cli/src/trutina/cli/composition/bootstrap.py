@@ -21,8 +21,9 @@ argument, so the returned ``CliContext`` falls back to the cached
 module never decides between ``Settings`` and ``TestSettings`` itself.
 """
 
-from trutina.cli.context import CliContext
 from trutina.config import Settings
+
+from .context import CliContext
 
 
 def build_context(settings: Settings | None = None) -> CliContext:

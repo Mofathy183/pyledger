@@ -7,7 +7,7 @@ terminal presentation -- it must remain callable identically regardless
 of where the DTO came from.
 """
 
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.core.account import (
     AccountViewModel,
     ChartOfAccountsViewModel,

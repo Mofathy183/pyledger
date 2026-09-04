@@ -1,5 +1,5 @@
 import pytest
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.cli.features.account.handler import (
     create_account_handler,
     delete_account_handler,
