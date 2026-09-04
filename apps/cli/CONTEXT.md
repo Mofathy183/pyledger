@@ -23,6 +23,31 @@ presentation-only error catalog can evolve independently of the API's
 equivalent pieces, without either package needing to know the other
 exists.
 
+## Why Composition, Shell, And Boundary Are Packages
+
+**Decision:** The Typer app, context construction, `CliContext`, and
+`CliState` live under `trutina.cli.composition`. The interactive REPL
+lives under `trutina.cli.shell` (`run_shell` from `loop.py`). The command
+error seam lives under `trutina.cli.shared.boundary`. Logo and welcome
+banner live under `trutina.cli.shared.ui`, not inside `shell/`.
+
+**Why:** Those concerns used to sit as loose modules at the top of
+`cli/` (and `error_boundary.py` loose under `shared/`). Grouping them
+keeps the composition root, the REPL, and the error seam discoverable
+the same way `features/` and `shared/ui/` already were, without mixing
+prompt-toolkit loop details into Typer registration or Rich chrome into
+dispatch.
+
+**What this is not:** a compatibility layer. Former import paths
+(`trutina.cli.app`, `trutina.cli.bootstrap`, `trutina.cli.context`,
+`trutina.cli.state`, `trutina.cli.shell` as a module,
+`trutina.cli.shell_builtins`, `trutina.cli.shell_completion`,
+`trutina.cli.shared.error_boundary`) are not present as forwarding
+modules. Callers import from the packages above. (`composition/__init__.py`
+and `shared/boundary/__init__.py` still describe shims that are not in
+the tree; treat those comments as stale until a docstring pass updates
+them.)
+
 ## Why A Synchronous CLI Over An Async Domain
 
 **Decision:** Typer/Click commands are plain, synchronous `def`s. Every
@@ -48,16 +73,37 @@ invocation. `start_blocking_portal()` is therefore called exactly once, in
 `main.py::run()` — no command, service, handler, or repository may create a
 second loop or a second portal.
 
+## Why The Shell Reuses The Same Typer App
+
+**Decision:** Bare `trutina-cli` enters `run_shell(state)`. Each non-empty
+line is shlex-split and passed to the same `app(...)` used for one-shot
+invocations (`standalone_mode=False`). Help shorthands become
+`app([*target, "--help"], obj=state, standalone_mode=False)`.
+
+**Why:** Command behavior, option parsing, and `--help` text must not
+fork between "typed in the shell" and "typed as argv". Completion
+descriptions are taken from Click's `get_short_help_str()` on that same
+tree for the same reason. Shell-only keywords (`exit`, `help`) are not
+Typer commands; they live in `SHELL_BUILTINS` so the loop and completer
+share one catalog. Only entries with `terminates=True` end the session
+today that is `exit`, not `quit`.
+
+**Why prompt_toolkit is a CLI dependency:** the REPL needs a session with
+live completion, Tab-to-accept, and a prompt style. That library stays in
+this package; `trutina-core` does not import it.
+
 ## Why `CliContext` Performs No I/O At Construction
 
 **Decision:** `build_context()` and `CliContext.__init__` never open a
-MongoDB connection or construct a repository/service. Every dependency is
-created lazily, the first time a command actually asks for it via a
-`get_*_repo()`/`get_*_service()` accessor, and cached for the rest of the
-invocation.
+MongoDB connection or construct a repository/service. Every repository and
+service is created lazily, the first time a command actually asks for it
+via a `get_*_repo()`/`get_*_service()` accessor, and cached for the rest
+of the invocation. `__init__` does construct a `MongoExecutor`; that
+object only wraps Beanie operations with storage-error translation and
+does not open a connection.
 
 **Why:** Startup cost must stay flat regardless of which command runs —
-`trutina account --help` must never touch MongoDB, because nothing in the
+`trutina-cli --help` must never touch MongoDB, because nothing in the
 `--help` path calls one of `CliContext`'s accessors. This also makes
 testability free: a `CliContext` built with injected `Fake*Repo` instances
 can never open a real connection, because the lazy-creation branch in each
@@ -70,8 +116,17 @@ None-check-then-construct shape (`get_account_repo()`,
 `get_journal_repo()`, `get_posting_repo()`, and the three
 `get_*_service()` equivalents). This is boilerplate, but it's boilerplate
 that's obvious to audit — a new repository/service follows the exact same
-six-line pattern, and a reviewer doesn't need to trace unrelated
-construction logic to confirm the laziness invariant holds.
+pattern, and a reviewer doesn't need to trace unrelated construction
+logic to confirm the laziness invariant holds.
+
+**Current connection path:** `composition/context.py` imports
+`beanie.init_beanie` and PyMongo's `ConnectionFailure` /
+`ServerSelectionTimeoutError` so first repository use can initialize
+Beanie and translate connection failures into `AppError.storage_timeout`
+/ `AppError.storage_unavailable`. That is the only CLI module that
+imports those libraries today. There is no import-linter contract
+forbidding Beanie/PyMongo in `trutina.cli` (the forbidden contract
+applies to `trutina.core` only).
 
 ## Why Caller-Injected Repositories Are Never Torn Down
 
@@ -109,9 +164,11 @@ CLI-specific phrasing leaking into JSON responses.
 
 ## Why `error_boundary()` Is A Single, Narrow Seam
 
-**Decision:** `error_boundary()` wraps exactly one `state.call(...)` per
-command body — never more — and is the only code in the CLI that catches
-`AppError`, `ValidationAppError`, or a raw `pydantic.ValidationError`.
+**Decision:** `error_boundary()` in `shared/boundary/error_boundary.py` is
+the only code in the CLI that catches `AppError`, `ValidationAppError`, or
+a raw `pydantic.ValidationError`. Commands wrap handler (and sometimes
+parser) work in that context manager rather than writing their own
+`try`/`except`.
 
 **Why:** If every command wrote its own `try`/`except`, error rendering
 (panel formatting, exit codes, whether to chain `from None`) would drift
@@ -119,11 +176,18 @@ per feature as each command's exception handling was authored
 independently. Centralizing it means a single bug fix or presentation
 change (e.g. a new panel style) is exactly one file to touch, and it
 guarantees the CLI never lets a raw domain exception reach the terminal as
-an unhandled traceback — a contract every command relies on without having
-to re-verify it in its own tests. `ValidationAppError` is caught before
+an unhandled traceback. `ValidationAppError` is caught before
 plain `AppError` specifically because it is a subclass; getting that
 ordering backward would silently swallow every field-violation list into
 the single-panel `AppError` branch.
+
+**What the source actually does:** several commands use more than one
+`error_boundary()` in a single body (account `update`/`delete` fetch via
+`_fetch_account`, then mutate). Account `create` wraps DTO construction
+and the handler call in the same block. Nested `error_boundary()` occurs
+when `update` calls `_fetch_account` from inside an outer block. The
+invariant to preserve is "no second catcher of those exception types,"
+not "exactly one `state.call` per command."
 
 ## Why Prompts Always Delegate To Parsers
 
@@ -146,8 +210,8 @@ that has to be remembered.
 **Decision:** Unlike `account`/`journal`, the `posting` feature's
 `parser.py` validates and cleans raw scalars (a journal number, an account
 identifier) rather than building a DTO — because `PostingService`'s own
-methods take plain arguments, mirroring the absence of a `PostingViewModel`
-input DTO in `trutina-core` itself (see that package's `CONTEXT.md` for
+methods take plain arguments, mirroring the absence of a posting input DTO
+in `trutina-core` itself (see that package's `CONTEXT.md` for
 why: postings are derived internally, never submitted by a caller).
 
 **Why replicate that decision at the CLI layer instead of inventing a
@@ -173,23 +237,23 @@ adding safety.
   from a test.
 - **Formatters never call a service or repository, and never import a
   domain schema** — only the DTOs/ViewModels a service already returned.
-- **Services remain UI-independent.** Nothing under `trutina-core`'s
-  `modules/*/service.py` imports `rich`, `typer`, or anything under `cli/`
-  — enforced by the workspace's layered import-linter contract.
+- **Services remain UI-independent.** Nothing under `trutina-core`
+  imports `rich`, `typer`, or anything under `cli/` — enforced by the
+  workspace's layered import-linter contract.
 - **Exactly one `BlockingPortal`/event loop per process.** No command,
   service, or repository may open a second one.
-- **`error_boundary()` wraps exactly one `state.call(...)`.** Never more
-  than one per command body.
+- **`error_boundary()` is the only catcher of `AppError`,
+  `ValidationAppError`, and Pydantic `ValidationError`.** Do not add a
+  second `try`/`except` for those types outside that seam.
 
 ## Allowed and Forbidden Dependencies
 
 **Allowed** (per `apps/cli/pyproject.toml`): `trutina-core`,
-`trutina-infrastructure`, `trutina-config`, `typer`, `rich`, `anyio`.
+`trutina-infrastructure`, `trutina-config`, `typer`, `rich`, `anyio`,
+`prompt-toolkit`.
 
 **Forbidden:** `trutina-api`, or any other `apps/*` package — the CLI must
-never depend on a sibling application. Nothing here should import
-`beanie`/`pymongo` directly either; those are reached only indirectly, via
-`CliContext`'s use of `trutina-infrastructure`'s concrete repositories.
+never depend on a sibling application.
 
 **Direction:** enforced by the workspace's root `pyproject.toml`
 import-linter `layers` contract:
@@ -200,23 +264,39 @@ downstream may import from it.
 ## Layering Within This Package
 
 ```text
-cli.app
+cli.composition.app
   -> cli.features.*.command
-    -> cli.features.*.{parser, prompt}     -> DTOs (trutina-core)
-    -> cli.state.CliState.call(...)
+    -> cli.features.*.{parser, prompt}     -> DTOs or scalars (trutina-core)
+    -> cli.composition.state.CliState.call(...)
       -> cli.features.*.handler
-        -> cli.context.CliContext -> trutina-core services
+        -> cli.composition.context.CliContext -> trutina-core services
     -> cli.features.*.formatter -> cli.shared.ui
-    -> cli.shared.error_boundary -> cli.shared.formatters.error + cli.shared.errors + cli.shared.ui
+    -> cli.shared.boundary.error_boundary
+         -> cli.shared.formatters.error + cli.shared.errors + cli.shared.ui
+
+cli.main.run
+  -> start_blocking_portal + CliState
+  -> cli.shell.run_shell  or  cli.composition.app(obj=state)
+  -> finally: portal.call(context.aclose)
+
+cli.shell.loop
+  -> cli.shared.ui.print_welcome_banner
+  -> prompt_toolkit PromptSession
+       (cli.shell.completion, cli.shared.ui.theme.build_shell_style,
+        cli.shell.keybindings)
+  -> cli.shell.dispatch.app(...)   [same Typer app]
 ```
 
-Within `cli/shared/`, `error_boundary.py` sits above `formatters/error.py`,
+Within `cli/shared/`, `boundary/error_boundary.py` sits above `formatters/error.py`,
 `errors/`, and `ui/` — it depends on all three, but none of them depend
-back on it or on each other in that direction. `ui/` is the lowest
-sub-layer (generic Rich widgets, no error-model awareness);
-`errors/`/`formatters/` build on `trutina-shared`'s `ErrorCode`/`AppError`
-plus `ui/`'s widgets; `error_boundary.py` is the only place all of that,
-plus `typer.Exit`, actually combines.
+back on it. `ui/` is the lowest sub-layer (generic Rich widgets, logo,
+banner; no error-model awareness); `errors/`/`formatters/` build on
+`trutina-shared`'s `ErrorCode`/`AppError` plus `ui/`'s widgets;
+`error_boundary.py` is the only place all of that, plus `typer.Exit`,
+actually combines.
+
+`shell/` depends on `composition` (the app and `CliState`) and `shared/ui`
+(banner, console, prompt_toolkit style). It does not own copy or logo art.
 
 No import-linter contract currently enforces this sub-layering
 mechanically (only the workspace-level `apps → infrastructure → core →
@@ -226,13 +306,14 @@ the current source, flagged here rather than described as enforced.
 ## Control Flow
 
 ```text
-User types a command
-  -> Typer parses argv into command + options
+User types a command (argv or shell line)
+  -> Typer parses into command + options
   -> Command function runs
       - flags/arguments given -> parser.py validates and builds a DTO
+        (or a posting scalar)
       - required flags omitted -> prompt.py interactively collects them,
         still funneling through parser.py
-  -> state.call(handler_fn, state.context, dto)   [crosses into async world]
+  -> state.call(handler_fn, state.context, ...)   [crosses into async world]
   -> Handler resolves the relevant service from CliContext
   -> Service (trutina-core) orchestrates domain construction, validation,
      repository calls
@@ -249,23 +330,25 @@ Bootstrap sequence (once per process):
 
 ```text
 main() -> build_context() -> start_blocking_portal() -> CliState
-  -> app(obj=state)  [Typer dispatch]
-    -> command runs synchronously, using state.call(...) for async work
+  -> run_shell(state)  or  app(obj=state)
   -> finally: portal.call(context.aclose)
 ```
 
-`cli/app.py`'s `main_callback()` is a defensive fallback only: if
+`composition/app.py`'s `main_callback()` is a defensive fallback only: if
 `ctx.obj` is `None` (a real invocation dispatched through `main.py` never
-hits this), it calls `build_context()` itself. A context built this way is
-_not_ wrapped in `main.py`'s `finally`, so nothing calls `aclose()` on it —
-this fallback must only ever pair with a context that can never open a
-real connection (a fake-backed one), never with a path that might lazily
-touch MongoDB.
+hits this), it calls `build_context()` itself and stores a `CliContext`,
+not a `CliState`. A context built this way is _not_ wrapped in
+`main.py`'s `finally`, so nothing calls `aclose()` on it — this fallback
+must only ever pair with a context that can never open a real connection
+(a fake-backed one), never with a path that might lazily touch MongoDB.
+Click/Typer resolves eager options such as `--help` before invoking this
+callback, so `trutina-cli --help` never reaches it.
 
 ## Data Flow
 
 - **Into a command:** raw `sys.argv` strings (Typer/Click-parsed) or
-  nothing, if falling into interactive mode.
+  nothing, if falling into interactive mode. Shell lines are shlex-split
+  first.
 - **Into a handler:** an already-validated DTO or plain scalar, plus
   `state.context` (never the `CliState` wrapper itself).
 - **Out of a handler:** a ViewModel (or list of ViewModels), or a raised
@@ -274,29 +357,35 @@ touch MongoDB.
   repository result.
 - **Out of a formatter's `build_*()`:** a Rich renderable (`Panel`, `Text`,
   `Table`) — no I/O. `print_*()` wraps that with a single
-  `console.print(...)` call.
-- **Into `error_boundary()`:** whatever exception the wrapped
-  `state.call(...)` raised.
+  `console.print(...)` call. The welcome banner follows the same
+  `build_welcome_banner()` / `print_welcome_banner()` split.
+- **Into `error_boundary()`:** whatever exception the wrapped block raised.
 - **Out of `error_boundary()`:** printed panels, plus `typer.Exit(code=1)`
   chained `from None` so the original traceback is never re-surfaced.
 
 ## Extension Points
 
-- **A new feature command group** (e.g. a future `reporting` group, once a
-  reporting pipeline exists in `trutina-core`): mirrors
-  `cli/features/{account,journal,posting}/` exactly — see README's
-  "Extending" section for the mechanical steps.
-- **A new `CliContext` accessor**: add a `get_<feature>_repo()`/
+- **A new feature command group:** mirrors
+  `cli/features/{account,journal,posting}/` — see README's
+  "Contributing" section for the mechanical steps. Register the Typer
+  app in `composition/app.py`; `main.py` picks up new top-level group
+  names from `registered_groups`, and the shell completer from the Click
+  tree.
+- **A new `CliContext` accessor:** add a `get_<feature>_repo()`/
   `get_<feature>_service()` pair following the existing None-check-then-
   construct shape; wire any peer-service dependency the same way
-  `JournalService` is wired to `AccountService`.
-- **New CLI-facing error wording**: add entries to
+  `JournalService` is wired to `AccountService` (and `PostingService` to
+  `JournalService`).
+- **New CLI-facing error wording:** add entries to
   `cli/shared/errors/errors.py`/`hint.py` keyed by `ErrorCode` — never add
   presentation text to `trutina-shared`.
-- **New shared Rich widgets**: add to `cli/shared/ui/widgets.py` following
+- **New shared Rich widgets:** add to `cli/shared/ui/widgets.py` following
   `panel()`/`rule()`/`table()`'s shape (accept style-name strings, never
-  hardcode colors); every formatter should build on these three rather
+  hardcode colors); feature formatters should build on these three rather
   than constructing `rich.panel.Panel`/`rich.table.Table` inline.
+- **New shell built-in:** add to `SHELL_BUILTINS` in `shell/builtins.py`
+  (description plus whether it terminates). Do not maintain a second
+  terminator set in `loop.py`.
 
 ## Assumptions This Package Relies On
 
@@ -308,10 +397,12 @@ touch MongoDB.
   and repository call assumes it is running on the single portal-owned loop
   established once in `main.py::run()`.
 - **`ErrorCode` members referenced in `cli/shared/errors/` stay in sync
-  with `shared/errors/codes.py`.** A new `ErrorCode` added upstream without
-  a matching `ERRORS`/`HINTS` entry here will fall back to the generic
-  `UNKNOWN_ERROR` catalog entry rather than failing loudly — this is
-  presentation degradation, not a test failure, so it must be checked
+  with `trutina.shared`'s `ErrorCode` enum.** `format_app_error()` and
+  related formatters use `ERRORS.get(..., ERRORS[ErrorCode.UNKNOWN_ERROR])`
+  (and the same fallback for `HINTS`). A new `ErrorCode` added upstream
+  without a matching `ERRORS`/`HINTS` entry here degrades to that generic
+  catalog text rather than failing loudly — this is presentation
+  degradation, not a test failure, so it must be checked
   manually when `trutina-shared`'s `ErrorCode` enum changes.
 - **`Fake*Repo` instances behave closely enough to their Mongo counterparts
   for CLI-level assertions.** E.g. `FakeJournalRepo` issues sequential
@@ -336,7 +427,7 @@ touch MongoDB.
   workaround.
 - **Constructing a DTO directly inside `prompt.py`** instead of collecting
   raw values and delegating to `parser.py`. This is the exact drift
-  `error_boundary`/parser convergence is designed to prevent (see above).
+  parser convergence is designed to prevent (see above).
 - **Assuming `trutina-shared`'s `ErrorCode` message belongs in this
   package's catalogs.** `trutina-shared` intentionally carries no
   presentation text — every `ErrorCode` needs its own `ERRORS`/`HINTS`
@@ -346,3 +437,9 @@ touch MongoDB.
   for convenience. This is the single-loop invariant's most common
   violation and produces intermittent, hard-to-reproduce failures under
   PyMongo's async client, not an immediate error.
+- **Re-introducing top-level forwarding modules** and leaving two public
+  homes for the same symbols, or documenting shims that are not in the
+  tree.
+- **Adding `quit` as a terminator in comments or tests without adding it
+  to `SHELL_BUILTINS`.** The loop only terminates on keywords returned by
+  `terminating_keywords()`.
