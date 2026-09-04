@@ -83,9 +83,7 @@ Each re-exports `app` — that feature's Typer sub-application.
 ## Usage
 
 ```text
-trutina-cli --help
-trutina-cli account --help
-trutina-cli journal create --help
+trutina-cli
 ```
 
 | Group     | Commands                                    |
@@ -98,7 +96,13 @@ trutina-cli journal create --help
 
 ### Interactive shell
 
-Run with no arguments to open the persistent shell (prompt `trutina>`). A leading `/` on any line is optional and stripped before dispatch. `help [<command path>]` and `<command path> help` both show Typer's own help for that path. `exit` (or `/exit`) ends the session; EOF and Ctrl+C also end it. Tab-completion is built live from the registered Click command tree, so it can never drift from real `--help` text.
+Bare `trutina-cli` (no arguments, no recognized command as the first token) opens a persistent interactive shell — prompt `trutina>` — rather than dispatching a single command. On start, it prints a welcome banner (the ASCII balance-scale mark, the Trutina wordmark, and a short orientation line: `/ to browse commands · help for detail`) before the first prompt.
+
+A leading `/` on any line is optional and stripped before dispatch — `/account list` and `account list` behave identically, including for the shell's own built-ins (`/exit` == `exit`, `/help` == `help`). Typing `/` (or just starting to type) opens live, Claude Code–style tab completion built from the real Typer/Click command tree, so suggestions and their descriptions can never drift from actual `--help` text. Tab accepts the highlighted (or first) match instead of just cycling through the menu.
+
+`<command path> help` is shorthand for `<command path> --help` and render Typer's own help output for that path — there is no separate, hand-written help text to keep in sync.
+
+`exit` (or `/exit`) is the only keyword that ends the session; EOF (Ctrl+D) and Ctrl+C also end it.
 
 ## Integration
 
