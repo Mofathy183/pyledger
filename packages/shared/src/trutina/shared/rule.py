@@ -29,16 +29,15 @@ def clean_account_name(value: str) -> str | None:
     separately via :func:`account_lookup_key`.
 
     Args:
-        value: User-provided account name or abbreviation.
+        value: User-provided account name.
 
     Returns:
         The trimmed account name when validation succeeds, otherwise
         ``None``.
 
     Notes:
-        Account names are restricted to a controlled format so account
-        references to remain predictable and can be matched consistently
-        throughout the chart of accounts.
+        The controlled format keeps account references predictable and
+        consistently matchable throughout the chart of accounts.
     """
     cleaned = value.strip()
 
@@ -89,8 +88,8 @@ def account_lookup_key(name: str) -> str:
     compared consistently while preserving their original presentation.
 
     Args:
-        name: A normalized account name or alias (already validated by
-            :func:`clean_account_name`).
+        name: A normalized account name already validated by
+            :func:`clean_account_name`.
 
     Returns:
         The case-folded lookup key.

@@ -30,8 +30,9 @@ def pydantic_error(code: ErrorCode) -> PydanticCustomError:
         code: The domain error code identifying the validation failure.
 
     Returns:
-        A PydanticCustomError whose type matches the supplied ErrorCode,
-        allowing later translation back into the same domain code.
+        A PydanticCustomError whose type is the supplied ErrorCode value.
+        The generic translator preserves that value in FieldViolation.value
+        when it is not one of the Pydantic-native types in PYDANTIC_CODES.
     """
     # noinspection PyTypeChecker
     return PydanticCustomError(code.value, "")
@@ -66,16 +67,16 @@ def get_field_violations(exc: PydanticValidationError) -> list[FieldViolation]:
     allowing the rest of the application to work exclusively with
     ErrorCode values and FieldViolation records.
 
-    Known Pydantic error types are mapped directly to equivalent
-    ErrorCode values. Unrecognized types are downgraded to
-    UNKNOWN_ERROR rather than exposing framework-specific failures
-    outside the translation layer.
+    Pydantic-native error types listed in PYDANTIC_CODES are mapped directly
+    to equivalent ErrorCode values. All other types are downgraded to
+    UNKNOWN_ERROR rather than exposing framework-specific failures outside
+    the translation layer; their raw Pydantic type is retained in value.
 
     Args:
         exc: The Pydantic ValidationError raised by a domain schema.
 
     Returns:
-        A list of FieldViolation records ordered by field path.
+        FieldViolation records in the order Pydantic reports them.
     """
     violations: list[FieldViolation] = []
 

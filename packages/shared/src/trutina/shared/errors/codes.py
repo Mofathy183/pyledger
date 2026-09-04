@@ -61,6 +61,6 @@ class ErrorCode(StrEnum):
     # ── Posting domain ─────────────────────────────────────────────────────
     JOURNAL_ALREADY_POSTED = "posting.already_posted"
 
-    # ── Storage (ready for MongoDB) ────────────────────────────────────────
+    # ── Storage ────────────────────────────────────────────────────────────
     STORAGE_UNAVAILABLE = "storage.unavailable"
     STORAGE_TIMEOUT = "storage.timeout"

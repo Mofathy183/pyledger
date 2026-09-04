@@ -6,8 +6,8 @@ AppError is the only exception type permitted to cross a feature
 service boundary. Adapters such as the CLI translate ErrorCode values
 into user-facing messages, hints, and presentation metadata.
 
-This module is depended on by service-layer workflows throughout
-modules/account, modules/journal, and modules/posting. It must remain
+This module is depended on by service-layer workflows throughout the core
+account, journal, and posting features. It must remain
 independent of CLI, Rich, Typer, and other presentation concerns.
 """
 
@@ -66,9 +66,9 @@ class AppError(Exception):
     or other presentation metadata. AppError never carries presentation
     strings itself.
 
-    The context payload may contain only JSON-serializable primitive
+    The context payload is a read-only mapping of string keys to string
     values. Domain models, DTOs, repositories, validation errors, and
-    other complex objects must never be stored in context.
+    other complex objects must never be stored in it.
 
     The optional `cause` field exists solely for diagnostics and logging
     and must never be exposed to end users.
@@ -184,10 +184,10 @@ class ValidationAppError(AppError):
     def validation(cls, exc: PydanticValidationError) -> ValidationAppError:
         """Translate a Pydantic ValidationError into a ValidationAppError.
 
-        Each Pydantic error whose `type` matches a known ErrorCode value
-        is mapped directly via ErrorCode(type). Unrecognized types fall
-        back to UNKNOWN_ERROR; the raw Pydantic type is preserved in
-        `value` so adapters and logs can surface it without re-raising.
+        Pydantic-native error types in the explicit translation allow-list
+        are mapped directly. All other types, including custom domain
+        validator types, become UNKNOWN_ERROR; the raw Pydantic type is
+        preserved in `value` for adapters and logs.
 
         Args:
             exc: The Pydantic ValidationError raised by a domain schema.
