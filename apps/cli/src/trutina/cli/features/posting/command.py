@@ -25,8 +25,8 @@ nothing else to expose.
 from typing import Annotated
 
 import typer
-from trutina.cli.shared.error_boundary import error_boundary
-from trutina.cli.state import CliState
+from trutina.cli.composition.state import CliState
+from trutina.cli.shared.boundary.error_boundary import error_boundary
 
 from .formatter import print_postings_list
 from .handler import (

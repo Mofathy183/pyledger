@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import pytest
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.cli.features.journal.handler import (
     create_journal_entry_handler,
     get_journal_entry_handler,

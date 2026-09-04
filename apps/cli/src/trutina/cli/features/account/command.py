@@ -13,8 +13,8 @@ is composed in ``formatter.py``.
 from typing import Annotated
 
 import typer
-from trutina.cli.shared.error_boundary import error_boundary
-from trutina.cli.state import CliState
+from trutina.cli.composition.state import CliState
+from trutina.cli.shared.boundary import error_boundary
 
 from .formatter import print_aborted, print_account, print_account_list, print_deleted
 from .handler import (

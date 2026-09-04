@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 from anyio.from_thread import start_blocking_portal
-from trutina.cli.state import CliState
+from trutina.cli.composition.state import CliState
 from trutina.core.account import AccountRepo
 from trutina.core.account.schemas import Account, AccountCategory, ChartOfAccounts
 from trutina.infrastructure.mongo.account import AccountDocument, MongoAccountRepo

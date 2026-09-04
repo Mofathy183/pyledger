@@ -7,7 +7,7 @@ about Typer, Click, or terminal presentation. Every handler resolves
 PostingService lazily from the supplied CliContext.
 """
 
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.core.posting import PostingViewModel
 
 

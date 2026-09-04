@@ -1,4 +1,4 @@
-from trutina.cli.context import CliContext
+from trutina.cli.composition.context import CliContext
 from trutina.config import TestSettings
 from trutina.core.account import AccountRepo
 from trutina.core.account.schemas import ChartOfAccounts
