@@ -2,33 +2,17 @@
 
 The double-entry accounting domain for Trutina: validated domain models, service
 workflows, and repository contracts for accounts, journal entries, and ledger postings.
-No database driver, no HTTP framework, no CLI framework — this package is pure business
-logic plus the interfaces storage adapters must satisfy.
 
 ## What This Package Is
 
-`trutina-core` owns the answer to "what is a valid accounting transaction and what
-happens when you post one." It is consumed by `apps/cli` and `apps/api`, and its
-repository contracts are implemented by `trutina-infrastructure`. Core itself never
-imports any of those three.
+`trutina-core` owns the rules for what counts as a valid accounting transaction and
+what happens when one is posted. It has no database driver, no HTTP framework, and no
+CLI framework — pure business logic plus the repository interfaces storage adapters
+must satisfy. It is consumed by `apps/cli` and `apps/api`; its repository contracts are
+implemented by `trutina-infrastructure`. Core itself never imports any of those three.
 
-If you're deciding where a change belongs: if it's a rule about debits, credits,
-account codes, or posting derivation, it belongs here. If it's about Mongo documents,
-Typer commands, or HTTP routes, it doesn't.
-
-## Why It Exists
-
-Splitting the accounting domain into its own package — independent of storage and
-presentation — means:
-
-- The same domain rules back both the CLI and the API without duplication.
-- Domain and service tests run in milliseconds with no database, using `Fake*Repo`
-  implementations from the shared test tree.
-- Storage can change (Mongo today, something else later) without touching a single
-  validation rule.
-
-See `CONTEXT.md` for the reasoning behind this split and the constraints that keep it
-intact.
+If a change is a rule about debits, credits, account codes, or posting derivation, it
+belongs here. If it's about Mongo documents, Typer commands, or HTTP routes, it doesn't.
 
 ## Installation
 
@@ -38,9 +22,37 @@ Within the workspace:
 uv sync --package trutina-core
 ```
 
-`trutina-core` depends only on `trutina-shared` (validation helpers, the error
-model). It has no dependency on `trutina-infrastructure`, `trutina-config`,
-`trutina-cli`, or `trutina-api`.
+`trutina-core` depends only on `trutina-shared` (validation helpers, the error model)
+and `pydantic`. It has no dependency on `trutina-infrastructure`, `trutina-config`,
+`trutina-cli`, or `trutina-api` — confirmed in `packages/core/pyproject.toml`.
+
+## Public API
+
+Import from each feature's package root, not from internal submodules:
+
+| Symbol                     | Package                | Purpose                                                 |
+| -------------------------- | ---------------------- | ------------------------------------------------------- |
+| `AccountService`           | `trutina.core.account` | Create/update/get/list/resolve/delete account workflows |
+| `AccountRepo`              | `trutina.core.account` | Abstract persistence contract for `Account`             |
+| `CreateAccountInput`       | `trutina.core.account` | Input DTO for account creation                          |
+| `UpdateAccountInput`       | `trutina.core.account` | Input DTO for partial account updates                   |
+| `AccountViewModel`         | `trutina.core.account` | Output view of a single account                         |
+| `ChartOfAccountsViewModel` | `trutina.core.account` | Output view of every account                            |
+| `JournalService`           | `trutina.core.journal` | Create/get/list journal-entry workflows                 |
+| `JournalRepo`              | `trutina.core.journal` | Abstract persistence contract for `JournalEntry`        |
+| `CreateJournalInput`       | `trutina.core.journal` | Input DTO for journal-entry creation                    |
+| `JournalLineInput`         | `trutina.core.journal` | Input DTO for a single journal line                     |
+| `JournalViewModel`         | `trutina.core.journal` | Output view of a journal entry                          |
+| `JournalLineViewModel`     | `trutina.core.journal` | Output view of a journal line                           |
+| `PostingService`           | `trutina.core.posting` | Post a journal entry; retrieve postings                 |
+| `PostingRepo`              | `trutina.core.posting` | Abstract persistence contract for `LedgerPosting`       |
+| `PostingViewModel`         | `trutina.core.posting` | Output view of a single posting (no input DTO exists)   |
+
+Domain schemas (`Account`, `JournalEntry`, `JournalLine`, `LedgerPosting`,
+`ChartOfAccounts`) are importable from their explicit submodule paths
+(e.g. `trutina.core.account.schemas.account`) when a repository adapter or similar
+needs the domain type itself. Callers outside `core` should generally work with DTOs
+and ViewModels instead.
 
 ## Package Layout
 
@@ -68,44 +80,11 @@ packages/core/src/trutina/core/
         └── ledger_posting.py  # LedgerPosting (frozen)
 ```
 
-Each feature module is self-contained: its own DTOs, its own repository contract, its
-own service, its own schemas. `posting` depends on `journal`, which depends on
-`account` — never the reverse (enforced by an import-linter contract at the workspace
-root).
-
-## Public API
-
-Import from each feature's package root, not from internal submodules:
-
-```python
-from trutina.core.account import (
-    AccountService,
-    AccountRepo,
-    CreateAccountInput,
-    UpdateAccountInput,
-    AccountViewModel,
-    ChartOfAccountsViewModel,
-)
-from trutina.core.journal import (
-    JournalService,
-    JournalRepo,
-    CreateJournalInput,
-    JournalLineInput,
-    JournalViewModel,
-    JournalLineViewModel,
-)
-from trutina.core.posting import (
-    PostingService,
-    PostingRepo,
-    PostingViewModel,
-)
-```
-
-Domain schemas (`Account`, `JournalEntry`, `JournalLine`, `LedgerPosting`,
-`ChartOfAccounts`) are importable from their explicit submodule paths
-(`trutina.core.account.schemas.account`, etc.) when you need the domain type itself
-— for example, inside a repository adapter. Callers outside `core` should generally
-work with DTOs and ViewModels instead.
+Each feature is self-contained: its own DTOs, repository contract, service, and
+schemas. Tests live beside the code they cover (`account/tests/`, `journal/tests/`,
+`posting/tests/`), split into `test_*_unit.py` (fake-repo, `@pytest.mark.unit`) and
+`test_*_integration.py` (real MongoDB via `trutina-infrastructure`,
+`@pytest.mark.integration`).
 
 ## Usage
 
@@ -179,7 +158,11 @@ handed a concrete repository at service-construction time by whichever app or
 infrastructure layer wires the graph together — core has no opinion on what that
 repository is backed by.
 
-## Extending This Package
+Internally, `posting` may import from `journal` and `account`; `journal` may import
+from `account`; `account` may import from neither. This ordering is enforced by an
+import-linter `layers` contract at the workspace root, not just by convention.
+
+## Extending
 
 Adding a new operation to an existing feature (e.g. a new `AccountService` method):
 
@@ -198,32 +181,11 @@ Adding a new feature module (e.g. a future `reporting` module):
 1. Mirror the existing shape: `dtos.py`, `repo.py`, `service.py`, `schemas/`, `tests/`.
 2. Respect the internal layering — a new module may depend on `account`, `journal`,
    or `posting` per the same rules those three already follow, but the import-linter
-   contract must be updated if you introduce a new directional dependency.
+   contract must be updated if a new directional dependency is introduced.
 3. Keep the module free of `beanie`/`pymongo` imports — the workspace-level
    import-linter contract enforces this for all of `trutina.core`.
 
-## Error Handling
-
-Every error that can cross a service boundary is either `AppError` or its subclass
-`ValidationAppError`, both from `trutina-shared`. Domain construction failures
-(a Pydantic `ValidationError` raised by a schema) are caught by the service and
-re-raised as `ValidationAppError`; business-rule failures (duplicate code, unknown
-account, already-posted journal entry) are raised directly as `AppError` with a
-specific `ErrorCode`.
-
-Confirmed codes used by this package's services: `DUPLICATE_ACCOUNT_CODE`,
-`DUPLICATE_ACCOUNT_NAME`, `UNKNOWN_ACCOUNT`, `UNKNOWN_JOURNAL_ENTRY`,
-`JOURNAL_ALREADY_POSTED`, `VALIDATION_ERROR` (wrapping domain validators). Callers
-should match on `AppError.code`, not on exception type alone, since every service
-failure surfaces through the same two exception classes.
-
 ## Testing
-
-Core's own tests live beside the code (`account/tests/`, `journal/tests/`,
-`posting/tests/`), split `test_*_unit.py` (fake-repo, `@pytest.mark.unit`) and
-`test_*_integration.py` (real MongoDB via `trutina-infrastructure`,
-`@pytest.mark.integration`). Shared fixtures/factories/fakes live at the workspace
-root under `tests/`.
 
 Run just this package's fast suite:
 
@@ -240,9 +202,22 @@ uv run pytest -m "integration and core"
 
 When writing new service tests, substitute the repository with the matching
 `Fake*Repo` from `tests/fakes/` rather than mocking — domain schemas should be
-constructed directly with no mocking at all. See
-`Trutina Unit Testing Prompt — Condensed Reference.md` at the repo root for the full
-project testing standard.
+constructed directly with no mocking at all.
+
+## Error Handling
+
+Every error that can cross a service boundary is either `AppError` or its subclass
+`ValidationAppError`, both from `trutina-shared`. Domain construction failures
+(a Pydantic `ValidationError` raised by a schema) are caught by the service and
+re-raised as `ValidationAppError`; business-rule failures (duplicate code, unknown
+account, already-posted journal entry) are raised directly as `AppError` with a
+specific `ErrorCode`.
+
+Confirmed codes used by this package's services: `DUPLICATE_ACCOUNT_CODE`,
+`DUPLICATE_ACCOUNT_NAME`, `UNKNOWN_ACCOUNT`, `UNKNOWN_JOURNAL_ENTRY`,
+`JOURNAL_ALREADY_POSTED`, `VALIDATION_ERROR` (wrapping domain validators). Callers
+should match on `AppError.code`, not on exception type alone, since every service
+failure surfaces through the same two exception classes.
 
 ## What Consumers Should Know
 
@@ -252,8 +227,7 @@ project testing standard.
 - **`CreateJournalInput` never carries a journal number.** `JournalService` assigns
   it via `JournalRepo.next_journal_number()`.
 - **`PostingViewModel` has no matching input DTO.** Postings are always derived
-  internally by `PostingService` from an already-persisted `JournalViewModel`; there
-  is nothing for a caller to submit.
+  internally by `PostingService` from an already-persisted `JournalViewModel`.
 - **Posting an entry twice raises, it doesn't silently no-op.** Callers must catch
   `AppError` with `ErrorCode.JOURNAL_ALREADY_POSTED` if retry logic is possible on
   their side.

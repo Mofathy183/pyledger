@@ -2,7 +2,7 @@
 
 Audience: maintainers, reviewers, and future contributors deciding whether a change
 belongs in this package and whether it preserves the guarantees the rest of the
-monorepo depends on. This document explains _why_ core looks the way it does, not
+monorepo depends on. This document explains why core looks the way it does, not
 how to call it — see `README.md` for usage.
 
 ## Why This Package Exists Separately
@@ -51,12 +51,11 @@ Two contracts apply directly to this package:
    support a "show postings for this account" convenience method — that capability
    belongs in a service that depends on both, not inside `account` itself).
 
-**Why this matters more than it looks like it does:** the layering rules are what
-let `AccountService`, `JournalService`, and `PostingService` be trusted in isolation.
-If `account/` could reach into `posting/`, a bug fix in one module could silently
-change behavior in a module that has no test coverage for that interaction. The
-one-directional rule keeps the blast radius of any change legible from the import
-statements alone.
+The layering rules are what let `AccountService`, `JournalService`, and
+`PostingService` be trusted in isolation. If `account/` could reach into `posting/`,
+a bug fix in one module could silently change behavior in a module that has no test
+coverage for that interaction. The one-directional rule keeps the blast radius of any
+change legible from the import statements alone.
 
 ## Design Decisions and Why They Were Made
 
@@ -69,31 +68,28 @@ dependency-graph package. This is the Dependency Inversion Principle applied
 literally: the domain defines the contract; storage conforms to it, not the other
 way around.
 
-**Trade-off accepted:** core cannot express storage-specific concerns (transactions,
+Trade-off accepted: core cannot express storage-specific concerns (transactions,
 indexes, connection pooling) anywhere in its own types. When
 `MongoPostingRepo.save_many()` needs atomicity a plain contract can't express, that
 constraint has to be documented in the contract's docstring as a promise the adapter
 must keep — core has no mechanism to enforce it beyond documentation and adapter
-tests. This is a deliberate cost: the alternative (leaking a `session` parameter or
-similar into the contract) would violate the zero-Mongo-awareness rule for a marginal
-gain.
+tests. This is deliberate: the alternative (leaking a `session` parameter or similar
+into the contract) would violate the zero-Mongo-awareness rule for a marginal gain.
 
 ### DTOs and ViewModels, not raw domain models, at the service boundary
 
 Every service method accepts a DTO (`CreateAccountInput`, `CreateJournalInput`) and
 returns a ViewModel (`AccountViewModel`, `JournalViewModel`, `PostingViewModel`)
 rather than the underlying Pydantic domain schema (`Account`, `JournalEntry`,
-`LedgerPosting`). This is intentional redundancy, not an oversight:
+`LedgerPosting`). This is intentional redundancy, not an oversight: it lets the
+domain schema evolve (add a private field, change an internal computed property)
+without changing what every caller — CLI formatters, API response models — has to
+depend on. It also gives DTOs room to have their own validation semantics that don't
+belong on the domain model. `UpdateAccountInput`'s `None`/omitted/explicitly-provided
+distinction for partial updates is a DTO-only concept; `Account` itself has no notion
+of a partial update.
 
-- It lets the domain schema evolve (add a private field, change an internal
-  computed property) without changing what every caller — CLI formatters, API
-  response models — has to depend on.
-- It gives DTOs room to have their own validation semantics that don't belong on the
-  domain model. `UpdateAccountInput`'s `None`/omitted/explicitly-provided distinction
-  for partial updates is a DTO-only concept; `Account` itself has no notion of a
-  partial update.
-
-**Trade-off accepted:** every service method has a mapping step (`_to_view_model`,
+Trade-off accepted: every service method has a mapping step (`_to_view_model`,
 `_to_entry_view`). This is boilerplate, but it's boilerplate in exactly one place per
 feature (the service), not duplicated across every consumer.
 
@@ -123,8 +119,11 @@ mode entirely rather than requiring service-layer discipline to prevent it.
 
 The same reasoning applies to `JournalEntry.total_debits`, `total_credits`,
 `is_balanced`, and `PostingViewModel.is_debit` — anywhere a value is fully
-determined by other fields on the same model, it is a computed property, not a
-stored one.
+determined by other fields on the same model, it is derived, not stored. Note that
+`LedgerPosting.is_debit` is a plain `@property` rather than a Pydantic
+`computed_field` (unlike `PostingViewModel.is_debit`, which is a real
+`computed_field`) — both achieve the same "never stored, always derived" guarantee,
+just via different mechanisms at the domain-schema layer versus the DTO layer.
 
 ### Validation lives in the domain schema, not the service
 
@@ -134,18 +133,17 @@ checks written imperatively in the service. A service that wants to enforce a ru
 constructs the domain object and lets construction fail — it does not duplicate the
 rule as an `if` statement first.
 
-**Why:** this guarantees the invariant holds for _every_ construction path, not just
-the one the current service method happens to use. If a second service, or a test
-factory, or a future migration script constructs a `JournalEntry` directly, the
-balance rule still applies — there is no way to build an invalid one by going around
-the service.
+This guarantees the invariant holds for _every_ construction path, not just the one
+the current service method happens to use. If a second service, or a test factory,
+or a future migration script constructs a `JournalEntry` directly, the balance rule
+still applies — there is no way to build an invalid one by going around the service.
 
-**Exception, and why it's not actually an exception:** `JournalService` checks
-account existence (`_validate_accounts`) before constructing the domain entry. This
-is not domain validation moved into the service — it's a cross-aggregate check
-(does this journal line's account exist in the chart?) that the `JournalLine` schema
-has no way to answer on its own, since it has no repository access and no knowledge
-of any chart snapshot. Cross-aggregate checks belong in the service; single-aggregate
+Exception, and why it's not actually an exception: `JournalService` checks account
+existence (`_validate_accounts`) before constructing the domain entry. This is not
+domain validation moved into the service — it's a cross-aggregate check (does this
+journal line's account exist in the chart?) that the `JournalLine` schema has no way
+to answer on its own, since it has no repository access and no knowledge of any
+chart snapshot. Cross-aggregate checks belong in the service; single-aggregate
 invariants belong in the schema. This is the dividing line to preserve when adding a
 new validation rule — ask whether the check needs data outside the object being
 constructed.
@@ -162,7 +160,7 @@ work around.
 
 ## Control Flow and Data Flow
 
-A representative request, `POST` a journal entry to the ledger, illustrates the
+A representative request, posting a journal entry to the ledger, illustrates the
 cross-service shape that recurs throughout core:
 
 ```text
@@ -179,57 +177,70 @@ PostingService.post_journal_entry(journal_number)
 ```
 
 Services call other services (`PostingService` holds a `JournalService`;
-`JournalService` holds an `AccountService`), never the other way down to a
-repository they don't own. `PostingService` never touches `AccountRepo` or
-`JournalRepo` directly — it only ever sees `JournalViewModel`, already fully
-validated, from `JournalService`. This is what "trusts that any entry returned by
-JournalService is fully validated" (see `posting/service.py`'s module docstring)
-means concretely: `PostingService` performs zero re-validation of journal line
-amounts or account existence, because those are `JournalEntry`/`JournalLine`
-invariants already enforced upstream, and re-checking them here would be exactly the
-kind of duplicated-rule drift the domain-validation design decision above exists to
-prevent.
+`JournalService` holds an `AccountService`), never reaching down to a repository they
+don't own. `PostingService` never touches `AccountRepo` or `JournalRepo` directly —
+it only ever sees `JournalViewModel`, already fully validated, from `JournalService`.
+Concretely, `PostingService` performs zero re-validation of journal line amounts or
+account existence, because those are `JournalEntry`/`JournalLine` invariants already
+enforced upstream, and re-checking them here would be exactly the kind of duplicated-
+rule drift the domain-validation design decision above exists to prevent.
 
 ## Assumptions This Package Relies On
 
-- **Every constructed domain object is immediately valid or immediately rejected.**
+- Every constructed domain object is immediately valid or immediately rejected.
   There is no notion of a "draft" or partially-valid `Account`/`JournalEntry`
   anywhere in core. If a future feature needs staged/draft entries, that is a new
   concept requiring new design, not an extension of the existing schemas.
-- **A `ChartOfAccounts` snapshot is a point-in-time view, not a live handle.**
+- A `ChartOfAccounts` snapshot is a point-in-time view, not a live handle.
   `AccountService.get_chart()` is documented as something callers validating
   multiple references must call once and reuse — calling `resolve_account()` in a
   loop instead rebuilds the chart from `repo.list_all()` on every call, and two such
   calls are not guaranteed to observe the same data. This is a real race window under
   concurrent writes; it is accepted because closing it fully would require
   transactional snapshot reads the current repository contract doesn't provide.
-- **Repository method contracts (return `None` on a miss, translate storage
-  failures to `AppError`, treat `save_many` as atomic) are promises, not enforced
-  by core.** Core cannot verify a `PostingRepo` implementation actually treats
-  `save_many` atomically — that has to be proven by that adapter's own tests in
+- Repository method contracts (return `None` on a miss, translate storage failures
+  to `AppError`, treat `save_many` as atomic) are promises, not enforced by core.
+  Core cannot verify a `PostingRepo` implementation actually treats `save_many`
+  atomically — that has to be proven by that adapter's own tests in
   `trutina-infrastructure`. Treat every repository contract docstring in `repo.py`
   as a spec an adapter must satisfy, and check that any new adapter's tests actually
   assert the documented behavior, not just typical-path success.
 
+## Known Gaps
+
+- `AccountService.create_account()`/`update_account()` perform their duplicate-code
+  and duplicate-name checks as a pre-check (`exists_by_code`/`exists_by_name`)
+  before construction and persistence — this is not atomic with the subsequent
+  `create`/`update` call. Under concurrent writes, two callers can both pass the
+  pre-check before either persists; the storage-layer unique index is the actual
+  authority in that case, and the adapter is expected to translate the resulting
+  conflict into `AppError.conflict()`. This is a deliberately accepted TOCTOU
+  window, not an oversight — closing it would require pushing transaction/session
+  semantics into a contract that is supposed to stay storage-agnostic.
+- `AccountService.delete_account()` performs an existence check only. There is no
+  posting-history safeguard (e.g. refusing to delete an account with existing
+  ledger postings) anywhere in the current source — do not document or assume one
+  exists.
+
 ## Common Mistakes to Avoid
 
-- **Constructing a domain schema directly from CLI/API code to "save a round trip."**
+- Constructing a domain schema directly from CLI/API code to "save a round trip."
   This bypasses whatever cross-aggregate check the service was performing (e.g.
   account-existence validation) and produces an object that may be structurally
   valid but business-invalid. Always go through the service.
-- **Adding a new cross-cutting validation as an `if` in a service method** instead of
-  a schema validator, when the check only needs data already on the object being
+- Adding a new cross-cutting validation as an `if` in a service method instead of a
+  schema validator, when the check only needs data already on the object being
   constructed. If it doesn't need a repository or another service, it belongs on the
   schema.
-- **Introducing an import from `account` into `journal` or `posting` that goes the
-  wrong direction**, or any import of `beanie`/`pymongo` anywhere in this package.
+- Introducing an import from `account` into `journal` or `posting` that goes the
+  wrong direction, or any import of `beanie`/`pymongo` anywhere in this package.
   Both are caught by CI's import-linter step, but catching it locally
   (`uv run lint-imports`) before pushing is faster than waiting on CI to reject it.
-- **Assuming `PostingService` re-validates what `JournalService` already validated.**
-  It doesn't, on purpose. If you find yourself wanting to add an amount or
+- Assuming `PostingService` re-validates what `JournalService` already validated. It
+  doesn't, on purpose. If you find yourself wanting to add an amount or
   account-existence check inside `PostingService`, that's a signal the check belongs
   on `JournalEntry`/`JournalLine` instead, where it will also protect every other
   caller of `JournalService`.
-- **Treating `AppError.code` as optional to check.** Catching bare `AppError` without
+- Treating `AppError.code` as optional to check. Catching bare `AppError` without
   inspecting `.code` in a caller that needs to distinguish "already posted" from
   "unknown journal number" will misbehave — both raise the same exception type.
