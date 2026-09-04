@@ -11,6 +11,19 @@ from enum import Enum
 from .detection import BG_COLOR
 
 
+class _BrandHex:
+    """Raw hex values, exported separately from ConsoleThemes because
+    prompt_toolkit's Style can't consume Rich style strings ("bold
+    #C9A227") -- only bare hex. Keeping the literal here, instead of
+    duplicating it by hand in shell_style.py, means the two can't
+    silently drift apart the way this module's docstring previously
+    warned they might.
+    """
+
+    BRAND = "#C9A227"  # brass -- product identity, not tied to any status
+    BRAND_DIM = "#8C8275"  # warm neutral -- brand-adjacent secondary text
+
+
 class ConsoleThemes(Enum):
     """Visual styles used throughout the Trutina CLI.
 
@@ -37,6 +50,9 @@ class ConsoleThemes(Enum):
     Enum values are Rich style definitions that are later converted
     into a Rich Theme instance.
     """
+
+    BRAND = f"bold {_BrandHex.BRAND}{BG_COLOR}"
+    BRAND_DIM = f"italic {_BrandHex.BRAND_DIM}{BG_COLOR}"
 
     SUCCESS = f"bold green{BG_COLOR}"
     ERROR = f"bold red{BG_COLOR}"
