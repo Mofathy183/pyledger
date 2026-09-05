@@ -1,329 +1,187 @@
 # Trutina
 
-Trutina is a Python CLI bookkeeping application built around double-entry accounting. It combines validated domain
-modeling, service-layer workflows, a MongoDB infrastructure layer, and a fully implemented Typer/Rich CLI, rather
-than reporting. The codebase is intentionally structured as an educational, architecture-first project for exploring
-how bookkeeping rules can be enforced in Python and exposed through a clean, layered command-line interface.
+Trutina is a Python double-entry bookkeeping engine, built as a `uv` workspace: one
+shared accounting-domain package, one storage adapter package, one settings package,
+and two thin presentation apps (a Typer/Rich CLI and a FastAPI HTTP API) that both
+sit on top of the same domain code.
 
-## Overview
+## What's Actually Here
 
-Trutina exists to model the core mechanics of a bookkeeping system in a small, inspectable codebase. It captures the
-chart of accounts, journal lines, journal entries, and ledger postings that sit at the heart of double-entry
-accounting.
+- **`packages/core`** (`trutina-core`) — the accounting domain: validated models,
+  `AccountService`/`JournalService`/`PostingService`, and the abstract
+  `AccountRepo`/`JournalRepo`/`PostingRepo` contracts. Zero knowledge of storage,
+  HTTP, or terminals. See `packages/core/README.md` / `CONTEXT.md`.
+- **`packages/infrastructure`** (`trutina-infrastructure`) — concrete MongoDB/Beanie
+  implementations of the three repository contracts, plus connection lifecycle and
+  error-translation helpers. See `packages/infrastructure/README.md` / `CONTEXT.md`.
+- **`packages/config`** (`trutina-config`) — typed, environment-driven settings
+  (`Settings`, `TestSettings`, `MongoSettings`, `ApiSettings`). Depends on nothing
+  else in the workspace. See `packages/config/README.md` / `CONTEXT.md`.
+- **`packages/shared`** (`trutina-shared`) — the lowest-level package: reusable
+  validation rules and the shared `ErrorCode`/`AppError`/`ValidationAppError` model.
+  Depends on nothing but `pydantic`. See `packages/shared/README.md` / `CONTEXT.md`.
+- **`apps/cli`** (`trutina-cli`) — a Typer/Rich terminal application, plus a
+  persistent interactive shell with Claude Code–style slash-command completion. See
+  `apps/cli/README.md` / `CONTEXT.md`.
+- **`apps/api`** (`trutina-api`) — a FastAPI HTTP presentation layer over the same
+  domain services, following a fixed Router → Mapper → Handler → Presenter pipeline
+  per feature. See `apps/api/CONTEXT.md` (no `apps/api/README.md` exists yet).
 
-The project is useful as a reference for:
-
-- understanding how accounting rules can be represented as validated domain models,
-- separating user interaction from business rules,
-- keeping service orchestration independent of terminal presentation,
-- and demonstrating how Clean Architecture boundaries can be applied in a Python CLI project.
-
-The current implementation validates account, journal, and posting data; provides service workflows for account,
-journal, and posting operations; includes MongoDB account, journal, and posting repositories plus the related
-connection and error-translation helpers; and exposes all of it through a complete `account`/`journal`/`posting`
-CLI built on Typer and Rich. Reporting (trial balance, historical views) is the main area still deliberately out
-of scope — see `src/trutina/cli/README.md` for full CLI architecture and `docs/ROADMAP.md` for what's next.
-
-## Current Features
-
-### Implemented
-
-- Chart of accounts domain model with case-insensitive account-name lookup and unique code/name validation.
-- Account domain model with normalized names and category-derived normal balance.
-- Account service workflows for create, update, lookup, list, resolve, and delete.
-- JournalLine validation for normalized account names and debit/credit exclusivity.
-- JournalEntry validation for positive journal numbers, supported posting dates, minimum line count, and balanced
-  totals.
-- Journal DTOs for service input and output contracts.
-- Journal service workflows for create, get, and list, including journal-number allocation.
-- Immutable LedgerPosting model with the same single-side posting rule.
-- Posting DTOs and posting service workflows for journal-to-posting derivation, duplicate-posting prevention, and
-  retrieval by account or journal number.
-- Async repository contracts for accounts, journals, and postings.
-- MongoDB connection helpers, shared Mongo execution/error translation, timestamped documents, and concrete
-  MongoDB account, journal, and posting repositories.
-- Shared validation helpers for account-name normalization and line-amount checks.
-- Shared error model and Pydantic error translation helpers.
-- A complete, feature-oriented CLI (`account`, `journal`, `posting` Typer command groups) with its own composition
-  root (`CliContext`, `CliState`), CLI-flag and interactive-prompt input paths, Rich-based formatters for every
-  command, and a shared error boundary that renders domain and validation failures as terminal panels. See
-  `src/trutina/cli/README.md` for the full CLI architecture.
-- Domain and service tests for account, journal, posting, and shared error behavior.
-- CLI unit and integration tests for all three command groups, plus composition-root tests.
-- MongoDB infrastructure tests for the connection lifecycle and the MongoDB account, journal, and posting repositories.
-
-### Partial or Scaffolded
-
-- `src/trutina/modules/journal/rule.py` is an empty scaffold.
-- `src/trutina/modules/posting/rule.py` is an empty scaffold.
-
-### Planned
-
-- Trial balance and reporting support.
-- Import/export and integration surfaces.
-
-## Architecture
-
-Trutina follows Clean Architecture ideas in a lightweight form:
-
-- Domain models own the accounting rules.
-- DTOs define service boundaries.
-- Services orchestrate validation and repository access.
-- Repository contracts define persistence boundaries.
-- Shared error types and validation helpers stay independent of the CLI.
-- The CLI is a thin, feature-oriented presentation layer over the service layer, with its own internal layering
-  (command → parser/prompt → handler → formatter) documented in `src/trutina/cli/README.md`.
-
-The main validation boundary is in the feature modules. Pydantic models enforce structural rules, shared validation
-helpers normalize common inputs, and services perform cross-record checks such as account existence and journal-number
-allocation.
-
-```text
-User
- ↓
-Typer Command (cli/features/<feature>/command.py)
- ↓
-Parser / Prompt
- ↓
-Handler
- ↓
-Service
- ↓
-Domain Models
- ↓
-Repository Contracts
- ↓
-Storage Adapters (MongoDB)
-```
-
-MongoDB storage adapters are implemented for accounts, journals, and postings. The CLI bridges its synchronous
-Typer/Click dispatch onto this async stack through a single `BlockingPortal`, owned for the life of the process by
-`main.py`. Full CLI architecture — the composition root, async execution model, error handling, and layer-by-layer
-dependency rules — is documented in `src/trutina/cli/README.md`.
+Each package/app's own README/CONTEXT is the authoritative reference for its
+internals. This file and `ARCHITECTURE.md`/`PROJECT_CONTEXT.md`/`AGENTS.md` describe
+only cross-cutting, workspace-level facts — they never restate a package's own
+internal detail.
 
 ## Repository Structure
 
 ```text
 .
-├── AGENTS.md
-├── README.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── PROJECT_CONTEXT.md
-│   └── ROADMAP.md
-├── pyproject.toml
-├── src/
-│   └── trutina/
-│       ├── conftest.py
-│       ├── main.py
-│       ├── cli/
-│       │   ├── app.py
-│       │   ├── bootstrap.py
-│       │   ├── context.py
-│       │   ├── state.py
-│       │   ├── features/
-│       │   │   ├── account/
-│       │   │   │   ├── command.py
-│       │   │   │   ├── parser.py
-│       │   │   │   ├── prompt.py
-│       │   │   │   ├── handler.py
-│       │   │   │   ├── formatter.py
-│       │   │   │   └── tests/
-│       │   │   ├── journal/
-│       │   │   │   ├── command.py
-│       │   │   │   ├── parser.py
-│       │   │   │   ├── prompt.py
-│       │   │   │   ├── handler.py
-│       │   │   │   ├── formatter.py
-│       │   │   │   └── tests/
-│       │   │   └── posting/
-│       │   │       ├── command.py
-│       │   │       ├── parser.py
-│       │   │       ├── prompt.py
-│       │   │       ├── handler.py
-│       │   │       ├── formatter.py
-│       │   │       └── tests/
-│       │   ├── shared/
-│       │   │   ├── error_boundary.py
-│       │   │   ├── interaction/
-│       │   │   │   └── prompt.py
-│       │   │   ├── ui/
-│       │   │   │   ├── console.py
-│       │   │   │   ├── widgets.py
-│       │   │   │   └── theme/
-│       │   │   │       ├── detection.py
-│       │   │   │       └── styles.py
-│       │   │   ├── errors/
-│       │   │   │   ├── errors.py
-│       │   │   │   └── hint.py
-│       │   │   └── formatters/
-│       │   │       └── error.py
-│       │   └── tests/
-│       ├── infrastructure/
-│       │   └── mongo/
-│       │       ├── account/
-│       │       │   ├── document.py
-│       │       │   ├── repository.py
-│       │       │   └── tests/
-│       │       ├── journal/
-│       │       │   ├── document.py
-│       │       │   ├── repository.py
-│       │       │   └── tests/
-│       │       ├── posting/
-│       │       │   ├── document.py
-│       │       │   ├── repository.py
-│       │       │   └── tests/
-│       │       ├── connection.py
-│       │       ├── error_translation.py
-│       │       ├── shared/
-│       │       │   ├── document.py
-│       │       │   ├── repository.py
-│       │       │   └── tests/
-│       │       └── tests/
-│       ├── modules/
-│       │   ├── account/
-│       │   │   ├── dtos.py
-│       │   │   ├── repo.py
-│       │   │   ├── service.py
-│       │   │   ├── schemas/
-│       │   │   │   ├── account.py
-│       │   │   │   └── chart.py
-│       │   │   └── tests/
-│       │   ├── journal/
-│       │   │   ├── dtos.py
-│       │   │   ├── repo.py
-│       │   │   ├── service.py
-│       │   │   ├── schemas/
-│       │   │   │   ├── journal.py
-│       │   │   │   └── line.py
-│       │   │   └── tests/
-│       │   └── posting/
-│       │       ├── dtos.py
-│       │       ├── repo.py
-│       │       ├── rule.py
-│       │       ├── service.py
-│       │       ├── schemas/
-│       │       │   └── ledger_posting.py
-│       │       └── tests/
-│       └── shared/
-│           ├── rule.py
-│           ├── util.py
-│           ├── errors/
-│           │   ├── codes.py
-│           │   ├── errors.py
-│           │   └── translators.py
-│           └── tests/
-└── tests/
-    ├── factories/
-    ├── fakes/
-    └── fixtures/
+├── apps/
+│   ├── cli/                  # trutina-cli
+│   │   └── src/trutina/cli/
+│   │       ├── main.py                # console entry point, single BlockingPortal
+│   │       ├── composition/           # app.py, bootstrap.py, context.py, state.py
+│   │       ├── features/{account,journal,posting}/
+│   │       │   └── command.py, parser.py, prompt.py, handler.py, formatter.py, tests/
+│   │       ├── shared/
+│   │       │   ├── boundary/          # error_boundary.py
+│   │       │   ├── errors/            # CLI-owned message/hint catalogs
+│   │       │   ├── formatters/        # AppError/ValidationError -> Rich panels
+│   │       │   ├── interaction/       # ask/select/confirm prompt primitives
+│   │       │   └── ui/                # console, widgets, theme/, shell_banner.py, logo.py
+│   │       └── shell/                 # interactive REPL: loop, dispatch, completion,
+│   │                                   # keybindings, builtins
+│   └── api/                  # trutina-api
+│       └── src/trutina/api/
+│           ├── composition/           # container.py, bootstrap.py, app.py, dependencies.py
+│           ├── features/{system,account,journal,posting}/
+│           │   └── router.py, schemas.py, mapper.py, handler.py, presenter.py, tests/
+│           └── shared/                # response.py, errors/{catalog,handlers,schemas}.py
+├── packages/
+│   ├── core/                 # trutina-core
+│   │   └── src/trutina/core/{account,journal,posting}/
+│   │       └── dtos.py, repo.py, service.py, schemas/, tests/
+│   ├── infrastructure/       # trutina-infrastructure
+│   │   └── src/trutina/infrastructure/mongo/
+│   │       ├── {account,journal,posting}/  # document.py, repository.py, tests/
+│   │       ├── shared/                     # document.py, repository.py (MongoExecutor)
+│   │       └── connection.py, error_translation.py
+│   ├── config/                # trutina-config
+│   │   └── src/trutina/config/  # base.py (Settings/TestSettings), mongo.py, api.py
+│   └── shared/                 # trutina-shared
+│       └── src/trutina/shared/  # rule.py, util.py, errors/{codes,errors,translators}.py
+├── tests/                     # root-level shared fixtures/factories/fakes only
+│   ├── fixtures/  ├── factories/  └── fakes/
+├── conftest.py                 # fixture-plugin registration + marker enforcement hook
+├── pytest.ini
+├── ty.toml
+├── ruff.toml
+├── pyproject.toml              # workspace root, import-linter contracts
+└── compose.yml                 # mongo + api services for local/dev
 ```
 
-See `src/trutina/cli/README.md` for a full description of every file under `cli/`.
+## Confirmed Dependency Direction
+
+```text
+apps.cli | apps.api
+        │
+        ▼
+trutina.infrastructure
+        │
+        ▼
+trutina.core
+        │
+        ▼
+trutina.shared | trutina.config
+```
+
+Enforced mechanically by import-linter contracts in the root `pyproject.toml`:
+
+- Layered: `trutina.cli | trutina.api → trutina.infrastructure → trutina.core → trutina.shared | trutina.config`.
+- Forbidden: `trutina.core` must never import `beanie` or `pymongo`.
+- Internal to core: `trutina.core.posting → trutina.core.journal → trutina.core.account` (one-directional).
+
+`trutina-config` and `trutina-shared` each depend on nothing else in the workspace.
+`apps/cli` never depends on `apps/api` and vice versa.
 
 ## Technology Stack
 
-- Python 3.14+ - modern typing features and the current runtime target.
-- UV - dependency and environment management.
-- Typer - command-line application framework for the CLI entry point and the `account`/`journal`/`posting`
-- Rich - terminal rendering for formatted account, journal, and posting output, styled panels, and error rendering.
-- Pydantic v2 - domain and DTO validation with structured error reporting.
-- Pytest - test runner for domain, service, and shared utility tests.
-- Ruff - linting and formatting.
-- AnyIO - bridges the CLI's synchronous Typer dispatch onto the async service/repository layer via a single
-  `BlockingPortal`.
+- Python 3.14+, managed as a `uv` workspace (`tool.uv.workspace.members = ["apps/*", "packages/*"]`).
+- Pydantic v2 — domain and DTO validation everywhere.
+- Typer + Rich + AnyIO + prompt-toolkit — the CLI and its interactive shell.
+- FastAPI + Uvicorn — the HTTP API.
+- Beanie + PyMongo (async) — MongoDB persistence, isolated to `trutina-infrastructure`.
+- Pytest (`asyncio_mode = auto`), Ruff, `ty`, `import-linter` — testing and static checks.
 
 ## Development Setup
 
 ```bash
-uv sync --dev
+uv sync --all-packages
 ```
 
 ```bash
-pytest -m unit
+uv run pytest -m unit
+uv run pytest -m integration      # requires MongoDB; see compose.yml / .env.test.example
 ```
 
 ```bash
-pytest -m integration
+uv run ruff check
+uv run ruff format
+uv run ty check
+uv run lint-imports                # enforces the import-linter contracts above
 ```
 
-```bash
-ruff check
-```
-
-```bash
-ruff format
-```
-
-```bash
-ty check
-```
+Convenience scripts: `tools/bootstrap.sh` (sync everything), `tools/fix.sh` (auto-fix
+formatting/lint), `tools/pre-push.sh` (the fast local gate CI also runs first),
+`tools/docker-build.sh` / `tools/docker-smoke.sh` (build and smoke-test the API image).
 
 ## Environment Configuration
-
-Copy the example environment files and customize them as needed:
 
 ```bash
 cp .env.example .env
 cp .env.test.example .env.test
 ```
 
-- `.env` contains settings for local development.
-- `.env.test` contains settings used by the test suite.
-- Test settings use nested environment variables such as `TRUTINA_TEST_MONGO__URI` and `TRUTINA_TEST_MONGO__DB`.
-- The test database should be separate from the development database to avoid accidental data loss.
+Production reads `TRUTINA_`-prefixed variables; tests read `TRUTINA_TEST_`-prefixed
+variables from a separate database. Nested settings use a double underscore
+(`TRUTINA_MONGO__URI`). See `packages/config/README.md` for the full field list.
 
-## Current Project Status
+## Current Status
 
-### Implemented
+| Area                                                           | Status                                                                                                                          |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Account domain, service, Mongo repository                      | Implemented, tested end-to-end                                                                                                  |
+| Journal domain, service, Mongo repository                      | Implemented, tested end-to-end                                                                                                  |
+| Posting domain, service, Mongo repository                      | Implemented, tested end-to-end                                                                                                  |
+| CLI: `account`/`journal`/`posting` command groups              | Implemented, unit + integration tested                                                                                          |
+| CLI: interactive shell (slash completion, help shorthands)     | Implemented, unit tested                                                                                                        |
+| API: `account`/`journal`/`posting` feature routers             | Present per `apps/api/CONTEXT.md`'s fixed pipeline; no `apps/api/README.md` to confirm full test-tier coverage — see Known Gaps |
+| API: `system` (health/root)                                    | Implemented as a documented flat exception                                                                                      |
+| Trial balance / reporting                                      | Not implemented                                                                                                                 |
+| Import/export, external integrations                           | Not implemented                                                                                                                 |
+| `modules/journal/rule.py`, `modules/posting/rule.py` scaffolds | Unconfirmed in this pass — not re-verified against `trutina-core`'s current README/CONTEXT                                      |
 
-- Account domain model, chart-of-accounts model, DTOs, repository contract, and service workflows.
-- Journal line and journal entry validation.
-- Journal DTOs, repository contract, and service workflows.
-- LedgerPosting model and posting service workflows.
-- Shared validation helpers and shared error translation.
-- MongoDB connection lifecycle helpers, error translation, timestamped documents, and concrete MongoDB account,
-  journal, and posting repositories.
-- Typed configuration layer with isolated test settings.
-- A complete CLI: Typer application bootstrap, composition root (`CliContext`/`CliState`), and fully wired
-  `account`, `journal`, and `posting` command groups with Rich-based formatting and a shared error-rendering
-  boundary.
-- Account, journal, posting, and shared error tests.
-- CLI unit and integration tests for all three feature groups, plus composition-root tests.
-- MongoDB connection and repository tests.
+See `ROADMAP.md` for what's next and `PROJECT_CONTEXT.md` for the reasoning behind
+the current shape.
 
-### Partial
+## Known Gaps / Open Flags
 
-- `modules/journal/rule.py`.
-- `modules/posting/rule.py`.
-
-### Planned
-
-- Trial balance and reporting support.
-- Import/export and integration surfaces.
-
-## Roadmap
-
-With the CLI now complete for account, journal, and posting workflows, the next milestones move toward trial
-balance reporting, historical views, and import/export support. See `docs/ROADMAP.md` for the full breakdown and
-`src/trutina/cli/README.md`'s "Future Work" section for CLI-specific next steps (e.g. additional command groups
-once reporting exists, shell completion, richer interactive workflows).
-
-## Design Principles
-
-- Double-entry accounting correctness: journal entries must balance and journal lines must carry exactly one side.
-- Explicit validation: invalid data should fail at the domain boundary with structured errors.
-- Type safety: Pydantic models and strict typing define the contracts between layers.
-- Testability: services depend on repository interfaces, which makes them easy to fake in tests.
-- Separation of concerns: CLI presentation, business logic, and persistence stay in separate layers — the CLI
-  itself is further layered internally (command → parser/prompt → handler → formatter), documented in
-  `src/trutina/cli/README.md`.
-- Future extensibility: repository contracts and DTO boundaries leave room for storage adapters and more workflows.
+- `apps/api/README.md` does not exist yet; API-layer facts above are drawn solely
+  from `apps/api/CONTEXT.md`.
+- `trutina-shared` documents `util.default_posting_date()` as unused by any active
+  workflow, but `apps/cli`'s journal parser (`cli/features/journal/parser.py`)
+  visibly imports and calls it. Flagged, not resolved, in `PROJECT_CONTEXT.md`.
+- `MongoPostingRepo.save_many()` has no multi-document transaction — a mid-batch
+  failure can partially persist a journal's postings (accepted, documented risk).
+- `get_field_violations()` (in `trutina-shared`) downgrades domain-raised
+  `ErrorCode`s to `UNKNOWN_ERROR` on `FieldViolation.code`; both the CLI and API
+  layers work around this by recovering the real code from `FieldViolation.value`.
 
 ## Contributing
 
-Keep changes focused and consistent with the existing architecture. Update or add tests when behavior changes, run the
-project formatting and lint checks locally, and avoid documenting scaffolding as implemented behavior.
+Keep changes scoped to the package/app they belong to. Update that package's own
+README/CONTEXT when its structure or maturity changes — do not let root docs drift
+into re-describing package internals. Run `tools/pre-push.sh` before pushing.
 
 ## License
 
